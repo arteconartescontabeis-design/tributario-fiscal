@@ -1,8 +1,8 @@
 /* Gera preview_layout_v150.html: o módulo REAL (motor, UI, página) com sessão simulada,
    dados de exemplo preenchidos e o alternador "Layout atual ⇄ Layout proposto". Sem login, sem Supabase. */
 const fs = require('fs'), path = require('path');
-const R = path.join(__dirname, '..'), M = path.join(R, 'modulos/imobiliario');
-const html = fs.readFileSync(path.join(R, 'imobiliaria.html'), 'utf8');
+const R = path.join(__dirname, '..'), M = path.join(R, 'imobiliario', 'modulos');
+const html = fs.readFileSync(path.join(R, 'imobiliario', 'index.html'), 'utf8');
 const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
 const js = f => fs.readFileSync(path.join(M, f), 'utf8');
 const mods = ['imob_manifesto.js','imob_estilo.js','imob_pagina.js','motorImob.js','persistenciaImob.js','parecerImobIA.js','nucleoRastreio.js','imob_premissas.js','imob_validacao.js','imob_relatorios.js','imob_graficos.js','ui_imobiliaria.js','imob_layout.js'];

@@ -72,7 +72,7 @@ async function empCarregar(){
 async function incLacreCruzado(){
   const box = $id('inc-lacre-cruzado'); if (!box) return;
   try {
-    const r = await fetch('index.html', { cache:'no-store' });
+    const r = await fetch('../analise-tributaria-pro/index.html', { cache:'no-store' });
     if (!r.ok) throw new Error('HTTP '+r.status);
     const t = await r.text();
     const hash = (t.match(/const LACRE_HASH = '([0-9a-f]+)'/)||[])[1] || null;
@@ -82,7 +82,7 @@ async function incLacreCruzado(){
       box.style.display = 'block';
       box.innerHTML = `<div style="background:var(--warn-bg);border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px">
         ⚠️ <b>Motor defasado.</b> O Análise Tributária Pro em produção (v${esc(versao||'?')}) foi re-selado com o lacre <code>${esc(hash)}</code>, e esta cópia usa <code>${LACRE_HASH}</code>.
-        As simulações continuam funcionando, mas saem marcadas como calculadas com motor defasado — regere o <code>incorporacao.html</code> com <code>node tools/build_incorporacao.js</code> e publique.</div>`;
+        As simulações continuam funcionando, mas saem marcadas como calculadas com motor defasado — regere o <code>incorporacao/index.html</code> com <code>node tools/build_incorporacao.js</code> e publique.</div>`;
     } else box.style.display = 'none';
   } catch(e){ INC.motorIndex = { hash:null, versao:null, erro: e.message }; box.style.display = 'none'; }
   incMotorBoxRender();

@@ -23,12 +23,11 @@ jobs:
         run: node tests/run.js
 
       - name: Suíte da Simulação de Incorporação (lacre copiado = lacre do index)
-        # 08/10/2026: incorporacao.html reconstruído a partir do index v7.99.1 (lacre 0a257d66) — a suíte voltou a
-        # passar inteira (272/272), então a falha dela volta a bloquear o push. Se o index re-selar o lacre, rode
-        # `node tools/build_incorporacao.js` antes de publicar.
+        # incorporacao/index.html é GERADO a partir de analise-tributaria-pro/index.html + incorporacao/src/.
+        # Se o ATP re-selar o lacre, rode `node tools/build_incorporacao.js` antes de publicar.
         run: node tests/run_incorporacao.js
 
-      - name: Suíte da Análise Imobiliária 1.4.0 (UI em jsdom + 25 testes de aceite)
+      - name: Suíte da Análise Imobiliária (UI em jsdom + testes de aceite)
         run: |
           npm i --no-save jsdom@24
           node tests/run_imob_ui.js

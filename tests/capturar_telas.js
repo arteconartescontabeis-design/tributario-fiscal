@@ -17,7 +17,7 @@ const H = require('./_harness_sessao.js');
   });
   const logs = []; pg.on('console', m => logs.push(m.type() + ': ' + m.text()));
   async function entrar(email, senha) { await pg.fill('#l-email', email); await pg.fill('#l-senha', senha); await pg.click('#btn-login'); await pg.waitForFunction(() => window.APP && APP.sessao !== 'carregando' && APP.sessao !== 'deslogado'); await pg.waitForTimeout(150); }
-  await pg.goto(H.ORIGEM + '/imobiliaria.html'); await pg.waitForTimeout(200);
+  await pg.goto(H.ORIGEM + '/imobiliario/index.html'); await pg.waitForTimeout(200);
   await entrar('teste.a@artecon.local', 'senha-a');
   await pg.evaluate(() => { abrirAba('inventario'); imobInventario(); }); await pg.waitForTimeout(400);
   await pg.screenshot({ path: path.join(OUT, '1_inventario_com_escritorio.png'), fullPage: false });

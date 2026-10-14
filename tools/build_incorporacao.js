@@ -14,9 +14,9 @@
 const fs = require('fs'), path = require('path');
 const { blocos } = require('./extrair_blocos.js');
 const RAIZ = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(RAIZ, 'analise-tributaria-pro', 'index.html'), 'utf8');
 const B = blocos(html);
-const src = f => fs.readFileSync(path.join(RAIZ, 'src', f), 'utf8');
+const src = f => fs.readFileSync(path.join(RAIZ, 'incorporacao', 'src', f), 'utf8');
 
 const lacre = B.lacre.replace(/'atp_lacre'/g, "'atp_lacre_inc'");
 if (lacre === B.lacre) throw new Error('bloco do lacre: chave atp_lacre não encontrada para renomear');
@@ -59,5 +59,5 @@ ${src('incorporacao_app_7.js')}
 </body>
 </html>
 `;
-fs.writeFileSync(path.join(RAIZ, 'incorporacao.html'), out);
+fs.writeFileSync(path.join(RAIZ, 'incorporacao', 'index.html'), out);
 console.log(`incorporacao.html gerado: ${Buffer.byteLength(out)} bytes · base index v${B.versao} · lacre ${B.lacreHash}`);

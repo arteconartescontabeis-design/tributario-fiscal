@@ -1,8 +1,8 @@
 /* tests/varredura_v161.js — varredura de erros da v1.6.1: carga completa (14 scripts + layout), fluxos venda/locação/permuta/comparativo, entradas hostis, 12 relatórios, abas do layout. Uso: npm i --no-save jsdom@24 && node tests/varredura_v161.js */
 var fs=require('fs'),path=require('path'),vm=require('vm'); var JSDOM=require('jsdom').JSDOM;
 var RAIZ=process.cwd(), MOD=path.join(RAIZ,'modulos','imobiliario');
-var html=fs.readFileSync('imobiliaria.html','utf8').replace(/<script src="[^"]*"><\/script>\s*/g,'').replace(/<script>[\s\S]*?<\/script>/g,'');
-var dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://artecon.test/imobiliaria.html'}); var w=dom.window;
+var html=fs.readFileSync('imobiliario/index.html','utf8').replace(/<script src="[^"]*"><\/script>\s*/g,'').replace(/<script>[\s\S]*?<\/script>/g,'');
+var dom=new JSDOM(html,{runScripts:'outside-only',pretendToBeVisual:true,url:'https://artecon.test/imobiliario/index.html'}); var w=dom.window;
 w.APP={escritorioId:null,user:{email:'t@a'}}; var erros=[];
 w.open=function(){ var dd=new JSDOM('<html><head></head><body></body></html>'); var ww=dd.window; ww.print=function(){}; ww.focus=function(){}; w.__ultimaJanela=ww; return ww; }; w.__ultimaJanela=null;
 w.console.error=function(){ erros.push(Array.prototype.slice.call(arguments).join(' ')); };

@@ -7,12 +7,12 @@
 var fs = require('fs'), path = require('path');
 var JSDOM = require('jsdom').JSDOM;
 var RAIZ = path.join(__dirname, '..');
-var MOD = path.join(RAIZ, 'modulos', 'imobiliario');
+var MOD = path.join(RAIZ, 'imobiliario', 'modulos');
 
-var html = fs.readFileSync(path.join(RAIZ, 'imobiliaria.html'), 'utf8')
+var html = fs.readFileSync(path.join(RAIZ, 'imobiliario', 'index.html'), 'utf8')
   .replace(/<script src="[^"]*"><\/script>\s*/g, '')                     // scripts são injetados manualmente
   .replace(/<script>[\s\S]*?<\/script>/g, '');                            // sem fetch/Supabase no teste
-var dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'https://artecon.test/imobiliaria.html' });
+var dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'https://artecon.test/imobiliario/index.html' });
 var w = dom.window;
 w.APP = { escritorioId: null, user: { email: 'tester@artecon' } };
 w.open = function () { var d = new JSDOM('<html><head></head><body></body></html>'); var ww = d.window; ww.print = function () {}; ww.focus = function () {}; w.__ultimaJanela = ww; return ww; };
@@ -49,8 +49,8 @@ t('E2', 'todo onclick da marcação aponta para função exportada', 'imob_pagin
   var falt = Object.keys(f).filter(function (k) { return typeof w[k] !== 'function'; });
   return falt.length ? { ok: false, obtido: falt } : true;
 });
-t('E3', 'lacre do motor íntegro e versão do módulo 1.6.2 visível', 'lacreVerificar + ModulosInfo', '338c914d / 1.6.2', function () {
-  var v = M.lacreVerificar(); return v.integro && v.hash_atual === '338c914d' && M.MOTOR_IMOB_VERSAO === '1.3.1' && w.ModulosInfo.imobiliario.versao === '1.6.2' && w.ModulosInfo.imobiliario.changelog[0].versao === '1.6.2' && w.ModulosInfo.imobiliario.motor.lacre === '338c914d' ? true : { ok: false, obtido: v };
+t('E3', 'lacre do motor íntegro e versão do módulo 1.6.3 visível', 'lacreVerificar + ModulosInfo', '338c914d / 1.6.3', function () {
+  var v = M.lacreVerificar(); return v.integro && v.hash_atual === '338c914d' && M.MOTOR_IMOB_VERSAO === '1.3.1' && w.ModulosInfo.imobiliario.versao === '1.6.3' && w.ModulosInfo.imobiliario.changelog[0].versao === '1.6.3' && w.ModulosInfo.imobiliario.motor.lacre === '338c914d' ? true : { ok: false, obtido: v };
 });
 t('E4', '14 abas e página injetada; nav lateral marca ativo', 'abrirAba', 'aba on = venda', function () {
   w.abrirAba('venda'); var on = d.querySelectorAll('#imob-tabs .tab.on');
@@ -288,7 +288,7 @@ t('N7', 'Resumo para o cliente e relatórios por operação (locação e permuta
 });
 
 t('E1', 'toda classe realmente renderizada tem CSS no módulo ou no índice', 'DOM após os testes', 'nenhuma classe órfã', function () {
-  var css = w.ImobEstilo.CSS + fs.readFileSync(path.join(RAIZ, 'imobiliaria.html'), 'utf8');
+  var css = w.ImobEstilo.CSS + fs.readFileSync(path.join(RAIZ, 'imobiliario', 'index.html'), 'utf8');
   var usadas = {}; d.querySelectorAll('#page-imobiliaria [class]').forEach(function (el) { String(el.className).split(/\s+/).forEach(function (c) { if (c) usadas[c] = 1; }); });
   var orf = Object.keys(usadas).filter(function (c) { return css.indexOf('.' + c) < 0; });
   return orf.length ? { ok: false, obtido: orf } : true;

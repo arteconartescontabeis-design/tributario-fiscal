@@ -27,8 +27,8 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const RAIZ = path.join(__dirname, '..');
 const { blocos } = require(path.join(RAIZ, 'tools', 'extrair_blocos.js'));
-const htmlIdx = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
-const htmlInc = fs.readFileSync(path.join(RAIZ, 'incorporacao.html'), 'utf8');
+const htmlIdx = fs.readFileSync(path.join(RAIZ, 'analise-tributaria-pro', 'index.html'), 'utf8');
+const htmlInc = fs.readFileSync(path.join(RAIZ, 'incorporacao', 'index.html'), 'utf8');
 const jsInc = [...htmlInc.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x => x[1]).join('\n');
 
 let OK = 0, FALHAS = [];
@@ -227,9 +227,9 @@ console.log('\n■ Tela e integração');
   { const proprio = jsInc.slice(jsInc.indexOf('// └── fim dos blocos copiados'));   // só o código PRÓPRIO do incorporação
     chk('Edge Function própria gerar-parecer-incorporacao no parecer de incorporação (a gerar-parecer do ATP só no bloco copiado parecerIA)', /INC_FN_IA  = 'gerar-parecer-incorporacao'/.test(htmlInc) && /supaFn\(INC_FN_IA/.test(proprio) && !/supaFn\('gerar-parecer'/.test(proprio)); }
   chk('badge e changelog na aba Versões', /id="badge-versao"/.test(htmlInc) && /INC_CHANGELOG = \[/.test(htmlInc) && new RegExp("\\['" + R('INC_VERSAO') + "'").test(htmlInc));
-  chk('conferência cruzada do lacre do index', /fetch\('index\.html'/.test(htmlInc));
+  chk('conferência cruzada do lacre do index (lê o ATP na pasta vizinha, não a si mesmo)', /fetch\('\.\.\/analise-tributaria-pro\/index\.html'/.test(htmlInc) && !/fetch\('index\.html'/.test(htmlInc));
   chk('parecer usa o papel timbrado e a régua do ATP', /ppDocumento\(B\)/.test(htmlInc) && /ppReguaRender\(\)/.test(htmlInc) && /capa\.jpg/.test(htmlInc));
-  chk('menu volta ao Análise Tributária Pro', /location\.href='index\.html'/.test(htmlInc));
+  chk('menu volta ao Análise Tributária Pro', /location\.href='\.\.\/analise-tributaria-pro\/'/.test(htmlInc));
   const S = g.__sim(ent([A, Bc], 2025)); R('INC').res = S;
   let erro = null; try { R('incRender()'); R('incParecerRender()'); } catch(e){ erro = e.message; }
   chk('tela e parecer renderizam sem exceção no sandbox', !erro, erro||'');

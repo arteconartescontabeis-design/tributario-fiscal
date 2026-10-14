@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.99.1 (lacre 0a257d66) em 2026-10-08T01:29:06.657Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.99.1 (lacre 0a257d66) em 2026-10-14T14:54:56.720Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -373,7 +373,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="nav-item" data-page="historico" onclick="go('historico')">🗂️ <span>Simulações gravadas</span></div>
       <div class="nav-item" data-page="relatorios" onclick="go('relatorios')">📑 <span>Relatórios</span></div>
       <div class="nav-item" data-page="versoes" onclick="go('versoes')">🕘 <span>Versões</span></div>
-      <div class="nav-item" onclick="location.href='index.html'">↩ <span>Análise Tributária Pro</span></div>
+      <div class="nav-item" onclick="location.href='../analise-tributaria-pro/'">↩ <span>Análise Tributária Pro</span></div>
     </div>
     <div class="foot"><span id="user-email"></span><br><span class="sair" onclick="doLogout()">Sair</span></div>
   </div>
@@ -7685,7 +7685,7 @@ async function empCarregar(){
 async function incLacreCruzado(){
   const box = $id('inc-lacre-cruzado'); if (!box) return;
   try {
-    const r = await fetch('index.html', { cache:'no-store' });
+    const r = await fetch('../analise-tributaria-pro/index.html', { cache:'no-store' });
     if (!r.ok) throw new Error('HTTP '+r.status);
     const t = await r.text();
     const hash = (t.match(/const LACRE_HASH = '([0-9a-f]+)'/)||[])[1] || null;
@@ -7695,7 +7695,7 @@ async function incLacreCruzado(){
       box.style.display = 'block';
       box.innerHTML = `<div style="background:var(--warn-bg);border-left:4px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px">
         ⚠️ <b>Motor defasado.</b> O Análise Tributária Pro em produção (v${esc(versao||'?')}) foi re-selado com o lacre <code>${esc(hash)}</code>, e esta cópia usa <code>${LACRE_HASH}</code>.
-        As simulações continuam funcionando, mas saem marcadas como calculadas com motor defasado — regere o <code>incorporacao.html</code> com <code>node tools/build_incorporacao.js</code> e publique.</div>`;
+        As simulações continuam funcionando, mas saem marcadas como calculadas com motor defasado — regere o <code>incorporacao/index.html</code> com <code>node tools/build_incorporacao.js</code> e publique.</div>`;
     } else box.style.display = 'none';
   } catch(e){ INC.motorIndex = { hash:null, versao:null, erro: e.message }; box.style.display = 'none'; }
   incMotorBoxRender();

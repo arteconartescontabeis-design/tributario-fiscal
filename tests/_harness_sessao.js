@@ -103,12 +103,12 @@ class Loader extends ResourceLoader {
   }
 }
 async function abrirJanela(RAIZ, supa, storageInicial, consoleLinhas) {
-  const HTML = fs.readFileSync(path.join(RAIZ, 'imobiliaria.html'), 'utf8');
+  const HTML = fs.readFileSync(path.join(RAIZ, 'imobiliario', 'index.html'), 'utf8');
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => { if (!/Could not load|not implemented/i.test(String(e && e.message))) consoleLinhas.push('jsdomError: ' + e.message); });
   ['info', 'warn', 'error', 'log'].forEach(n => vc.on(n, (...a) => consoleLinhas.push(n + ': ' + a.map(String).join(' '))));
   const dom = new JSDOM(HTML, {
-    url: ORIGEM + '/imobiliaria.html', runScripts: 'dangerously', resources: new Loader(RAIZ), pretendToBeVisual: true, virtualConsole: vc,
+    url: ORIGEM + '/imobiliario/index.html', runScripts: 'dangerously', resources: new Loader(RAIZ), pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(window) {
       window.fetch = (u, i) => supa.fetch(u, i);
       window.matchMedia = window.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }));

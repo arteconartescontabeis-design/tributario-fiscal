@@ -20,7 +20,7 @@
 const fs = require('fs'), path = require('path'), vm = require('vm');
 
 const RAIZ = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(RAIZ, 'analise-tributaria-pro', 'index.html'), 'utf8');
 const js = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x => x[1]).join('\n');
 
 // ── sandbox DOM mínimo ──
@@ -5266,7 +5266,7 @@ console.log('\n■ Integridade da interface');
       && (html.match(/data_exclusao_simples: d\.data_exclusao_do_simples \|\| null, data_opcao_simei: d\.data_opcao_pelo_mei \|\| null/g)||[]).length === 2);
     chk('5ba · ficha da empresa: campos de abertura, CNAE e situação Simples/MEI; Salvar grava data_abertura/cnae_codigo e o que veio da Receita; coluna Abertura na lista',
       /id="emp-abertura" type="date"/.test(html) && /id="emp-cnae"/.test(html) && /id="emp-receita-info"/.test(html) && /const ficha = \{ data_abertura:/.test(html) && /receita_consultada_em = new Date\(\)\.toISOString\(\)/.test(html) && /<th>Abertura<\/th>/.test(html) && /sql\/setup_v7991\.sql/.test(html));
-    chk('5ba · sql/setup_v7991.sql existe e cria as colunas (idempotente)', fs.existsSync(path.join(RAIZ,'sql','setup_v7991.sql')) && /add column if not exists data_abertura\s+date/.test(fs.readFileSync(path.join(RAIZ,'sql','setup_v7991.sql'),'utf8')));
+    chk('5ba · banco/atp/setup_v7991.sql existe e cria as colunas (idempotente)', fs.existsSync(path.join(RAIZ,'banco','atp','setup_v7991.sql')) && /add column if not exists data_abertura\s+date/.test(fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v7991.sql'),'utf8')));
     r(`EMPRESAS = [{ cnpj:'55555555000155', razao_social:'Nova Ltda', data_abertura:'2026-02-15' }, { cnpj:'66666666000166', razao_social:'Antiga Ltda', data_abertura:'2010-05-01' }];`);
     chk('5ba · análise 2026 sem início + ficha aberta em 15/02/2026 → inicioAtividade 2026-02 com origem E',
       r(`(()=>{ const a = anNovo('55555555000155', 2026); const ok = anInicioDaFicha(a); return ok && a.cfg.inicioAtividade === '2026-02' && a.cfg.inicioOrigem === 'E'; })()`));

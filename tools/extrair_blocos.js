@@ -55,6 +55,6 @@ function blocos(html){
 }
 module.exports = { blocos };
 if (require.main === module) {
-  const B = blocos(fs.readFileSync(process.argv[2]||'index.html','utf8'));
+  const B = blocos(fs.readFileSync(process.argv[2]||'analise-tributaria-pro/index.html','utf8'));
   for (const k of Object.keys(B)) console.log(k.padEnd(12), typeof B[k]==='string' ? B[k].length+' bytes' : B[k]);
 }

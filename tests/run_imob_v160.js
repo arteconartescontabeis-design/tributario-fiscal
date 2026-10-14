@@ -8,7 +8,7 @@
  * Uso: node tests/run_imob_v160.js   (sem dependências) */
 'use strict';
 var fs = require('fs'), path = require('path'), vm = require('vm');
-var MOD = path.join(__dirname, '..', 'modulos', 'imobiliario');
+var MOD = path.join(__dirname, '..', 'imobiliario', 'modulos');
 var g = {}; vm.runInNewContext(fs.readFileSync(path.join(MOD, 'motorImob.js'), 'utf8'), g);
 var M = g.MotorImob, B = require('./casos_base.js'), base = require('./baseline_motor_1.2.0.json');
 var total = 0, falhas = 0, log = [];
