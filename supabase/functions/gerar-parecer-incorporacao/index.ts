@@ -1,4 +1,7 @@
-// ═══ Simulação de Incorporação — Edge Function "gerar-parecer-incorporacao" (v1.4.1) ═══
+// ═══ Simulação de Incorporação — Edge Function "gerar-parecer-incorporacao" (v1.5.0) ═══
+// v1.5.0 (14/10/2026): devolve os 3 textos que o app v1.5.0 já pede e hoje saíam com o texto padrão:
+//   objetivo (seção 2 — Objetivo e escopo), conclSoc (conclusão societária) e recomendacaoCond (recomendação
+//   condicionada). Toda chave ausente continua virando "" e o app mantém o texto padrão. Nada mais mudou.
 // v1.4.1 (08/10/2026): credencial em cascata (gateway próprio → gateway do ATP → chave direta). Publicada no slot CERTO:
 //   a v1.4.0 estava publicada em "gerar-parecer-imobiliario" (slot da Imobiliária) e este slot seguia na v1.3.0.
 // v1.4.0 (27/09/2026): IA Central — ver bloco abaixo. Nada mais mudou em relação à v1.3.0.
@@ -125,8 +128,8 @@ REGRAS ABSOLUTAS:
 7. Nunca escreva "economia negativa": quando o valor for desfavorável diga "acréscimo tributário". Nunca dê nota, score, ranking ou percentual que não esteja no JSON.
 8. Patrimônio e endividamento NÃO foram avaliados (o sistema não recebe balanço): trate como limitação em toda conclusão, e se decisao.incompleta for true diga "ANÁLISE INCOMPLETA" na conclusão global.
 
-Formato exato da resposta (19 chaves, todas obrigatórias):
-{"textos":{"intro":"...","empresas":"...","premissas":"...","leitura":"...","reforma":"...","parecer1":"...","parecer2":"...","recomendacao":"...","executivo":"...","ranking":"...","antesDepois":"...","carga":"...","regimes":"...","reformaDecisao":"...","conclTrib":"...","conclFin":"...","conclPatr":"...","conclReforma":"...","conclGlobal":"..."}}
+Formato exato da resposta (22 chaves, todas obrigatórias):
+{"textos":{"intro":"...","empresas":"...","premissas":"...","leitura":"...","reforma":"...","parecer1":"...","parecer2":"...","recomendacao":"...","executivo":"...","ranking":"...","antesDepois":"...","carga":"...","regimes":"...","reformaDecisao":"...","conclTrib":"...","conclFin":"...","conclPatr":"...","conclReforma":"...","conclGlobal":"...","objetivo":"...","conclSoc":"...","recomendacaoCond":"..."}}
 
 Conteúdo de cada campo (1 parágrafo cada; os 11 últimos usam o bloco "decisao" do JSON):
 - intro: o que é a simulação (incorporação de ${p.incorporadas.map((e: any) => String(e.nome)).join(", ")} por ${String(p.incorporadora.nome)}, ano-base ${p.ano}), por que a carga não é linear (progressividade do Simples, adicional de IRPJ, Reforma) e o que o documento compara.
@@ -146,7 +149,10 @@ Conteúdo de cada campo (1 parágrafo cada; os 11 últimos usam o bloco "decisao
 - conclFin: conclusão financeira em 1 a 2 frases (resultado após tributos e margem no Lucro Real, se houver; senão diga que não há base para conclusão financeira).
 - conclPatr: conclusão patrimonial em 1 frase: não avaliada, o sistema não recebe balanço (ativo, passivo, patrimônio líquido, dívidas); sem ela a recomendação não é definitiva.
 - conclReforma: conclusão sobre a Reforma em 1 a 2 frases (acumulado da transição e estabilidade do sinal).
-- conclGlobal: UMA frase: cenário recomendado no que o sistema mede (tributos e Reforma), com score e classificação, e a ressalva de patrimônio/endividamento não avaliados (ou "STATUS: ANÁLISE INCOMPLETA" se decisao.incompleta for true).${blocoAb}${blocoAl}${blocoRegras}`;
+- conclGlobal: UMA frase: cenário recomendado no que o sistema mede (tributos e Reforma), com score e classificação, e a ressalva de patrimônio/endividamento não avaliados (ou "STATUS: ANÁLISE INCOMPLETA" se decisao.incompleta for true).
+- objetivo: objetivo e escopo do parecer em 1 parágrafo: o que a análise mede (carga tributária de hoje das empresas separadas e da consolidada, regimes permitidos e efeitos da Reforma ano a ano) e o que NÃO mede (patrimônio, endividamento, aspectos societários, trabalhistas e contratuais), com o ano-base e a data-base da regulamentação.
+- conclSoc: conclusão societária em 1 a 2 frases: não avaliada pelo sistema; antes da incorporação é preciso levantar a sucessão de direitos e obrigações (Lei 6.404/76, art. 227), contratos, licenças, funcionários, imóveis, veículos, marcas e sistemas.
+- recomendacaoCond: recomendação condicionada em 1 a 2 frases, coerente com decisao.classificacao e decisao.score: o cenário mais favorável no que o sistema mede, condicionado à validação patrimonial, financeira, societária e jurídica e à conferência dos dados; se decisao.incompleta for true, diga que não há base para recomendar até a simulação ser refeita.${blocoAb}${blocoAl}${blocoRegras}`;
 
     const user = "Dados da simulação (calculados pelo motor do sistema):\n" + JSON.stringify(p, null, 1);
     const r = await fetch(URL_IA, {
@@ -187,7 +193,7 @@ Conteúdo de cada campo (1 parágrafo cada; os 11 últimos usam o bloco "decisao
     if (!obj) return json({ erro: "A IA não devolveu JSON válido e não foi possível reparar. Detalhe: " + limpo.slice(0, 160) }, 502);
     if (!obj?.textos) return json({ erro: "Resposta sem o campo textos." }, 502);
     for (const k of ["intro","empresas","premissas","leitura","reforma","parecer1","parecer2","recomendacao",
-                     "executivo","ranking","antesDepois","carga","regimes","reformaDecisao","conclTrib","conclFin","conclPatr","conclReforma","conclGlobal"])
+                     "executivo","ranking","antesDepois","carga","regimes","reformaDecisao","conclTrib","conclFin","conclPatr","conclReforma","conclGlobal","objetivo","conclSoc","recomendacaoCond"])
       if (typeof obj.textos[k] !== "string") obj.textos[k] = "";
     return json(obj, 200);
   } catch (e) {
