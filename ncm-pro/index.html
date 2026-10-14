@@ -354,13 +354,12 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <input id="usrNome" placeholder="Nome" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
         <input id="usrEmail" type="email" placeholder="e-mail" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-        <input id="usrSenha" type="text" placeholder="senha inicial" style="min-width:140px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
         <select id="usrPapel" style="padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
           <option value="operador">Operador</option><option value="admin">Administrador</option>
         </select>
-        <button class="btn btn-sm" onclick="criarUsuario()">Cadastrar</button>
+        <button class="btn btn-sm" onclick="criarUsuario()">Dar acesso</button>
       </div>
-      <p style="font-size:11.5px;color:var(--text-3);margin-top:6px">A senha inicial deve ser trocada pelo usuário depois. Para o login funcionar de imediato, desative "Confirm email" em Authentication → Providers no Supabase.</p>
+      <p style="font-size:11.5px;color:var(--text-3);margin-top:6px">O login é o do departamento Tributário e Fiscal (o mesmo do Análise Tributária Pro). Se a pessoa ainda não tem login, crie primeiro no Análise Tributária Pro → Usuários; depois dê o acesso aqui. Senhas também se redefinem por lá.</p>
     </div>
     <div id="usrLista" class="card"></div>
   </section>
@@ -403,7 +402,7 @@
           <button class="btn btn-sm" onclick="supaLogin()">Entrar</button>
           <button class="btn sec btn-sm" onclick="supaLogout()">Sair</button>
         </div>
-        <p style="font-size:11.5px;color:var(--text-3);margin-top:2px">Após salvar o schema no banco, crie seu usuário e rode no SQL Editor: <code>select ncm_vincular_usuario('artecon','admin');</code> (logado). A <b>anon key</b> é pública por design — a proteção real é a RLS.</p>
+        <p style="font-size:11.5px;color:var(--text-3);margin-top:2px">Banco do departamento Tributário e Fiscal; o login é o do Análise Tributária Pro e o acesso ao NCM é dado por um administrador (Usuários → Dar acesso). A <b>anon key</b> é pública por design — a proteção real é a RLS.</p>
         <p style="margin-top:14px"><button class="btn sec btn-sm" onclick="resetLocal()">Resetar dados locais</button></p>
       </div>
     </div>
@@ -584,14 +583,23 @@ function indexar(){
 }
 function jacc(A,B){if(!A.size||!B.size)return 0;let i=0;A.forEach(g=>{if(B.has(g))i++;});return i/(A.size+B.size-i);}
 
-/* ---------- conexão embutida (publishable key é segura no navegador, protegida por RLS) ---------- */
-const DEFAULT_SUPA_URL = 'https://lpubtyklsftjinpvcvvq.supabase.co';
-const DEFAULT_SUPA_KEY = 'sb_publishable_Gg9AGh6I4ui8wps4R2TMbA_Ne-d9Uyu';
-const DEFAULT_AI_PROXY = 'https://lpubtyklsftjinpvcvvq.supabase.co/functions/v1/claude-proxy';
+/* ---------- conexão embutida (publishable key é segura no navegador, protegida por RLS) ----------
+   10/2026: banco do departamento Tributário e Fiscal (projeto analise-tributaria-pro) — o mesmo login do
+   Análise Tributária Pro. O banco antigo do NCM (lpubtyklsftjinpvcvvq) fica arquivado depois da virada. */
+const DEFAULT_SUPA_URL = 'https://kmdrqkiyhdmdtufrogke.supabase.co';
+const DEFAULT_SUPA_KEY = 'sb_publishable_4eHrESOoQYRC7bR9rYKGBg_If2lOjnE';
+const DEFAULT_AI_PROXY = 'https://kmdrqkiyhdmdtufrogke.supabase.co/functions/v1/ncm-claude-proxy';
+/* memória local própria: o NCM antigo (mesmo endereço-base) continua usando 'ncmpro_local' sem interferência */
+const CHAVE_LOCAL = 'ncmpro_local_v2';
 /* ---------- estado local persistido ---------- */
 let STORE = {classif:[], buscas:[], varreduras:[], tipi:[], cfg:{}};
 function carregar(){
-  try{const r=localStorage.getItem('ncmpro_local');if(r){STORE=JSON.parse(r);}}catch(e){}
+  try{const r=localStorage.getItem(CHAVE_LOCAL);
+    if(r){STORE=JSON.parse(r);}
+    else{ // 1ª abertura no endereço novo: traz classificações, buscas e varreduras locais do NCM antigo, sem a conexão antiga
+      const v1=localStorage.getItem('ncmpro_local');
+      if(v1){const a=JSON.parse(v1);STORE={classif:a.classif||[],buscas:a.buscas||[],varreduras:a.varreduras||[],tipi:a.tipi||[],cfg:{aiModel:(a.cfg&&a.cfg.aiModel)||'haiku'}};}
+    }}catch(e){}
   if(!STORE.classif||STORE.classif.length===0){STORE.classif=JSON.parse(JSON.stringify(SEED_CLASSIF));salvar();}
   if(!STORE.cfg)STORE.cfg={};
   // conexão sempre preenchida com o padrão (app já abre pronto)
@@ -604,7 +612,7 @@ function carregar(){
   else{const h=hydrateTIPI();SEED_TIPI.length=0;h.forEach(r=>SEED_TIPI.push(r));}   // TIPI oficial embutida
   indexar();
 }
-function salvar(){try{localStorage.setItem('ncmpro_local',JSON.stringify(STORE));}catch(e){}}
+function salvar(){try{localStorage.setItem(CHAVE_LOCAL,JSON.stringify(STORE));}catch(e){}}
 function resetLocal(){const cfg=STORE.cfg||{};STORE={classif:JSON.parse(JSON.stringify(SEED_CLASSIF)),buscas:[],varreduras:[],tipi:[],cfg};const h=hydrateTIPI();SEED_TIPI.length=0;h.forEach(r=>SEED_TIPI.push(r));indexar();salvar();toast('Dados locais resetados — TIPI oficial recarregada');render();}
 
 /* texto buscável = cadeia inteira concatenada */
@@ -1046,7 +1054,8 @@ async function refinarLoteIA(){
       i++;
       _iaProc(`Refinando com IA… (${i} de ${alvo.length})`, `Item: ${(r.produto||'').slice(0,46)}`, Math.round((i-1)/alvo.length*100));
       try{
-        const resp=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json'},
+        const tok=SUPA?(((await SUPA.auth.getSession()).data.session)||{}).access_token:'';
+        const resp=await fetch(proxy,{method:'POST',headers:{'Content-Type':'application/json','apikey':STORE.cfg.supaKey,...(tok?{'Authorization':'Bearer '+tok}:{})},
           body:JSON.stringify({produto:r.produto, ncm_atual:r.ncmAtual||null, candidatos:r.candidatos, model:modelo})});
         if(!resp.ok)throw new Error('HTTP '+resp.status);
         const data=await resp.json();
@@ -1324,7 +1333,6 @@ async function renderUsuarios(){
   document.getElementById('usrLista').innerHTML=`<table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th>${EH_ADMIN?'<th>Ações</th>':''}</tr></thead><tbody>${
     data.map(u=>{
       const acoes = EH_ADMIN && u.id!==meu ? `
-        <span class="sel" onclick="redefinirSenhaUsuario('${u.id}','${(u.nome||u.email||'').replace(/'/g,'')}')">redefinir senha</span> ·
         <span class="sel" onclick="mudarPapel('${u.id}','${u.papel==='admin'?'operador':'admin'}')">${u.papel==='admin'?'tornar operador':'tornar admin'}</span> ·
         <span class="sel" onclick="toggleAtivo('${u.id}',${u.ativo?'false':'true'})">${u.ativo?'inativar':'reativar'}</span> ·
         <span class="sel" style="color:#9b1c2e" onclick="excluirUsuario('${u.id}','${(u.nome||u.email||'').replace(/'/g,'')}')">excluir</span>` : (u.id===meu?'<span style="color:var(--text-3)">você</span>':'');
@@ -1350,36 +1358,17 @@ async function excluirUsuario(id,nome){
   if(error){ toast('Erro ao excluir: '+error.message); return; }
   toast('Usuário excluído'); renderUsuarios();
 }
-async function redefinirSenhaUsuario(id,nome){
-  if(!EH_ADMIN){toast('Apenas admin');return;}
-  const senha=prompt(`Nova senha para "${nome}" (mínimo 6 caracteres):`);
-  if(senha===null)return;            // cancelou
-  if(senha.length<6){toast('Senha mínima de 6 caracteres');return;}
-  toast('Redefinindo senha…');
-  try{
-    const {error}=await SUPA.rpc('ncm_admin_redefinir_senha',{p_uid:id,p_senha:senha});
-    if(error){ toast('Erro: '+error.message); return; }
-    toast(`Senha redefinida para ${nome}. Avise a nova senha ao usuário.`);
-  }catch(e){ toast('Erro: '+e.message); }
-}
 async function criarUsuario(){
   if(!_supaOnline()||!EH_ADMIN){toast('Apenas admin conectado');return;}
-  const nome=$('#usrNome').value.trim(), email=$('#usrEmail').value.trim(), senha=$('#usrSenha').value, papel=$('#usrPapel').value;
-  if(!email||!senha){toast('Informe e-mail e senha');return;}
-  if(senha.length<6){toast('Senha mínima de 6 caracteres');return;}
-  toast('Cadastrando…');
+  const nome=$('#usrNome').value.trim(), email=$('#usrEmail').value.trim(), papel=$('#usrPapel').value;
+  if(!email){toast('Informe o e-mail');return;}
+  toast('Dando acesso…');
   try{
-    // cliente descartável: cria o usuário sem trocar a sessão do admin
-    const tmp=window.supabase.createClient(STORE.cfg.supaUrl, STORE.cfg.supaKey, {auth:{persistSession:false,autoRefreshToken:false,storageKey:'ncmpro_tmp'}});
-    const {data,error}=await tmp.auth.signUp({email,password:senha});
-    if(error){toast('Auth: '+error.message);return;}
-    const uid=data.user&&data.user.id;
-    if(!uid){toast('Usuário criado; confirme o e-mail para ativar.');return;}
-    // vincula ao tenant do admin via função segura
-    const {error:e2}=await SUPA.rpc('ncm_admin_criar_usuario',{p_uid:uid,p_email:email,p_nome:nome||null,p_papel:papel});
-    if(e2){toast('Vínculo: '+e2.message);return;}
-    $('#usrNome').value='';$('#usrEmail').value='';$('#usrSenha').value='';
-    toast('Usuário cadastrado'); renderUsuarios();
+    // 10/2026: o login é o do departamento (mesmo do Análise Tributária Pro) — aqui só se libera o NCM para ele
+    const {error}=await SUPA.rpc('ncm_admin_vincular_por_email',{p_email:email,p_nome:nome||null,p_papel:papel});
+    if(error){toast(error.message);return;}
+    $('#usrNome').value='';$('#usrEmail').value='';
+    toast('Acesso liberado'); renderUsuarios();
   }catch(e){toast('Erro: '+e.message);}
 }
 
@@ -1503,8 +1492,8 @@ async function supaPosLogin(){
   try{
     const {data:t}=await SUPA.rpc('ncm_tenant_atual');
     TENANT=t||null;
-    if(!TENANT){_supaStatus('logado, mas sem tenant — rode ncm_vincular_usuario','#b06a00');
-      toast('Usuário sem vínculo de tenant. Rode ncm_vincular_usuario no SQL Editor.');return;}
+    if(!TENANT){_supaStatus('logado, mas sem acesso ao NCM Pro','#b06a00');
+      toast('Seu login ainda não tem acesso ao NCM Pro. Peça a um administrador do NCM (Usuários → Dar acesso).');return;}
     try{ const {data:adm}=await SUPA.rpc('ncm_eh_admin'); EH_ADMIN=!!adm; }catch(e){ EH_ADMIN=false; }
     await supaCarregarClassificados();
     const em=(SESSAO&&SESSAO.user&&SESSAO.user.email)||'usuário';
