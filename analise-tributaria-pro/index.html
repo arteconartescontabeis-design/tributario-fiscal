@@ -803,6 +803,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.100.0</b></td><td>18/10/2026</td><td><b>🔒 RELATÓRIO DE ANÁLISE FECHADA SAI DO SNAPSHOT (decisão B08): o fechamento congela a EXECUÇÃO completa, e parecer, conferência e relatórios passam a sair dela — o documento emitido NÃO muda quando o motor muda. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achado novo 1 da auditoria de 18/10/2026: 10 das 73 análises fechadas recalculavam diferente do snapshot; a maior diferença, R$ 285.962,24.) <b>(1) O problema:</b> o snapshot do fechamento só alimentava um aviso na tela da análise — Relatórios, parecer e conferência recalculavam com o motor ATUAL, de modo que uma atualização do app mudava, em silêncio, o que já havia sido emitido ao cliente. <b>(2) Execução congelada:</b> <code>anSnapshotCalc</code> passa a gravar no snapshot a execução completa — resultado (<code>exec.res</code>), cenários da Reforma congelados dentro dele (<code>res.__cen</code>, devolvidos pelo próprio <code>calcCenariosReforma</code>, o portão único dos cenários) e a base projetada dos documentos (<code>exec.base</code>, pela nova função pura <code>baseReformaDe</code>) — mais o <b>lacre</b> da época. <b>(3) Relatórios leem o fechamento:</b> análise fechada com execução carrega <code>RL.exec</code>; <code>RL.res</code> e <code>rlBaseReforma</code> saem do congelado; o motor atual roda apenas para MEDIR a divergência, que aparece no aviso (verde: "este documento sai da execução congelada"), nunca no documento. O rodapé legal do parecer declara o motor DO FECHAMENTO (versão, lacre e data), com a versão que imprimiu ao lado. <b>(4) Fechamentos antigos</b> (anteriores à v7.100.0, sem execução): seguem no recálculo, agora com aviso âmbar "SEM execução congelada" nos relatórios e na trava. <b>(5) 🔁 Refechar com o motor atual</b> (<code>anRefechar</code>): um clique recalcula, grava snapshot novo com a execução congelada, mantém a análise fechada e registra o evento <i>refechada</i> (de → para) no histórico — é o caminho para atualizar fechamento antigo ou divergente. Trocar parâmetros não recalcula execução congelada. <b>(6) Suíte:</b> guardas de versão relaxadas para o minor de 3 dígitos (a exatidão do badge segue garantida pela guarda da 1ª linha do changelog). Bloco 5bf.</td></tr>
                     <tr><td><b>v7.99.5</b></td><td>18/10/2026</td><td><b>✍️ TEXTOS QUE AFIRMAVAM DEMAIS (B06) e REGISTRO OBRIGATÓRIO DA DECISÃO JUDICIAL ao desligar a LC 224 (B07). Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) Elegibilidade com receita estimada (achado A03):</b> o texto "não é elegível … já supera o teto desde o início do período" afirmava com certeza mesmo quando a receita era apenas lançada ou presumida. Agora a frase declara a FONTE — RBAA informada (segue assertiva), valores lançados/estimados na análise, ou presunção pelo primeiro mês — e, fora da RBAA declarada, termina pedindo a confirmação da receita do ano anterior na Configuração antes de decidir. <b>(2) Aba Compras/ICMS·IPI harmonizada com a v7.97.0 (achado A06):</b> os hints do quadro de ICMS e da estimativa de PIS/COFINS passaram a dizer que a base do crédito JÁ EXCLUI a parcela de fornecedores MEI/Simples, que não destaca ICMS (LC 123/2006, art. 23). <b>(3) Lacre "quatro casos" (achado da auditoria):</b> o cartão da aba Versões dizia "dois casos-gabarito" desde a v7.30.0; o lacre cobre QUATRO desde a v7.95.1 (comércio, serviços, estresse do art. 24 e empresa nova) — o texto agora diz isso. <b>(4) LC 224 com fundamento registrado (B07):</b> desligar a chave "Não aplicar (liminar / decisão judicial)" passou a EXIGIR o número do processo e a data da decisão (campos novos na Configuração, <code>cfg.lc224Proc</code>/<code>cfg.lc224Data</code>); sem o registro, a regra continua aplicada e o aviso explica. O registro herda entre anos junto com a chave (CFG_HERDA) e cada mudança entra na trilha de alterações com rótulo próprio. Suíte: bloco 5be.</td></tr>
                     <tr><td><b>v7.99.4</b></td><td>18/10/2026</td><td><b>🏷️ O RESUMO GRAVADO PASSA A DECLARAR O MOTOR QUE O CALCULOU, e o Dashboard marca "desatualizada", alerta VALOR NEGATIVO e separa o total de economia. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achados A01 e novo 3 da auditoria de 18/10/2026.) <b>(1) O problema:</b> o Dashboard lê o resumo do último Salvar de cada análise — calculado pelo motor daquela época. Com 108 das 109 análises gravadas antes da v7.96/v7.97/LC 224, o "Economia potencial identificada" de R$ 7,9 mi somava resultados de motores diferentes, e uma análise exibia Presumido <b>negativo</b> (−R$ 220.249,89, defeito corrigido na v7.96.0) sem aviso algum. <b>(2) Resumo com carimbo:</b> <code>anSalvar</code> e <code>rfSalvar</code> gravam <code>motor:{app, lacre}</code> no resumo; o ramo do rfSalvar que preserva o resumo de outra gravação preserva também o motor dela — carimbar ali seria mentir. Resumo sem carimbo = anterior à v7.99.4 = desatualizado por definição. <b>(3) Dashboard honesto:</b> <code>dashMotorInfo</code> compara o lacre gravado com o atual; a linha ganha o selo <b>"desatualizada"</b> (com o motor de origem no título) e <b>"valor negativo"</b> em vermelho quando o resumo guarda número abaixo de zero; o cartão do topo passa a somar só as análises do motor atual, com a nota "+ R$ X em N análise(s) com motor antigo — fora do total" e o alerta de negativos. Nenhum número gravado muda: a mudança é dizer DE ONDE cada um veio. Suíte: bloco 5bd.</td></tr>
                     <tr><td><b>v7.99.3</b></td><td>18/10/2026</td><td><b>⏳ ESTADO "CARREGANDO" NA TROCA DE EMPRESA e BLOQUEIO TOTAL quando a leitura do banco falha. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Dois defeitos com a mesma raiz (achados A04 e novo 4 da auditoria de 18/10/2026): <b>(1) Conclusão antes da carga.</b> Ao trocar de empresa, a tela desenhava uma análise NOVA — receita zero e conclusões calculadas do nada (confiança "ALTO") — no intervalo entre o pedido e a resposta do banco. Agora a troca liga o estado <code>AN_CARREGANDO</code>: os cartões mostram "⏳ Carregando a análise do banco…", o veredito some e o recálculo não desenha NENHUMA conclusão até a carga terminar. <b>(2) Falha de leitura virava análise em branco gravável.</b> Se a leitura desse erro, o <code>catch</code> criava uma análise vazia e apagava a marca de placeholder; sem <code>_verEm</code>, a guarda de conflito de versão não disparava e o Salvar podia substituir a análise gravada por uma em branco. Agora a falha deixa a análise <b>bloqueada</b>: continua placeholder, ganha <code>_erroLeitura</code> com o motivo, a tela mostra a tarja "⛔ A leitura desta análise falhou" com botão <b>Tentar de novo</b> — e <code>anBloqueada()</code> corta edição (grade e setters), lançamento, importação, preenchimento e gravação (<code>anSalvar</code> recusa e devolve <code>false</code>) tanto durante a carga quanto após a falha. Suíte: bloco 5bc.</td></tr>
@@ -6568,7 +6569,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.5';
+const APP_VERSAO = '7.100.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -6579,10 +6580,55 @@ function anSnapshotCalc(){
   try { const C = calcCenariosReforma(AN._res, AN.reforma||null); const L33 = C.REF[C.REF.length-1];
     cen = { dentro: cenDentro(T, L33), hib: L33.hib, regular: L33.regular }; }
   catch(e){ cenErro = String(e && e.message || e); console.error('anSnapshotCalc/cenários:', e); }
-  return { versao: APP_VERSAO, em: new Date().toISOString(),
+  // ═══ v7.100.0 · B08 — A EXECUÇÃO COMPLETA VIAJA NO SNAPSHOT ═══
+  // Resultado, cenários (congelados em res.__cen) e a base projetada dos documentos. Com ela,
+  // Relatórios, parecer e conferência de análise fechada saem do FECHAMENTO, não do recálculo:
+  // o parecer emitido não muda quando o motor muda (decisão B08 — snapshot, com aviso e botão
+  // de refechamento). Se a serialização falhar, o snapshot sai sem exec e o app avisa que a
+  // análise segue no comportamento antigo (recálculo com aviso).
+  let exec = null, execErro = null;
+  try {
+    const res = JSON.parse(JSON.stringify(AN._res));
+    res.__cen = JSON.parse(JSON.stringify(calcCenariosReforma(AN._res, AN.reforma||null)));
+    exec = { res };
+    const B = baseReformaDe(AN, AN._res, AN.reforma||null);
+    if (B.proj){
+      const bres = JSON.parse(JSON.stringify(B.res));
+      bres.__cen = JSON.parse(JSON.stringify(calcCenariosReforma(B.res, B.reforma)));
+      exec.base = { res: bres, reforma: B.reforma ? JSON.parse(JSON.stringify(B.reforma)) : null,
+                    proj: JSON.parse(JSON.stringify(B.proj)), k: B.k };
+    }
+  } catch(e){ exec = null; execErro = String(e && e.message || e); console.error('anSnapshotCalc/exec:', e); }
+  return { versao: APP_VERSAO, lacre: LACRE_HASH, em: new Date().toISOString(),
     totais: { receita:T.receita||0, receitaExp:T.receitaExp||0, simples:T.simples||0, lp:T.lp||0, lr:T.lr||0, das:T.das||0 },
     cen2033: cen, cen2033Erro: cenErro,          // v7.63.0 (A06): a falha viaja no snapshot
+    exec, execErro,                              // v7.100.0 · B08
     dasMeses: (AN?._res?.meses||[]).map(M=>+(M.das||0).toFixed(2)) };
+}
+// v7.100.0 · B08 — refechar com o motor atual: recalcula, grava um NOVO snapshot (com a execução
+// congelada) e mantém a análise fechada. O snapshot anterior deixa de valer e o refechamento fica
+// registrado no histórico. É o caminho para atualizar um fechamento antigo ou divergente sem o
+// vai-e-vem de reabrir e fechar à mão.
+async function anRefecharCore(){
+  if (!AN || !AN.cnpj || !anTravada()) return false;
+  try { AN._res = calcular(AN, PARAMS.anexos, folhaPercDaEmpresa()); } catch(e){ toast('Não foi possível recalcular: ' + e.message); return false; }
+  const antes = (AN._snapshot||{}).versao || '?';
+  const snap = anSnapshotCalc();
+  AN._status = 'fechada'; AN._snapshot = snap; AN._fechadoPor = APP?.user?.email||''; AN._fechadoEm = snap.em;
+  try {
+    await supa('PATCH', `atp_analises?cnpj=eq.${AN.cnpj}&ano=eq.${AN.ano}`,
+      { body:{ status:'fechada', fechado_por: AN._fechadoPor, fechado_em: snap.em, snapshot: snap } });
+    await anHistGravar({ cnpj:AN.cnpj, ano:AN.ano, dados:{...AN,_res:undefined,_verEm:undefined},
+      resumo:{ evento:'refechada', de:'app v'+antes, para:'app v'+APP_VERSAO, por: APP?.user?.email||'' } });
+  } catch(e){ console.error('anRefecharCore:', e); toast('Não foi possível gravar o refechamento: ' + e.message); return false; }
+  anTravaRender();
+  return true;
+}
+async function anRefechar(){
+  if (!AN || !AN.cnpj){ toast('Selecione a empresa e abra a análise primeiro.'); return; }
+  if (!anTravada()){ toast('A análise não está fechada — use 🔒 Fechar análise.'); return; }
+  if (!await dlgSimNao('Refechar com o motor atual?', 'O aplicativo recalcula a análise com o motor atual (app v'+APP_VERSAO+'), grava um NOVO snapshot com a execução congelada e mantém a análise fechada. O snapshot anterior deixa de valer — se um parecer já foi entregue com os números antigos, avalie reemiti-lo. O refechamento fica registrado no histórico.', 'Sim, refechar', 'Não')) return;
+  if (await anRefecharCore()) toast('Análise refechada ✓ — snapshot novo com a execução do motor atual (app v'+APP_VERSAO+').');
 }
 async function anFecharAbrir(){
   if (!AN || !AN.cnpj){ toast('Selecione a empresa e abra a análise primeiro.'); return; }
@@ -6595,7 +6641,7 @@ async function anFecharAbrir(){
     toast('Análise reaberta — edição liberada.'); anTravaRender(); return;
   }
   if (AN_SUJO){ toast('Salve a análise antes de fechar (o snapshot congela a versão gravada).'); return; }
-  if (!await dlgSimNao('Fechar a análise?', 'O fechamento congela os resultados num snapshot (com a versão do app), registra quem fechou e bloqueia edição e importação. Após futuras atualizações do aplicativo, qualquer divergência entre o recálculo e o snapshot será avisada em vez de aplicada em silêncio.', 'Sim, fechar', 'Não')) return;
+  if (!await dlgSimNao('Fechar a análise?', 'O fechamento congela os resultados numa EXECUÇÃO completa (versão do app, lacre do motor, resultado e cenários) — os relatórios e o parecer desta análise passam a sair dela, e não mudam com atualizações do aplicativo. Registra quem fechou e bloqueia edição e importação; divergências do motor atual são avisadas, nunca aplicadas em silêncio.', 'Sim, fechar', 'Não')) return;
   const snap = anSnapshotCalc();
   AN._status = 'fechada'; AN._snapshot = snap; AN._fechadoPor = APP?.user?.email||''; AN._fechadoEm = snap.em;
   try {
@@ -6620,9 +6666,13 @@ function anTravaRender(){
     }
     if (difs.length) divg = `<div style="margin-top:6px;padding:8px 10px;border-left:4px solid #b03a2e;background:#fdedec;font-size:12px">
       <b>⚠️ O recálculo atual (app v${APP_VERSAO}) diverge do snapshot do fechamento (app v${snap.versao||'?'})</b> — os valores fechados permanecem no snapshot; nada foi alterado:<br>${difs.map(esc).join('<br>')}
-      <br><span class="hint">Para adotar os números novos, reabra a análise (🔓), recalcule e feche de novo.</span></div>`;
+      <br><span class="hint">Para adotar os números novos, use 🔁 Refechar com o motor atual, abaixo.</span></div>`;
   }
-  box.innerHTML = `<div class="card" style="border-left:4px solid #1e8449"><b>🔒 Análise fechada</b> por ${esc(AN._fechadoPor||'?')} em ${AN._fechadoEm?new Date(AN._fechadoEm).toLocaleString('pt-BR'):'?'} (app v${esc(String((AN._snapshot||{}).versao||'?'))}) — edição e importação bloqueadas.${divg}</div>`;
+  // v7.100.0 · B08: fechamento antigo (sem execução congelada) é avisado, e o refechamento vira um botão
+  const semExec = !(snap.exec && snap.exec.res)
+    ? `<div class="hint" style="margin-top:4px">⚠️ Fechamento anterior à v7.100.0 — sem execução congelada: os relatórios desta análise ainda usam o recálculo do motor atual. Refeche para congelar os números emitidos.</div>` : '';
+  box.innerHTML = `<div class="card" style="border-left:4px solid #1e8449"><b>🔒 Análise fechada</b> por ${esc(AN._fechadoPor||'?')} em ${AN._fechadoEm?new Date(AN._fechadoEm).toLocaleString('pt-BR'):'?'} (app v${esc(String((AN._snapshot||{}).versao||'?'))}) — edição e importação bloqueadas.${semExec}${divg}
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="anRefechar()" title="Recalcula com o motor atual (v${APP_VERSAO}) e grava um NOVO snapshot com a execução congelada — o anterior deixa de valer; o refechamento fica no histórico.">🔁 Refechar com o motor atual</button></div></div>`;
 }
 
 async function anSalvar() {
@@ -6787,7 +6837,7 @@ async function issCorrigir(i){
 // ═══════════ PARÂMETROS ═══════════
 function prAuto(){
   if (AN) anRecalcular();
-  if (RL && RL.dados) { RL.res = calcular(RL.dados, PARAMS.anexos, folhaPercDaEmpresa(RL.dados.cfg)); }
+  if (RL && RL.dados && !RL.exec) { RL.res = calcular(RL.dados, PARAMS.anexos, folhaPercDaEmpresa(RL.dados.cfg)); }   // v7.100.0 · B08: execução congelada não se recalcula por troca de parâmetro
   // v7.16.3: a Reforma aberta acompanha na hora a mudança das alíquotas
   if (RF) { RF.aliq = JSON.parse(JSON.stringify(PARAMS.reforma || RF_ALIQ_DEFAULT)); rfCalcular?.(); }
 }
@@ -7674,6 +7724,10 @@ function cenRank(T, L){
 // Cenários da Reforma p/ empresa do Simples: por dentro × híbrido (LC 214) × fora do Simples.
 // Mescla os dados salvos com os padrões ano a ano (análises antigas podem não ter todos os campos).
 function calcCenariosReforma(res, reforma) {
+  // v7.100.0 · B08: execução CONGELADA no fechamento carrega os próprios cenários (res.__cen).
+  // Devolvê-los aqui — no único portão dos cenários — é o que impede o motor atual de recalcular
+  // um documento emitido de análise fechada. Resultado vivo não tem __cen e segue o caminho normal.
+  if (res && res.__cen) return res.__cen;
   const T = res.totais, meses = res.meses;
   const rfx = Object.assign({ benefRec:{}, benefCred:{}, contra:{}, receita:0, baseIS:0, credSimplesPct:0 }, reforma||{});
   // v7.1 (A5): sem compras informadas na aba Reforma, usa as compras de revenda da própria análise
@@ -10230,11 +10284,23 @@ async function rlCarregar() {
   empGlobalSet(cnpj, ano);
   if (!cnpj) { RL.dados=null; rlRender(); return; }
   RL.empresa = EMPRESAS.find(e=>e.cnpj===cnpj) || null;
-  let dados = null;
+  let dados = null, linha = null;
   try {
     const rows = await supa('GET','atp_analises',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, limit:'1' } });
-    if (rows.length) dados = rows[0].dados;
+    if (rows.length) { linha = rows[0]; dados = linha.dados; }
   } catch {}
+  // ═══ v7.100.0 · B08 — ANÁLISE FECHADA: OS DOCUMENTOS SAEM DO FECHAMENTO ═══
+  // (Achado novo 1 da auditoria de 18/10/2026: 10 das 73 fechadas recalculavam diferente do
+  // snapshot, a maior em R$ 285.962,24.) Fechada com execução congelada: RL.res é o resultado
+  // gravado no fechamento e os cenários vêm congelados nele (res.__cen) — o motor atual roda SÓ
+  // para medir a divergência do aviso. Fechada ANTES da v7.100.0 (snapshot sem exec): mantém o
+  // recálculo, com aviso de que o documento pode divergir do emitido.
+  RL.fechada = null; RL.exec = null; RL.divergeAtual = null;
+  if (linha && linha.status === 'fechada'){
+    RL.fechada = { snapshot: linha.snapshot || null, por: linha.fechado_por || '', em: linha.fechado_em || null };
+    const sx = linha.snapshot && linha.snapshot.exec;
+    if (sx && sx.res) RL.exec = sx;
+  }
   if (!dados && AN && AN.cnpj===cnpj && +AN.ano===ano) dados = AN;   // análise aberta não salva
   // v7.56.3 · o relatório sempre partiu da análise GRAVADA. Quem edita a grade e vem direto para
   // Relatórios vê os números ANTIGOS e conclui que a alteração não teve efeito — foi o que
@@ -10256,7 +10322,17 @@ async function rlCarregar() {
   // carregar a chave da análise (cnpj|ano) e são descartados quando ela muda.
   { const chaveIA = cnpj + '|' + ano;
     if (RL._ia && RL._ia.chave !== chaveIA){ RL._ia = null; RL._iaErro = null; } }
-  RL.res = dados ? calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg)) : null;
+  RL.res = RL.exec ? RL.exec.res : (dados ? calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg)) : null);   // v7.100.0 · B08
+  if (RL.exec && dados){ try {   // v7.100.0 · B08: o recálculo atual mede a divergência para o aviso — o documento não o usa
+      const atual = calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg));
+      const S = (RL.fechada.snapshot && RL.fechada.snapshot.totais) || RL.exec.res.totais || {};
+      const difs = [];
+      for (const [k,rot] of [['simples','Simples'],['lp','Presumido'],['lr','Real'],['das','DAS']]){
+        const a = +S[k]||0, b = +atual.totais[k]||0;
+        if (Math.abs(a-b)>0.015) difs.push(rot+': '+fmtR(a)+' (fechado) → '+fmtR(b)+' (motor atual)');
+      }
+      if (difs.length) RL.divergeAtual = difs;
+    } catch(e){ console.error('divergência do fechamento:', e); } }
   RL.reforma = dados?.reforma || null;
   RL.cmp = null;
   RL.forn = null;                                          // v7.20.0: consulta mais recente de cada tipo p/ o parecer
@@ -10560,20 +10636,30 @@ function premissaCreditoIBS(D){
 // Projeta a análise E a aba Reforma JUNTAS (rfProjetar × k), exatamente como o parecer fazia
 // sozinho. Parecer, conferência e relatório "Reforma" leem DAQUI — divergir ficou impossível.
 // Ano completo (ou vazio): devolve o realizado puro, k = 1, e nenhum documento se move.
-function rlBaseReforma(){
-  const vazio = { res: RL.res, reforma: RL.reforma, proj: null, k: 1 };
-  if (!RL.dados || !RL.res) return vazio;
-  const PJ = projJanelaEfetiva((RL.dados.cfg)||{});
-  let P = null; try { P = anProjetarAno(RL.dados, PJ.v); } catch(e){ P = null; }
+// v7.100.0 · B08: a projeção da base virou função PURA (dados/res/reforma entram por parâmetro),
+// para o fechamento poder congelar exatamente o que os documentos leem — realizado e projetado.
+function baseReformaDe(dados, res, reforma){
+  const vazio = { res, reforma, proj: null, k: 1 };
+  if (!dados || !res) return vazio;
+  const PJ = projJanelaEfetiva((dados.cfg)||{});
+  let P = null; try { P = anProjetarAno(dados, PJ.v); } catch(e){ P = null; }
   if (!P) return vazio;
   try {
     const r = calcular(P.dados, PARAMS.anexos, folhaPercDaEmpresa(P.dados.cfg));
-    const intReal = Math.max(0, (RL.res.totais.receita||0) - (RL.res.totais.receitaExp||0));
+    const intReal = Math.max(0, (res.totais.receita||0) - (res.totais.receitaExp||0));
     const intProj = Math.max(0, (r.totais.receita||0) - (r.totais.receitaExp||0));
     const k = intReal > 0.005 ? intProj/intReal : 1;
-    P.k = k; P.origem = PJ.origem; P.tReal = RL.res.totais;
-    return { res: r, reforma: rfProjetar(RL.reforma, k), proj: P, k };
-  } catch(e){ console.error('rlBaseReforma', e); return vazio; }
+    P.k = k; P.origem = PJ.origem; P.tReal = res.totais;
+    return { res: r, reforma: rfProjetar(reforma, k), proj: P, k };
+  } catch(e){ console.error('baseReformaDe', e); return vazio; }
+}
+function rlBaseReforma(){
+  // v7.100.0 · B08: análise fechada com execução congelada — os documentos leem o fechamento
+  if (RL.exec){
+    if (RL.exec.base && RL.exec.base.res) return { res: RL.exec.base.res, reforma: RL.exec.base.reforma, proj: RL.exec.base.proj, k: RL.exec.base.k || 1 };
+    return { res: RL.res, reforma: RL.reforma, proj: null, k: 1 };
+  }
+  return baseReformaDe(RL.dados, RL.res, RL.reforma);
 }
 
 function parecerDados(){
@@ -10806,7 +10892,9 @@ function ppTarjaSemDados(){
 function ppPremissasLegais(){
   const _ar = (RL && RL.dados) ? audResumo(RL.dados) : null;   // v7.94.3
   const _trilha = _ar ? ` · Dados de entrada: ${_ar.manuais} alteração(ões) manual(is)${_ar.sobreImportado ? ' (' + _ar.sobreImportado + ' sobre valor importado)' : ''} e ${_ar.lotes} importação(ões) registradas na trilha de alterações (Conferência, bloco 0).` : '';
-  return `<div class="pp-notaia" style="margin-top:6px">Premissas legais desta emissão: LC 123/2006 (limite, sublimite e Fator R — arts. 3º, 13-A, 18, 19 e 20) · Res. CGSN nº 140/2018 (arts. 22, 24 e 26) e nº 190/2026 (Anexos I–V por vigência, art. 22-A, art. 40-D, art. 58) · EC 132/2023 e LC 214/2025 (IBS/CBS, art. 8º, art. 12 §2º V, arts. 47–58) · Lei 9.249/95 e 9.430/96 (Presumido) · Lei 9.065/95 (Real) · STF Tema 69 e Lei 14.592/2023 · alíquotas de referência Res. CGIBS nº 14/2026 (estimativa; definitivas pelo cálculo do TCU homologado pelo Senado). Motor Análise Tributária Pro v${APP_VERSAO} · lacre ${LACRE_HASH} · data-base ${new Date().toLocaleDateString('pt-BR')}.${_trilha}</div>`;
+  return `<div class="pp-notaia" style="margin-top:6px">Premissas legais desta emissão: LC 123/2006 (limite, sublimite e Fator R — arts. 3º, 13-A, 18, 19 e 20) · Res. CGSN nº 140/2018 (arts. 22, 24 e 26) e nº 190/2026 (Anexos I–V por vigência, art. 22-A, art. 40-D, art. 58) · EC 132/2023 e LC 214/2025 (IBS/CBS, art. 8º, art. 12 §2º V, arts. 47–58) · Lei 9.249/95 e 9.430/96 (Presumido) · Lei 9.065/95 (Real) · STF Tema 69 e Lei 14.592/2023 · alíquotas de referência Res. CGIBS nº 14/2026 (estimativa; definitivas pelo cálculo do TCU homologado pelo Senado). ${(RL && RL.exec && RL.fechada && RL.fechada.snapshot)
+    ? `Motor da execução congelada no fechamento — Análise Tributária Pro v${esc(String(RL.fechada.snapshot.versao||'?'))} · lacre ${esc(String(RL.fechada.snapshot.lacre||'?'))} · fechada em ${RL.fechada.snapshot.em?new Date(RL.fechada.snapshot.em).toLocaleDateString('pt-BR'):'?'} (documento impresso pela v${APP_VERSAO})`
+    : `Motor Análise Tributária Pro v${APP_VERSAO} · lacre ${LACRE_HASH} · data-base ${new Date().toLocaleDateString('pt-BR')}`}.${_trilha}</div>`;
 }
 function rlParecer(){
   const D = parecerDados();
@@ -13079,9 +13167,33 @@ function rlProjPopular(){
   sel.value = cur;
 }
 // v7.56.3 · faixa de defasagem — entra no topo de qualquer relatório
+// ═══ v7.100.0 · B08 — o estado do FECHAMENTO entra em todo relatório (via rlAvisoDefasado) ═══
+function rlAvisoFechada(){
+  if (!RL || !RL.fechada) return '';
+  const s = RL.fechada.snapshot || {};
+  const quem = `${esc(RL.fechada.por||'?')} em ${RL.fechada.em?new Date(RL.fechada.em).toLocaleString('pt-BR'):'?'}`;
+  if (RL.exec){
+    const divg = (RL.divergeAtual && RL.divergeAtual.length)
+      ? `<div style="margin-top:6px;padding:8px 10px;border-left:4px solid #b9770e;background:#fef6e7;font-size:12px"><b>O motor atual (v${APP_VERSAO}) daria números DIFERENTES:</b><br>${RL.divergeAtual.map(esc).join('<br>')}<br><span class="hint">O documento continua fiel ao fechamento — nada muda sozinho. Para adotar os números novos, refeche a análise.</span></div>` : '';
+    return `<div class="card no-print" style="border-left:4px solid #1e8449;background:#f2fbf6">
+      <b>🔒 Análise fechada — este documento sai da execução congelada no fechamento</b>
+      <div class="hint" style="margin-top:5px">Fechada por ${quem} · motor app v${esc(String(s.versao||'?'))} · lacre ${esc(String(s.lacre||'?'))}. Os números NÃO mudam com atualizações do aplicativo (decisão B08).</div>${divg}
+      <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="rlIrRefechar()">🔁 Abrir a análise para refechar com o motor atual</button></div></div>`;
+  }
+  return `<div class="card no-print" style="border-left:4px solid #b9770e;background:#fef6e7">
+    <b>⚠️ Análise fechada SEM execução congelada (fechamento anterior à v7.100.0)</b>
+    <div class="hint" style="margin-top:5px">Fechada por ${quem} (app v${esc(String(s.versao||'?'))}). Este documento usa o RECÁLCULO do motor atual (v${APP_VERSAO}) e pode divergir do que foi emitido no fechamento. Refeche a análise para congelar a execução e travar os números.</div>
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="rlIrRefechar()">🔁 Abrir a análise para refechar com o motor atual</button></div></div>`;
+}
+function rlIrRefechar(){
+  const cnpj = $id('rl-empresa').value; if (!cnpj) return;
+  empAnalisar(cnpj);
+  toast('Confira o ano no topo e use 🔁 Refechar com o motor atual, no aviso da análise fechada.');
+}
 function rlAvisoDefasado(){
-  if (!RL || !RL.defasado || !RL.defasado.length) return '';
-  return `<div class="card no-print" style="border-left:4px solid #b3261e;background:#fff7f6">
+  const fechada = rlAvisoFechada();   // v7.100.0 · B08: todo relatório declara de onde saem os números
+  if (!RL || !RL.defasado || !RL.defasado.length) return fechada;
+  return fechada + `<div class="card no-print" style="border-left:4px solid #b3261e;background:#fff7f6">
     <b>⚠️ Este relatório está usando a análise GRAVADA, e a tela tem alterações mais recentes.</b>
     <div class="hint" style="margin-top:5px">Diferenças em: <b>${esc(RL.defasado.join(', '))}</b>.
     Os relatórios sempre partem do que está salvo no banco — não do que está aberto na aba Análise Atual.
