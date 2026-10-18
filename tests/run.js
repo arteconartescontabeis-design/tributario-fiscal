@@ -5258,6 +5258,21 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bk · v7.101.4 — B18 perfil de demonstração isolado (LGPD) + teste de acesso negativo (setup_v71014.sql) ═══
+  {
+    const sql = fs.existsSync(path.join(RAIZ,'banco','atp','setup_v71014.sql')) ? fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v71014.sql'),'utf8') : '';
+    chk('5bk · setup_v71014.sql: cria o escritório Demonstração e MOVE a conta teste@artecon.cnt.br para ele',
+      /insert into public\.atp_escritorios \(nome\)/.test(sql) && /'Demonstração'/.test(sql)
+      && /update public\.atp_usuarios/.test(sql) && /teste@artecon\.cnt\.br/.test(sql));
+    chk('5bk · setup_v71014.sql: semeia UMA empresa fictícia (rotulada) no escritório de demonstração, sem tocar nas reais',
+      /EMPRESA DEMONSTRAÇÃO/.test(sql) && /FICTÍCIA/i.test(sql) && !/delete from public\.atp_empresas/.test(sql) && !/update public\.atp_empresas/.test(sql));
+    chk('5bk · setup_v71014.sql: teste de acesso NEGATIVO em begin/rollback — conta de teste vê só a fictícia; análises reais = 0',
+      /request\.jwt\.claims/.test(sql) && /set local role authenticated/.test(sql) && /rollback/i.test(sql)
+      && /empresas_que_a_conta_teste_ve/.test(sql) && /analises_que_a_conta_teste_ve/.test(sql));
+    chk('5bk · lacre 0a257d66 intocado (B18 é banco e política, não motor)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bk · v7.101.4 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.4<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bj · v7.101.3 — B12 rodapé rastreável nos relatórios: motor, selo do lacre e execução de origem ═══
   {
     const run = c => vm.runInContext(c, ctx);
