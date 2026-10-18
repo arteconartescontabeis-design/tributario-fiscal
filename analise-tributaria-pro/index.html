@@ -803,6 +803,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.99.5</b></td><td>18/10/2026</td><td><b>✍️ TEXTOS QUE AFIRMAVAM DEMAIS (B06) e REGISTRO OBRIGATÓRIO DA DECISÃO JUDICIAL ao desligar a LC 224 (B07). Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) Elegibilidade com receita estimada (achado A03):</b> o texto "não é elegível … já supera o teto desde o início do período" afirmava com certeza mesmo quando a receita era apenas lançada ou presumida. Agora a frase declara a FONTE — RBAA informada (segue assertiva), valores lançados/estimados na análise, ou presunção pelo primeiro mês — e, fora da RBAA declarada, termina pedindo a confirmação da receita do ano anterior na Configuração antes de decidir. <b>(2) Aba Compras/ICMS·IPI harmonizada com a v7.97.0 (achado A06):</b> os hints do quadro de ICMS e da estimativa de PIS/COFINS passaram a dizer que a base do crédito JÁ EXCLUI a parcela de fornecedores MEI/Simples, que não destaca ICMS (LC 123/2006, art. 23). <b>(3) Lacre "quatro casos" (achado da auditoria):</b> o cartão da aba Versões dizia "dois casos-gabarito" desde a v7.30.0; o lacre cobre QUATRO desde a v7.95.1 (comércio, serviços, estresse do art. 24 e empresa nova) — o texto agora diz isso. <b>(4) LC 224 com fundamento registrado (B07):</b> desligar a chave "Não aplicar (liminar / decisão judicial)" passou a EXIGIR o número do processo e a data da decisão (campos novos na Configuração, <code>cfg.lc224Proc</code>/<code>cfg.lc224Data</code>); sem o registro, a regra continua aplicada e o aviso explica. O registro herda entre anos junto com a chave (CFG_HERDA) e cada mudança entra na trilha de alterações com rótulo próprio. Suíte: bloco 5be.</td></tr>
                     <tr><td><b>v7.99.4</b></td><td>18/10/2026</td><td><b>🏷️ O RESUMO GRAVADO PASSA A DECLARAR O MOTOR QUE O CALCULOU, e o Dashboard marca "desatualizada", alerta VALOR NEGATIVO e separa o total de economia. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achados A01 e novo 3 da auditoria de 18/10/2026.) <b>(1) O problema:</b> o Dashboard lê o resumo do último Salvar de cada análise — calculado pelo motor daquela época. Com 108 das 109 análises gravadas antes da v7.96/v7.97/LC 224, o "Economia potencial identificada" de R$ 7,9 mi somava resultados de motores diferentes, e uma análise exibia Presumido <b>negativo</b> (−R$ 220.249,89, defeito corrigido na v7.96.0) sem aviso algum. <b>(2) Resumo com carimbo:</b> <code>anSalvar</code> e <code>rfSalvar</code> gravam <code>motor:{app, lacre}</code> no resumo; o ramo do rfSalvar que preserva o resumo de outra gravação preserva também o motor dela — carimbar ali seria mentir. Resumo sem carimbo = anterior à v7.99.4 = desatualizado por definição. <b>(3) Dashboard honesto:</b> <code>dashMotorInfo</code> compara o lacre gravado com o atual; a linha ganha o selo <b>"desatualizada"</b> (com o motor de origem no título) e <b>"valor negativo"</b> em vermelho quando o resumo guarda número abaixo de zero; o cartão do topo passa a somar só as análises do motor atual, com a nota "+ R$ X em N análise(s) com motor antigo — fora do total" e o alerta de negativos. Nenhum número gravado muda: a mudança é dizer DE ONDE cada um veio. Suíte: bloco 5bd.</td></tr>
                     <tr><td><b>v7.99.3</b></td><td>18/10/2026</td><td><b>⏳ ESTADO "CARREGANDO" NA TROCA DE EMPRESA e BLOQUEIO TOTAL quando a leitura do banco falha. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Dois defeitos com a mesma raiz (achados A04 e novo 4 da auditoria de 18/10/2026): <b>(1) Conclusão antes da carga.</b> Ao trocar de empresa, a tela desenhava uma análise NOVA — receita zero e conclusões calculadas do nada (confiança "ALTO") — no intervalo entre o pedido e a resposta do banco. Agora a troca liga o estado <code>AN_CARREGANDO</code>: os cartões mostram "⏳ Carregando a análise do banco…", o veredito some e o recálculo não desenha NENHUMA conclusão até a carga terminar. <b>(2) Falha de leitura virava análise em branco gravável.</b> Se a leitura desse erro, o <code>catch</code> criava uma análise vazia e apagava a marca de placeholder; sem <code>_verEm</code>, a guarda de conflito de versão não disparava e o Salvar podia substituir a análise gravada por uma em branco. Agora a falha deixa a análise <b>bloqueada</b>: continua placeholder, ganha <code>_erroLeitura</code> com o motivo, a tela mostra a tarja "⛔ A leitura desta análise falhou" com botão <b>Tentar de novo</b> — e <code>anBloqueada()</code> corta edição (grade e setters), lançamento, importação, preenchimento e gravação (<code>anSalvar</code> recusa e devolve <code>false</code>) tanto durante a carga quanto após a falha. Suíte: bloco 5bc.</td></tr>
                     <tr><td><b>v7.99.2</b></td><td>18/10/2026</td><td><b>📅 PRAZOS DA RES. CGSN Nº 194/2026 numa tabela única e SPLIT PAYMENT dito como cenário, nunca como fato. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O problema dos prazos (achado A02 da auditoria externa):</b> a Res. CGSN nº 194/2026 (DOU 28/09/2026) alterou os prazos que a Res. 190/2026 havia fixado — opção pelo Simples para 2027 de <b>1º/09 a 15/10/2026</b> (já encerrada), opção pelo regime regular de IBS/CBS (híbrido) de <b>1º/09 a 30/10/2026</b>, regularização de pendências até 30/10, cancelamento de 03/11 a 20/12; empresas em início de atividade: Simples de 16/10 a 31/12 e IBS/CBS de 31/10 a 31/12 — e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão. <b>(2) A correção estrutural (B02):</b> nasce a tabela <code>PRAZOS_LEGAIS</code> por exercício, única fonte de toda data de prazo legal: o parágrafo de prazos do parecer, os cartões da apresentação (<code>AP_PRAZOS</code>), os "Pontos de atenção" e os resumos derivam dela (<code>prazoD</code>, <code>prazoProximo</code>, <code>prazoVencido</code>), e a suíte acusa data fixa fora da tabela. O resumo da apresentação passa a apontar o <b>próximo prazo em aberto</b> na data da geração, em vez de uma data congelada. <b>(3) Split payment (B03, achado novo 6):</b> o parecer dizia que a CBS e o IBS "passam a ser recolhidos na fonte" — o split como fato consumado. O CGIBS informou em agosto/2026 que o split <b>não</b> estará disponível no início da cobrança efetiva (jan/2027) e não há data confirmada para operar. Todos os textos passam a declarar: mecanismo previsto na LC 214/2025 (art. 33), em regulamentação, sem data para operar; valores = <b>cenário conservador</b> de caixa. O cartão de caixa da apresentação e a seção do parecer ganham o rótulo "(cenário)", e uma instrução nova impede a IA de atribuir data de início ao split. Suíte: bloco 5bb.</td></tr>
@@ -4784,9 +4785,9 @@ const AN_SECOES = [
     ['IPI'], ['compras.baseIpiCred','Base p/ crédito de IPI'],
   ]},
   { id:'impostos', nome:'🧾 ICMS · IPI', linhas:[
-    ['ICMS — preencha só para substituir o valor apurado; em branco, o app calcula pelas bases × % da Config'],
+    ['ICMS — preencha só para substituir o valor apurado; em branco, o app calcula pelas bases × % da Config (compras sem ST já excluída a parcela de fornecedores MEI/Simples — v7.97.0)'],
     ['icms.cred','Crédito de ICMS (substituir) — igual ao quadro acima','nul'], ['icms.deb','Débito de ICMS (substituir) — igual ao quadro acima','nul'],
-    ['PIS/COFINS no Presumido e no Real — nota a nota (v7.89.0). Em branco, o app estima: (revenda sem ST + com redução) × % ICMS de vendas; compras p/ revenda × % ICMS de compras'],
+    ['PIS/COFINS no Presumido e no Real — nota a nota (v7.89.0). Em branco, o app estima: (revenda sem ST + com redução) × % ICMS de vendas; compras p/ revenda (menos a parcela de MEI/Simples, que não destaca ICMS) × % ICMS de compras'],
     ['icms.tema69','ICMS destacado nas saídas — Tema 69 (nota a nota)','nul'], ['icms.lei14592','ICMS nas aquisições p/ revenda — Lei 14.592/2023 (nota a nota)','nul'],
     ['Crédito transferido por fornecedor do Simples (v7.97.0) — só o que a optante INFORMOU na NF-e (CSOSN 101/201, LC 123/2006, art. 23, § 1º). Em branco = zero. O MEI nunca transfere crédito.'],
     ['icms.credSimples','Crédito de ICMS informado nas NF de optantes do Simples (nota a nota)','nul'],
@@ -4958,7 +4959,8 @@ function audRotulo(campo){
     sublimite:'Sublimite', sublimiteValor:'Sublimite (valor próprio)', lrPeriodo:'Período do Lucro Real', lrPrejIrpj:'Prejuízo fiscal inicial', lrPrejCsll:'Base negativa CSLL inicial', projJanela:'Janela da projeção', anoRefParecer:'Ano de referência do parecer',
     credLRpct:'% creditável no LR', folhaPerc:'Percentuais de folha', ratBasico:'RAT básico', fap:'FAP', travaNoDas:'Trava na guia', arredondaPorTributo:'Arredondar por tributo', frComposicao:'Composição do Fator R', dedIssRetido:'Deduz ISS retido', issRetidoNaCarga:'ISS retido na carga',
     transpPresuncao:'Presunção transporte', icmsTranspV:'ICMS transporte %', transpCredPres:'Crédito presumido transporte', sem13Pago:'Sem pagamento de 13º',
-    icmsSaldoIni:'Saldo credor de ICMS em 1º/jan', lc224:'LC 224/2025 — presunção +10% (aplicar?)' };
+    icmsSaldoIni:'Saldo credor de ICMS em 1º/jan', lc224:'LC 224/2025 — presunção +10% (aplicar?)',
+    lc224Proc:'LC 224/2025 — processo da decisão que desliga', lc224Data:'LC 224/2025 — data da decisão' };   // v7.99.5 · B07
   if (sec === 'cfg') return CFG[k] || ('Configuração · ' + k);
   if (sec === 'folha13') return ({ prolabore13:'Pró-labore 13º', salarios13:'Proventos 13º', baseFgts13:'Base FGTS 13º' })[k] || k;
   if (sec === 'reforma') return ({ receita:'Reforma · receita anual tributável', baseIS:'Reforma · base do Imposto Seletivo', credSimplesPct:'Reforma · % crédito s/ compras do Simples' })[k] || ('Reforma · ' + k);
@@ -5099,8 +5101,20 @@ function snSituacaoTexto(EL, ano){
   if (!EL) return '';
   const teto = fmtR(EL.teto || SN_TETO_CHEIO), a = +ano || (typeof AN !== 'undefined' && AN ? +AN.ano : new Date().getFullYear());
   const pctExc = EL.excesso != null ? (EL.excesso*100).toFixed(1).replace('.', ',') + '%' : '';
-  if (EL.estado === 'inelegivel')
-    return 'A empresa não é elegível ao Simples Nacional em ' + a + ': a receita bruta ' + (EL.fonte === 'declarado' ? 'do ano anterior, conforme informado, ' : '') + 'já supera o teto de ' + teto + ' desde o início do período' + (pctExc ? ' (excesso de ' + pctExc + ')' : '') + ': não pode optar pelo Simples Nacional em ' + a + ', e o regime não entra no comparativo do ano.';
+  if (EL.estado === 'inelegivel'){
+    // v7.99.5 · B06 (achado A03): o que é estimativa não pode ser afirmado como certeza. A fonte
+    // da receita entra na frase e, fora da RBAA declarada, a conclusão vem qualificada, com o
+    // pedido de confirmar o dado antes de decidir.
+    const _fonte = EL.fonte === 'declarado'
+      ? 'a receita bruta do ano anterior, conforme informado, já supera'
+      : EL.fonte === 'presumido'
+      ? 'a receita lançada indica, por presunção (RBT12 dos 12 meses anteriores não informado), receita acima de'
+      : 'a receita bruta dos 12 meses anteriores, conforme os valores lançados ou estimados na análise, supera';
+    return 'A empresa não é elegível ao Simples Nacional em ' + a + ': ' + _fonte + ' o teto de ' + teto
+      + ' desde o início do período' + (pctExc ? ' (excesso de ' + pctExc + ')' : '')
+      + ': não pode optar pelo Simples Nacional em ' + a + ', e o regime não entra no comparativo do ano.'
+      + (EL.fonte === 'declarado' ? '' : ' A conclusão usa valores informados na análise — confirme a receita bruta do ano anterior (RBAA) na Configuração antes de decidir.');
+  }
   if (EL.estado === 'transicao'){
     if (EL.excesso > 0.20)
       return 'Considerando que a empresa estava regularmente no Simples Nacional em ' + a + ', a receita interna ultrapassou o limite anual de ' + teto + ' em mais de 20% (' + pctExc + ')' + (EL.mesEstouro ? ', em ' + MESES_LONGO[EL.mesEstouro-1] : '') + ': a exclusão produz efeitos a partir do mês seguinte ao da ocorrência do excesso (LC 123/2006, art. 3º, § 9º).';
@@ -5922,7 +5936,13 @@ function anRenderConfig() {
     <div><label>Adicional de IRPJ</label><select id="cf-adic" onchange="anAplicarConfig(true)"><option value="trimestral" ${c.adicionalIR=='trimestral'?'selected':''}>Trimestral</option><option value="mensal" ${c.adicionalIR=='mensal'?'selected':''}>Mensal (estimativa)</option><option value="off" ${c.adicionalIR=='off'?'selected':''}>Não calcular</option></select></div>
     <div><label>LC 224/2025 — presunção +10% <span class="hint">(v7.99.0)</span></label><select id="cf-lc224" onchange="anAplicarConfig(true)" title="LC 224/2025, art. 4º: a parcela da receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre, acumulado) tem os percentuais de presunção do IRPJ e da CSLL acrescidos em 10% (32% → 35,2%; 8% → 8,8%; CSLL 12% → 13,2%). IRPJ desde jan/2026, CSLL desde abr/2026 (IN RFB 2.305/2025 e 2.306/2026). Desligue só se a empresa tiver liminar ou decisão judicial — as ADIs 7920, 7936, 7944 e 7982 ainda não foram julgadas pelo STF.">
       <option value="sim" ${c.lc224===false?'':'selected'}>Aplicar (regra em vigor desde 2026)</option>
-      <option value="nao" ${c.lc224===false?'selected':''}>Não aplicar (liminar / decisão judicial)</option></select></div>
+      <option value="nao" ${c.lc224===false?'selected':''}>Não aplicar (liminar / decisão judicial)</option></select>
+      <!-- v7.99.5 · B07: desligar a LC 224 exige o processo e a data da decisão que o justifica — ficam no cfg e na trilha -->
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <input id="cf-lc224-proc" placeholder="Processo (nº CNJ) — obrigatório ao desligar" value="${esc(c.lc224Proc||'')}" onchange="anAplicarConfig(true)" title="Número do processo da liminar/decisão judicial que afasta a LC 224/2025 para esta empresa. Obrigatório para desligar a regra; entra na trilha de alterações." style="flex:2">
+        <input id="cf-lc224-data" type="date" value="${esc(c.lc224Data||'')}" onchange="anAplicarConfig(true)" title="Data da decisão judicial. Obrigatória para desligar a regra." style="flex:1">
+      </div>
+      ${c.lc224===false && c.lc224Proc ? `<div class="hint">Desligada pela decisão de ${c.lc224Data ? c.lc224Data.split('-').reverse().join('/') : '—'} no processo ${esc(c.lc224Proc)}.</div>` : ''}</div>
     <div><label>Sublimite ICMS/ISS (R$ 3,6 mi)</label><select id="cf-sublim" onchange="anAplicarConfig(true)"><option value="auto" ${(c.sublimite||'auto')=='auto'?'selected':''}>Aplicar trava da 5ª faixa</option><option value="off" ${c.sublimite=='off'?'selected':''}>Não aplicar</option></select></div>
     <div><label>Trava da 5ª faixa na guia <span class="hint">(v7.36.0)</span></label><select id="cf-travadas" onchange="anAplicarConfig(true)"><option value="sim" ${c.travaNoDas===false?'':'selected'}>Dentro do DAS (PGDAS-D)</option><option value="nao" ${c.travaNoDas===false?'selected':''}>Fora do DAS — legado</option></select></div>
     <div><label>ISS retido na carga do regime <span class="hint">(v7.79.0)</span></label><select id="cf-issretcarga" onchange="anAplicarConfig(true)" title="O ISS retido pelo tomador é imposto suportado na operação: a empresa recebe líquido. Contá-lo na carga mede o custo econômico; não contá-lo mede o desembolso próprio.">
@@ -6119,6 +6139,20 @@ function anAplicarConfig(silencioso) {
     lc224: (vRaw('cf-lc224', _cfg.lc224===false?'nao':'sim') || 'sim') !== 'nao' });   // v7.99.0 · false = liminar
   if (!(+AN.cfg.icmsSaldoIni > 0)) delete AN.cfg.icmsSaldoIni;   // v7.96.0: em branco = zero, e a chave não ocupa espaço
   if (AN.cfg.lc224 !== false) delete AN.cfg.lc224;              // v7.99.0: ausente = aplica (padrão legal); só a exceção é gravada
+  // ═══ v7.99.5 · B07 — DESLIGAR A LC 224 EXIGE O PROCESSO E A DATA DA DECISÃO ═══
+  // A chave já existia (v7.99.0), mas desligava sem deixar rastro do fundamento. Agora o número do
+  // processo e a data da decisão são obrigatórios para desligar: sem eles a regra continua aplicada
+  // (o select volta a "sim" e o aviso explica). Os dois moram no cfg (lc224Proc/lc224Data), herdam
+  // entre anos como a própria chave e entram na trilha de alterações pelo audSincronizar.
+  { const _lcProc = String(vRaw('cf-lc224-proc', _cfg.lc224Proc||'')||'').trim();
+    const _lcData = String(vRaw('cf-lc224-data', _cfg.lc224Data||'')||'').trim();
+    if (AN.cfg.lc224 === false){
+      if (!_lcProc || !_lcData){
+        delete AN.cfg.lc224; delete AN.cfg.lc224Proc; delete AN.cfg.lc224Data;
+        const _sel = $id('cf-lc224'); if (_sel) _sel.value = 'sim';
+        toast('⚖️ Para DESLIGAR a LC 224/2025 informe o número do processo e a data da decisão judicial — sem o registro, a regra continua aplicada.');
+      } else { AN.cfg.lc224Proc = _lcProc; AN.cfg.lc224Data = _lcData; }
+    } else { delete AN.cfg.lc224Proc; delete AN.cfg.lc224Data; } }
   // v7.35.0 · período de apuração do Lucro Real e saldos de prejuízo (podem não existir em telas antigas)
   if (AN.cfg.arredondaPorTributo !== true) delete AN.cfg.arredondaPorTributo;   // v7.62.0: ausente ≠ false
   if (!(+AN.cfg.rbaa > 0)) delete AN.cfg.rbaa;                       // v7.70.0: em branco = não informada
@@ -6459,7 +6493,7 @@ async function anTrocarEmpresa() {
 const CFG_HERDA = ['iss','icmsV','icmsC','ipiV','ipiC','icmsTranspV','transpCredPres','lpBaseServ',
   'lpBaseCom','lpBaseServCsll','lpBaseComCsll','transpPresuncao','folhaPerc','adicionalIR','sublimite',
   'travaNoDas','lrPeriodo','projJanela','anoRefParecer','credLRpct',
-  'lc224'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa
+  'lc224','lc224Proc','lc224Data'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa · v7.99.5 · B07: o registro da decisão herda junto
 // NÃO se herda o que é do ano: rbt12Lanc, rbt12ExpLanc, folha12Lanc, rbt12Direto, rbt12ExpDireto, lrPrejIrpj,
 // lrPrejCsll e snAntAcima — são apuração, não parâmetro.
 async function cfgHerdar(an, cnpj, ano){
@@ -6534,7 +6568,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.4';
+const APP_VERSAO = '7.99.5';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -8134,7 +8168,7 @@ function qxExportar(){
 }
 
 // ═══ v7.30.0 — LACRE DO MOTOR DE CÁLCULO ═══
-// Dois casos-gabarito (os mesmos da suíte de testes/CI) viajam DENTRO do app. A cada troca de
+// Os casos-gabarito da suíte de testes/CI (dois na origem; QUATRO desde a v7.95.1) viajam DENTRO do app. A cada troca de
 // versão, o app recalcula tudo com os PADRÕES DE FÁBRICA (anexos, folha, alíquotas da Reforma —
 // parâmetros editados pelo usuário NÃO entram) e confere o resultado, ao centavo, contra o selo
 // (hash) gravado nesta versão. Divergência = o motor mudou sem intenção → alerta vermelho.
@@ -8203,7 +8237,7 @@ function lacreRender(){
       <button class="btn" style="margin-left:auto" onclick="lacreBoot(true)">Revalidar agora</button>
     </div>
     <div class="hint" style="margin-top:6px">${ok
-      ? 'Os dois casos-gabarito embutidos foram recalculados nesta versão com os padrões de fábrica e bateram, ao centavo, com o selo gravado na entrega — o motor não sofreu alteração acidental. Regras alteradas de propósito são re-seladas e registradas no changelog abaixo.'
+      ? 'Os quatro casos-gabarito embutidos (comércio no sublimite, serviços com Fator R, estresse do art. 24 e empresa nova) foram recalculados nesta versão com os padrões de fábrica e bateram, ao centavo, com o selo gravado na entrega — o motor não sofreu alteração acidental. Regras alteradas de propósito são re-seladas e registradas no changelog abaixo.'
       : (LACRE_ST.erro ? ('Erro ao recalcular: '+LACRE_ST.erro) : 'Os cálculos produzidos por esta versão NÃO batem com o selo gravado na entrega. Não use os resultados para decisão até verificar — restaure a versão anterior e reporte.')}</div>
     ${linhas?`<table style="margin-top:8px"><thead><tr><th>Caso-gabarito</th><th class="num">DAS anual</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th class="num">2033 híbrido</th><th class="num">2033 regular</th></tr></thead><tbody>${linhas}</tbody></table>`:''}
   </div>`;

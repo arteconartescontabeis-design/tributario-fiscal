@@ -4659,7 +4659,7 @@ console.log('\n■ Integridade da interface');
         r.meses.slice(2,5).map(M=>M.rbt12.toFixed(2)).join(' / ')); }
 
     // ── (4) credLRpct na tela ──
-    chk('5aa · credLRpct · a Configuração tem os cinco campos e o funil grava só quando >0', /id="cf-crlr-\$\{k\}"/.test(html) && /if \(Object\.keys\(o\)\.length\) AN\.cfg\.credLRpct = o; else delete AN\.cfg\.credLRpct;/.test(html) && /'anoRefParecer','credLRpct',\s*'lc224'\]/.test(html));
+    chk('5aa · credLRpct · a Configuração tem os cinco campos e o funil grava só quando >0', /id="cf-crlr-\$\{k\}"/.test(html) && /if \(Object\.keys\(o\)\.length\) AN\.cfg\.credLRpct = o; else delete AN\.cfg\.credLRpct;/.test(html) && /'anoRefParecer','credLRpct',\s*'lc224'/.test(html));   // v7.99.5: a lista ganhou lc224Proc/lc224Data depois do lc224 — o que importa aqui é o credLRpct herdar
     { const a = nova('44444444000144'); a.receitas.a3_semret = Array(12).fill(100000); a.despesas.adm = Array(12).fill(20000);
       const r0 = calc(a, clone(AD), {...FD}); a.cfg.credLRpct = { adm: 0.5 }; const r1 = calc(a, clone(AD), {...FD});
       const pc = r => r.meses.reduce((s,M)=>s+M.lr.pis+M.lr.cofins,0);
@@ -5258,6 +5258,48 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.9[5-9]\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5be · v7.99.5 — B06 textos (elegibilidade estimada, aba Compras, lacre "quatro casos") + B07 registro da liminar LC 224 ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    // B06 · A03: o que é estimativa não é afirmado como certeza
+    { const tDecl = run(`snSituacaoTexto({ estado:'inelegivel', fonte:'declarado', teto:4800000, excesso:0.1 }, 2026)`);
+      const tPres = run(`snSituacaoTexto({ estado:'inelegivel', fonte:'presumido', teto:4800000, excesso:0.1 }, 2026)`);
+      const tLanc = run(`snSituacaoTexto({ estado:'inelegivel', fonte:'lancamento', teto:4800000, excesso:0.1 }, 2026)`);
+      chk('5be · inelegível com RBAA declarada segue assertivo (conforme informado), sem pedido de confirmação',
+        /conforme informado/.test(tDecl) && !/confirme a receita bruta/.test(tDecl));
+      chk('5be · inelegível por PRESUNÇÃO declara a presunção e pede confirmação da RBAA antes de decidir',
+        /presunção/.test(tPres) && /confirme a receita bruta do ano anterior/.test(tPres));
+      chk('5be · inelegível por lançamento declara que a conclusão usa valores lançados ou estimados',
+        /lançados ou estimados/.test(tLanc) && /confirme a receita bruta do ano anterior/.test(tLanc)); }
+    // B06 · A06: textos da aba Compras/ICMS·IPI harmonizados com a v7.97.0
+    chk('5be · hints do quadro ICMS e do PIS/COFINS citam a exclusão das compras de MEI/Simples (v7.97.0)',
+      /em branco, o app calcula pelas bases × % da Config \(compras sem ST já excluída a parcela de fornecedores MEI\/Simples — v7\.97\.0\)/.test(html)
+      && /compras p\/ revenda \(menos a parcela de MEI\/Simples, que não destaca ICMS\) × % ICMS de compras/.test(html));
+    // B06 · lacre: a aba Versões fala em QUATRO casos
+    chk('5be · texto do lacre diz "quatro casos-gabarito" (o lacre cobre 4 desde a v7.95.1)',
+      /Os quatro casos-gabarito embutidos/.test(html) && !/Os dois casos-gabarito embutidos/.test(html));
+    // B07 · desligar a LC 224 exige processo e data; os dois entram no cfg (e, por ele, na trilha)
+    chk('5be · a Configuração tem os campos do processo e da data da decisão', /id="cf-lc224-proc"/.test(html) && /id="cf-lc224-data"/.test(html));
+    { const o = run(`(function(){ const _an = AN; AN = anNovo('11111111000111', 2026);
+        document.getElementById('cf-lc224').value = 'nao';
+        document.getElementById('cf-lc224-proc').value = ''; document.getElementById('cf-lc224-data').value = '';
+        anAplicarConfig(true);
+        const revertido = AN.cfg.lc224 === undefined && AN.cfg.lc224Proc === undefined && document.getElementById('cf-lc224').value === 'sim';
+        document.getElementById('cf-lc224').value = 'nao';
+        document.getElementById('cf-lc224-proc').value = '0001234-56.2026.4.03.0000';
+        document.getElementById('cf-lc224-data').value = '2026-09-15';
+        anAplicarConfig(true);
+        const r = { revertido, lig: AN.cfg.lc224, proc: AN.cfg.lc224Proc, data: AN.cfg.lc224Data };
+        document.getElementById('cf-lc224').value = ''; document.getElementById('cf-lc224-proc').value = ''; document.getElementById('cf-lc224-data').value = '';
+        AN = _an; return r; })()`);
+      chk('5be · desligar SEM processo/data é recusado (volta a aplicar) — com os dois, grava lc224=false + processo + data',
+        o.revertido === true && o.lig === false && o.proc === '0001234-56.2026.4.03.0000' && o.data === '2026-09-15'); }
+    chk('5be · processo e data herdam entre anos (CFG_HERDA) e têm rótulo na trilha',
+      /'lc224','lc224Proc','lc224Data'\]/.test(html) && /lc224Proc:'LC 224\/2025 — processo/.test(html) && /lc224Data:'LC 224\/2025 — data/.test(html));
+    chk('5be · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5be · v7.99.5 · badge e changelog', /APP_VERSAO = '7\.99\.\d+'/.test(html) && /<b>v7\.99\.5<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bd · v7.99.4 — B05 versão do motor no resumo; Dashboard marca "desatualizada" e alerta valor negativo ═══
   {
     const run = c => vm.runInContext(c, ctx);
@@ -5403,7 +5445,7 @@ console.log('\n■ Integridade da interface');
     const ri = g.calcular(Ai, clone(AD), {...FD});
     chk('5az · início em jul/2026: limite proporcional (2 trimestres = 2,5 mi) → 4 mi de receita dão excedente 1,5 mi (com o limite cheio de 5 mi seria zero)',
       ri.lc224.inicioTrimestre === 2 && Math.abs(ri.lc224.excIR-1500000)<0.01 && ri.lc224.trimestres[2].aplicaIR && !ri.lc224.trimestres[1].aplicaIR, 'exc=' + ri.lc224.excIR.toFixed(0));
-    chk('5az · Configuração: chave LC 224 (sim/não), herdada entre anos; ausente = aplica', /id="cf-lc224"/.test(html) && /if \(AN\.cfg\.lc224 !== false\) delete AN\.cfg\.lc224;/.test(html) && /'lc224'\];/.test(html));
+    chk('5az · Configuração: chave LC 224 (sim/não), herdada entre anos; ausente = aplica', /id="cf-lc224"/.test(html) && /if \(AN\.cfg\.lc224 !== false\) delete AN\.cfg\.lc224;/.test(html) && /'lc224'[,\]]/.test(html));   // v7.99.5: lc224Proc/lc224Data entraram na herança logo após o lc224
     chk('5az · memória mensal e anual declaram o acréscimo (excedente, limite acumulado, presunção média, fonte); premissas, Verificar e regra da IA também',
       /acréscimo LC 224\/2025<\/b>/.test(html) && /IN RFB 2\.305\/2025 e 2\.306\/2026/.test(html) && /pushP\('lc224'/.test(html) && /LC 224\/2025 aplicada: receita acima de R\$ 1,25 mi\/trimestre/.test(html) && /ADIs 7920, 7936, 7944 e 7982/.test(html) && /lc224Regra/.test(html));
     { const l = vm.runInContext('lacreRodar()', ctx);
