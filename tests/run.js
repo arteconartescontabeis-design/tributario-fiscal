@@ -5258,6 +5258,42 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bg · v7.101.0 — B09 registro de execuções imutáveis (atp_execucoes, setup_v7101.sql) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    chk('5bg · execParams: impressões digitais (hash de 8 hex) dos anexos, folha, reforma e cfg',
+      (() => { const p = run('execParams({ iss: 0.05 })'); return ['anexos','folha','reforma','cfg'].every(k => /^[0-9a-f]{8}$/.test(p[k])); })());
+    { const o = await vm.runInContext(`(async()=>{ const _supa = supa; let posto = null;
+        supa = async (m,t,op)=> { if (t === 'atp_execucoes'){ posto = { m, body: op.body }; return []; } return []; };
+        const inp = JSON.parse(JSON.stringify(LACRE_CASOS[1].inp));
+        const res = calcular(inp, PARAMS.anexos, folhaPercDaEmpresa(inp.cfg));
+        let ok, okFalha;
+        try { ok = await execRegistrar('salvar', '11111111000111', 2026, res, null, inp.cfg);
+          supa = async ()=>{ throw new Error('relation "atp_execucoes" does not exist'); };
+          okFalha = await execRegistrar('salvar', '11111111000111', 2026, res, null, inp.cfg);
+        } finally { supa = _supa; }
+        const b = posto && posto.body && posto.body[0];
+        return { ok, okFalha, m: posto && posto.m, app: b && b.app, lacre: b && b.lacre, origem: b && b.origem,
+          das: b && b.totais && Math.abs(b.totais.das - res.totais.das) < 0.005,
+          cen: !!(b && b.cen2033 && isFinite(b.cen2033.hib)), params: !!(b && b.params && /^[0-9a-f]{8}$/.test(b.params.anexos)) }; })()`, ctx);
+      chk('5bg · execRegistrar grava cnpj/ano, origem, motor (app + lacre), totais, cen2033 e params na atp_execucoes',
+        o.ok === true && o.m === 'POST' && o.app === run('APP_VERSAO') && o.lacre === run('LACRE_HASH') && o.origem === 'salvar' && o.das === true && o.cen === true && o.params === true);
+      chk('5bg · sem a tabela (setup_v7101.sql não rodado) o registro falha em silêncio e devolve false', o.okFalha === false); }
+    chk('5bg · salvar, fechar e refechar registram a execução (três origens no código)',
+      /execRegistrar\('salvar', AN\.cnpj, AN\.ano, AN\._res/.test(html) && /execRegistrar\('fechar', AN\.cnpj, AN\.ano, AN\._res/.test(html) && /execRegistrar\('refechar', AN\.cnpj, AN\.ano, AN\._res/.test(html));
+    { const sql = fs.existsSync(path.join(RAIZ,'banco','atp','setup_v7101.sql')) ? fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v7101.sql'),'utf8') : '';
+      chk('5bg · setup_v7101.sql: tabela atp_execucoes com RLS do escritório, SÓ select+insert e trigger de imutabilidade',
+        /create table if not exists public\.atp_execucoes/.test(sql)
+        && /atp_execucoes_sel/.test(sql) && /atp_execucoes_ins/.test(sql)
+        && !/create policy atp_execucoes_(upd|del)/.test(sql)
+        && /atp_meu_escritorio/.test(sql)
+        && /before update or delete on public\.atp_execucoes/.test(sql) && /raise exception/.test(sql)); }
+    chk('5bg · a análise tem o visor "📜 Execuções" (lista imutável: quando, quem, motor, totais)',
+      /onclick="anExecucoes\(\)"/.test(html) && /Execuções gravadas — registro imutável/.test(html));
+    chk('5bg · lacre 0a257d66 intocado (B09 não toca o motor)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bg · v7.101.0 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.0<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bf · v7.100.0 — B08 relatório de análise fechada sai do SNAPSHOT (execução congelada no fechamento) ═══
   {
     const run = c => vm.runInContext(c, ctx);

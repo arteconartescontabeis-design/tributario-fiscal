@@ -491,6 +491,7 @@ ul.ap-lista li{margin-bottom:7px}
         <button class="btn solid" id="an-btn-salvar" onclick="comBotao('an-btn-salvar','Salvando',()=>anSalvar())">💾 Salvar análise</button>
         <button class="btn" onclick="anRecalcular()">Recalcular</button>
         <button class="btn" onclick="anHistorico()" title="As três gravações mais recentes desta análise, com data e autor">🕘 Histórico</button>
+        <button class="btn" onclick="anExecucoes()" title="Registro imutável das execuções gravadas desta análise: quando, quem, motor (app + lacre), parâmetros e totais (v7.101.0 · B09)">📜 Execuções</button>
         <button class="btn" id="an-trava-btn" onclick="anFecharAbrir()" title="Fechada: os números ficam congelados no snapshot; edição e importação bloqueadas até reabrir">🔒 Fechar análise</button>
         <button class="btn" onclick="anVerificarMostrar()" title="Varre a análise e lista o que impede o cálculo, o que distorce o resultado e o que merece conferência">🔎 Verificar</button>
       </div>
@@ -803,6 +804,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.101.0</b></td><td>18/10/2026</td><td><b>📜 REGISTRO DE EXECUÇÕES IMUTÁVEL (B09): cada gravação deixa quem, quando, o motor (app + lacre), as impressões digitais dos parâmetros e os totais — numa tabela que não aceita alteração nem exclusão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O quê:</b> salvar (<code>anSalvar</code>), fechar (<code>anFecharAbrir</code>) e refechar (<code>anRefecharCore</code>) passam a chamar <code>execRegistrar</code>, que insere na tabela nova <code>atp_execucoes</code>: cnpj/ano, data, origem, <code>app</code> (APP_VERSAO), <code>lacre</code> (LACRE_HASH), usuário, totais do ano (receita, Simples, LP, LR, DAS), cenários 2033 e <code>params</code> — hashes dos anexos, da folha, da reforma e do cfg da análise (<code>execParams</code>), que permitem provar depois COM QUE parâmetros o número saiu. <b>(2) Imutável em duas camadas</b> (<code>banco/atp/setup_v7101.sql</code>, idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>): RLS do escritório só com SELECT e INSERT (sem política de UPDATE/DELETE, a API não altera nem apaga) e trigger que recusa UPDATE/DELETE por qualquer caminho, console incluído. <b>(3) Sem o SQL aplicado, nada quebra:</b> o registro falha em silêncio (um aviso por sessão no console) e o app segue normal. <b>(4) Visor:</b> botão <b>📜 Execuções</b> ao lado do Histórico lista o registro da análise aberta. Com o resumo carimbado (v7.99.4) e a execução congelada do fechamento (v7.100.0), fecha-se o circuito da Prioridade 1: a mesma execução dá os mesmos totais no Dashboard, no parecer e na conferência — e agora fica provado QUANDO e COM O QUÊ cada número foi produzido. Suíte: bloco 5bg.</td></tr>
                     <tr><td><b>v7.100.0</b></td><td>18/10/2026</td><td><b>🔒 RELATÓRIO DE ANÁLISE FECHADA SAI DO SNAPSHOT (decisão B08): o fechamento congela a EXECUÇÃO completa, e parecer, conferência e relatórios passam a sair dela — o documento emitido NÃO muda quando o motor muda. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achado novo 1 da auditoria de 18/10/2026: 10 das 73 análises fechadas recalculavam diferente do snapshot; a maior diferença, R$ 285.962,24.) <b>(1) O problema:</b> o snapshot do fechamento só alimentava um aviso na tela da análise — Relatórios, parecer e conferência recalculavam com o motor ATUAL, de modo que uma atualização do app mudava, em silêncio, o que já havia sido emitido ao cliente. <b>(2) Execução congelada:</b> <code>anSnapshotCalc</code> passa a gravar no snapshot a execução completa — resultado (<code>exec.res</code>), cenários da Reforma congelados dentro dele (<code>res.__cen</code>, devolvidos pelo próprio <code>calcCenariosReforma</code>, o portão único dos cenários) e a base projetada dos documentos (<code>exec.base</code>, pela nova função pura <code>baseReformaDe</code>) — mais o <b>lacre</b> da época. <b>(3) Relatórios leem o fechamento:</b> análise fechada com execução carrega <code>RL.exec</code>; <code>RL.res</code> e <code>rlBaseReforma</code> saem do congelado; o motor atual roda apenas para MEDIR a divergência, que aparece no aviso (verde: "este documento sai da execução congelada"), nunca no documento. O rodapé legal do parecer declara o motor DO FECHAMENTO (versão, lacre e data), com a versão que imprimiu ao lado. <b>(4) Fechamentos antigos</b> (anteriores à v7.100.0, sem execução): seguem no recálculo, agora com aviso âmbar "SEM execução congelada" nos relatórios e na trava. <b>(5) 🔁 Refechar com o motor atual</b> (<code>anRefechar</code>): um clique recalcula, grava snapshot novo com a execução congelada, mantém a análise fechada e registra o evento <i>refechada</i> (de → para) no histórico — é o caminho para atualizar fechamento antigo ou divergente. Trocar parâmetros não recalcula execução congelada. <b>(6) Suíte:</b> guardas de versão relaxadas para o minor de 3 dígitos (a exatidão do badge segue garantida pela guarda da 1ª linha do changelog). Bloco 5bf.</td></tr>
                     <tr><td><b>v7.99.5</b></td><td>18/10/2026</td><td><b>✍️ TEXTOS QUE AFIRMAVAM DEMAIS (B06) e REGISTRO OBRIGATÓRIO DA DECISÃO JUDICIAL ao desligar a LC 224 (B07). Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) Elegibilidade com receita estimada (achado A03):</b> o texto "não é elegível … já supera o teto desde o início do período" afirmava com certeza mesmo quando a receita era apenas lançada ou presumida. Agora a frase declara a FONTE — RBAA informada (segue assertiva), valores lançados/estimados na análise, ou presunção pelo primeiro mês — e, fora da RBAA declarada, termina pedindo a confirmação da receita do ano anterior na Configuração antes de decidir. <b>(2) Aba Compras/ICMS·IPI harmonizada com a v7.97.0 (achado A06):</b> os hints do quadro de ICMS e da estimativa de PIS/COFINS passaram a dizer que a base do crédito JÁ EXCLUI a parcela de fornecedores MEI/Simples, que não destaca ICMS (LC 123/2006, art. 23). <b>(3) Lacre "quatro casos" (achado da auditoria):</b> o cartão da aba Versões dizia "dois casos-gabarito" desde a v7.30.0; o lacre cobre QUATRO desde a v7.95.1 (comércio, serviços, estresse do art. 24 e empresa nova) — o texto agora diz isso. <b>(4) LC 224 com fundamento registrado (B07):</b> desligar a chave "Não aplicar (liminar / decisão judicial)" passou a EXIGIR o número do processo e a data da decisão (campos novos na Configuração, <code>cfg.lc224Proc</code>/<code>cfg.lc224Data</code>); sem o registro, a regra continua aplicada e o aviso explica. O registro herda entre anos junto com a chave (CFG_HERDA) e cada mudança entra na trilha de alterações com rótulo próprio. Suíte: bloco 5be.</td></tr>
                     <tr><td><b>v7.99.4</b></td><td>18/10/2026</td><td><b>🏷️ O RESUMO GRAVADO PASSA A DECLARAR O MOTOR QUE O CALCULOU, e o Dashboard marca "desatualizada", alerta VALOR NEGATIVO e separa o total de economia. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achados A01 e novo 3 da auditoria de 18/10/2026.) <b>(1) O problema:</b> o Dashboard lê o resumo do último Salvar de cada análise — calculado pelo motor daquela época. Com 108 das 109 análises gravadas antes da v7.96/v7.97/LC 224, o "Economia potencial identificada" de R$ 7,9 mi somava resultados de motores diferentes, e uma análise exibia Presumido <b>negativo</b> (−R$ 220.249,89, defeito corrigido na v7.96.0) sem aviso algum. <b>(2) Resumo com carimbo:</b> <code>anSalvar</code> e <code>rfSalvar</code> gravam <code>motor:{app, lacre}</code> no resumo; o ramo do rfSalvar que preserva o resumo de outra gravação preserva também o motor dela — carimbar ali seria mentir. Resumo sem carimbo = anterior à v7.99.4 = desatualizado por definição. <b>(3) Dashboard honesto:</b> <code>dashMotorInfo</code> compara o lacre gravado com o atual; a linha ganha o selo <b>"desatualizada"</b> (com o motor de origem no título) e <b>"valor negativo"</b> em vermelho quando o resumo guarda número abaixo de zero; o cartão do topo passa a somar só as análises do motor atual, com a nota "+ R$ X em N análise(s) com motor antigo — fora do total" e o alerta de negativos. Nenhum número gravado muda: a mudança é dizer DE ONDE cada um veio. Suíte: bloco 5bd.</td></tr>
@@ -6512,6 +6514,54 @@ async function cfgHerdar(an, cnpj, ano){
 }
 function anMudou(){ anTrocarEmpresa(); }
 // ═══ v7.12: histórico de versões — as 3 últimas por empresa/ano, com autoria ═══
+// ═══ v7.101.0 · B09 — REGISTRO DE EXECUÇÕES (imutável) ═══
+// Cada gravação que produz números (salvar, fechar, refechar) deixa um registro imutável na
+// atp_execucoes: quem, quando, com que motor (app + lacre), com que parâmetros (impressões
+// digitais) e que totais saíram. A tabela é só-INSERT (setup_v7101.sql — revisado e aplicado
+// POR VOCÊ; o app nunca mexe no banco sozinho); sem ela, o app funciona normalmente e avisa
+// uma vez por sessão no console.
+let EXEC_LOG_AVISADO = false;
+function execParams(cfg){
+  const h = o => { try { return lacreHash(JSON.stringify(o ?? null)); } catch(e){ return 'erro'; } };
+  return { anexos: h(PARAMS.anexos), folha: h(PARAMS.folha), reforma: h(PARAMS.reforma || null), cfg: h(cfg || null) };
+}
+async function execRegistrar(origem, cnpj, ano, res, reforma, cfg){
+  if (!cnpj || !res || !res.totais) return false;
+  const T = res.totais;
+  let cen = null;
+  try { const C = calcCenariosReforma(res, reforma || null); const L33 = C.REF[C.REF.length-1];
+    cen = { dentro: cenDentro(T, L33), hib: L33.hib, regular: L33.regular }; } catch(e){/* cen2033 é opcional no registro */}
+  const reg = { cnpj, ano: +ano, em: new Date().toISOString(), origem, app: APP_VERSAO, lacre: LACRE_HASH,
+    usuario: APP?.user?.email || null,
+    totais: { receita:+T.receita||0, simples:+T.simples||0, lp:+T.lp||0, lr:+T.lr||0, das:+T.das||0, lrIncompleto: !!T.lrIncompleto },
+    cen2033: cen, params: execParams(cfg) };
+  try { await supa('POST','atp_execucoes',{ body:[reg] }); return true; }
+  catch(e){ if (!EXEC_LOG_AVISADO){ EXEC_LOG_AVISADO = true; console.warn('execução não registrada (rode o setup_v7101.sql):', e.message); } return false; }
+}
+// v7.101.0 · B09 — visor do registro: quando, quem, motor e totais de cada gravação
+async function anExecucoes(){
+  const cnpj = (AN && AN.cnpj) || $id('an-empresa').value || '';
+  const ano  = +(AN?.ano) || +$id('an-ano').value;
+  if (!cnpj) { toast('Selecione a empresa no topo.'); return; }
+  let rs = [];
+  try { rs = await supa('GET','atp_execucoes',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, order:'em.desc', limit:'40' } }) || []; }
+  catch(e){ alert('Não consegui ler o registro de execuções.\n\nSe o script setup_v7101.sql ainda não foi executado no Supabase, a tabela não existe.\n\nDetalhe: ' + (e.message||e)); return; }
+  const el = $id('an-hist'); if (!el) return;
+  el.style.display = '';
+  if (!rs.length){
+    el.innerHTML = `<h3 style="margin:0">Execuções gravadas — registro imutável</h3>
+      <div class="hint">Nenhuma execução registrada desta análise (${ano}) — a primeira entra na próxima gravação (após o setup_v7101.sql).</div>
+      <button class="btn" style="margin-top:10px" onclick="$id('an-hist').style.display='none'">Fechar</button>`;
+    return;
+  }
+  const linhas = rs.map(r => `<tr><td>${new Date(r.em).toLocaleString('pt-BR')}</td><td>${esc(r.origem||'')}</td><td>${esc(r.usuario||'—')}</td>
+    <td style="white-space:nowrap">v${esc(String(r.app||'?'))} · ${esc(String(r.lacre||'?'))}</td>
+    <td class="num">${r.totais?fmtR(+r.totais.simples||0):'—'}</td><td class="num">${r.totais?fmtR(+r.totais.lp||0):'—'}</td><td class="num">${r.totais?fmtR(+r.totais.lr||0):'—'}</td></tr>`).join('');
+  el.innerHTML = `<h3 style="margin:0">Execuções gravadas — registro imutável (B09)</h3>
+    <div class="hint">Cada gravação (salvar, fechar, refechar) registra quem, quando, o motor (app + lacre), as impressões digitais dos parâmetros e os totais. A tabela não aceita alteração nem exclusão pela API.</div>
+    <div style="overflow-x:auto;margin-top:8px"><table><thead><tr><th>Quando</th><th>Origem</th><th>Por</th><th>Motor</th><th class="num">Simples</th><th class="num">Presumido</th><th class="num">Real</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <button class="btn" style="margin-top:10px" onclick="$id('an-hist').style.display='none'">Fechar</button>`;
+}
 async function anHistGravar(reg){
   try {
     await supa('POST','atp_analises_hist',{ body:[{ cnpj:reg.cnpj, ano:reg.ano, dados:reg.dados,
@@ -6569,7 +6619,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.100.0';
+const APP_VERSAO = '7.101.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -6620,6 +6670,7 @@ async function anRefecharCore(){
       { body:{ status:'fechada', fechado_por: AN._fechadoPor, fechado_em: snap.em, snapshot: snap } });
     await anHistGravar({ cnpj:AN.cnpj, ano:AN.ano, dados:{...AN,_res:undefined,_verEm:undefined},
       resumo:{ evento:'refechada', de:'app v'+antes, para:'app v'+APP_VERSAO, por: APP?.user?.email||'' } });
+    await execRegistrar('refechar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
   } catch(e){ console.error('anRefecharCore:', e); toast('Não foi possível gravar o refechamento: ' + e.message); return false; }
   anTravaRender();
   return true;
@@ -6647,6 +6698,7 @@ async function anFecharAbrir(){
   try {
     await supa('PATCH', `atp_analises?cnpj=eq.${AN.cnpj}&ano=eq.${AN.ano}`,
       { body:{ status:'fechada', fechado_por: AN._fechadoPor, fechado_em: snap.em, snapshot: snap } });
+    await execRegistrar('fechar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
     toast(`Análise ${AN.ano} fechada ✓ — snapshot gravado (app v${APP_VERSAO}).`);
   } catch(e){ alert('Não foi possível gravar o fechamento: '+e.message+'\n\nRode o setup_v726.sql no Supabase (colunas status/snapshot) e tente de novo.'); AN._status='aberta'; }
   anTravaRender();
@@ -6716,6 +6768,7 @@ async function anSalvar() {
       motor:{ app: APP_VERSAO, lacre: LACRE_HASH } }, atualizado_em:new Date().toISOString() }];   // v7.99.4 · B05: o resumo declara o motor que o calculou
   try { await supa('POST','atp_analises?on_conflict=cnpj,ano',{ body }); AN_SUJO = false; AN._verEm = body[0].atualizado_em;
     await anHistGravar(body[0]);
+    await execRegistrar('salvar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
     if (AN._cfgHerdadaDe) delete AN._cfgHerdadaDe;   // v7.49.0: gravado — deixa de ser herança
     toast('Análise salva.'); return true; }
   catch(e){ console.error('anSalvar:', e); toast('Erro ao salvar: '+e.message); return false; }
