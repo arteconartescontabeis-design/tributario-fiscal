@@ -803,6 +803,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.99.3</b></td><td>18/10/2026</td><td><b>⏳ ESTADO "CARREGANDO" NA TROCA DE EMPRESA e BLOQUEIO TOTAL quando a leitura do banco falha. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Dois defeitos com a mesma raiz (achados A04 e novo 4 da auditoria de 18/10/2026): <b>(1) Conclusão antes da carga.</b> Ao trocar de empresa, a tela desenhava uma análise NOVA — receita zero e conclusões calculadas do nada (confiança "ALTO") — no intervalo entre o pedido e a resposta do banco. Agora a troca liga o estado <code>AN_CARREGANDO</code>: os cartões mostram "⏳ Carregando a análise do banco…", o veredito some e o recálculo não desenha NENHUMA conclusão até a carga terminar. <b>(2) Falha de leitura virava análise em branco gravável.</b> Se a leitura desse erro, o <code>catch</code> criava uma análise vazia e apagava a marca de placeholder; sem <code>_verEm</code>, a guarda de conflito de versão não disparava e o Salvar podia substituir a análise gravada por uma em branco. Agora a falha deixa a análise <b>bloqueada</b>: continua placeholder, ganha <code>_erroLeitura</code> com o motivo, a tela mostra a tarja "⛔ A leitura desta análise falhou" com botão <b>Tentar de novo</b> — e <code>anBloqueada()</code> corta edição (grade e setters), lançamento, importação, preenchimento e gravação (<code>anSalvar</code> recusa e devolve <code>false</code>) tanto durante a carga quanto após a falha. Suíte: bloco 5bc.</td></tr>
                     <tr><td><b>v7.99.2</b></td><td>18/10/2026</td><td><b>📅 PRAZOS DA RES. CGSN Nº 194/2026 numa tabela única e SPLIT PAYMENT dito como cenário, nunca como fato. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O problema dos prazos (achado A02 da auditoria externa):</b> a Res. CGSN nº 194/2026 (DOU 28/09/2026) alterou os prazos que a Res. 190/2026 havia fixado — opção pelo Simples para 2027 de <b>1º/09 a 15/10/2026</b> (já encerrada), opção pelo regime regular de IBS/CBS (híbrido) de <b>1º/09 a 30/10/2026</b>, regularização de pendências até 30/10, cancelamento de 03/11 a 20/12; empresas em início de atividade: Simples de 16/10 a 31/12 e IBS/CBS de 31/10 a 31/12 — e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão. <b>(2) A correção estrutural (B02):</b> nasce a tabela <code>PRAZOS_LEGAIS</code> por exercício, única fonte de toda data de prazo legal: o parágrafo de prazos do parecer, os cartões da apresentação (<code>AP_PRAZOS</code>), os "Pontos de atenção" e os resumos derivam dela (<code>prazoD</code>, <code>prazoProximo</code>, <code>prazoVencido</code>), e a suíte acusa data fixa fora da tabela. O resumo da apresentação passa a apontar o <b>próximo prazo em aberto</b> na data da geração, em vez de uma data congelada. <b>(3) Split payment (B03, achado novo 6):</b> o parecer dizia que a CBS e o IBS "passam a ser recolhidos na fonte" — o split como fato consumado. O CGIBS informou em agosto/2026 que o split <b>não</b> estará disponível no início da cobrança efetiva (jan/2027) e não há data confirmada para operar. Todos os textos passam a declarar: mecanismo previsto na LC 214/2025 (art. 33), em regulamentação, sem data para operar; valores = <b>cenário conservador</b> de caixa. O cartão de caixa da apresentação e a seção do parecer ganham o rótulo "(cenário)", e uma instrução nova impede a IA de atribuir data de início ao split. Suíte: bloco 5bb.</td></tr>
                     <tr><td><b>v7.99.1</b></td><td>08/10/2026</td><td><b>📇 Cadastro único da empresa (fase 1): data de abertura, CNAE e situação no Simples/MEI passam a morar NA FICHA, e a análise anual lê a data de abertura de lá. Lacre <code>0a257d66</code> INTOCADO.</b> <b>(1) O problema</b>: o início de atividade era digitado dentro de cada análise anual (só mês/ano), não passava de um ano para o outro, a importação do PGDAS-D o sobrescrevia em silêncio — e a consulta de CNPJ recebia a data de abertura da Receita e a descartava. <b>(2) Ficha da empresa</b> (<code>sql/setup_v7991.sql</code>: colunas <code>data_abertura</code>, <code>cnae_codigo</code>, <code>data_exclusao_simples</code>, <code>data_opcao_simei</code>, <code>data_exclusao_simei</code>, <code>natureza_juridica</code>, <code>receita_consultada_em</code>): "Preencher pela Receita" traz data de abertura, CNAE (código — descrição) e a situação no Simples/MEI com datas; a data de abertura é editável; a lista de empresas ganha a coluna Abertura. <b>(3) A análise lê a ficha</b>: análise nova (troca de empresa, ano novo herdando configuração, empresa adotada na importação) sem início próprio recebe a data de abertura da ficha quando ela é do ano-base ou do anterior (<code>cfg.inicioOrigem = 'E'</code>, selo "E · ficha da empresa" na Configuração); análise existente ganha o botão "Usar a data de abertura da ficha" (evento <i>ficha</i> na trilha). O que já está na análise (digitado ou PGDAS-D) prevalece; editar à mão derruba o selo. Com isso o limite do Simples, o RBT12 e a LC 224 proporcionais passam a partir da data da Receita. <b>(4) Verificar</b>: acusa início da análise diferente da abertura da ficha, ficha com abertura e análise sem início, e ficha sem data. Fases 2 (regime por ano) e 3 (Imobiliária e Classificação lendo a ficha) ficam para depois. Suíte: bloco 5ba.</td></tr>
                     <tr><td><b>v7.99.0</b></td><td>07/10/2026</td><td><b>⚖️ LC 224/2025 — acréscimo de 10% nos percentuais de presunção do Lucro Presumido sobre a receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre). LACRE RE-SELADO <code>8ab9c16a</code> → <code>0a257d66</code>: casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, R$ 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos.</b> <b>(1) A regra</b> (art. 4º da LC 224/2025; IN RFB 2.305/2025, alterada pela IN 2.306/2026): o acréscimo é <b>relativo</b> — 8% → 8,8%, 16% → 17,6%, 32% → 35,2%; CSLL 12% → 13,2% e 32% → 35,2% — e incide só sobre a parcela da receita bruta (de atividades, inclusive exportação; sem financeiras) que ultrapassa o limite. Vigência: IRPJ desde 1º/01/2026 e CSLL desde 1º/04/2026 (noventena). <b>(2) Como o motor aplica</b>: por trimestre, limite de R$ 1,25 mi <b>acumulado</b> no ano (o que sobra de um trimestre compensa nos seguintes; o 4º fecha a conta anual — a variação do excedente acumulado pode ser negativa e devolve acréscimo cobrado antes); acréscimo na base = excedente × 10% × presunção média ponderada do trimestre (equivale ao rateio proporcional por atividade); entra no 3º mês do trimestre, antes do adicional (que também sobe). Empresa que começou no ano tem o limite proporcional aos trimestres de atividade (início de atividade da Configuração). <b>(3) Chave na Configuração</b> — "LC 224/2025 — presunção +10%": <i>Aplicar</i> (padrão) ou <i>Não aplicar (liminar / decisão judicial)</i>; herdada entre anos como parâmetro da empresa (<code>cfg.lc224 === false</code>). As ADIs 7920, 7936, 7944 e 7982 estão pendentes no STF. <b>(4) Onde aparece</b>: memória mensal (linha da base do IRPJ e da CSLL com excedente, limite acumulado, presunção média e fonte), memória anual, premissas (parâmetro próprio), Verificar (aviso quando aplicada ou desligada), regra de texto para a IA do parecer e <code>res.lc224 / T.lc224</code> (trimestre a trimestre). Ano-base anterior a 2026 não muda. Suíte: bloco 5az.</td></tr>
@@ -2659,6 +2660,7 @@ async function foLancar(){
   if (!AN || !AN.cnpj || limparCNPJ(AN.cnpj) !== cnpjE){
     toast('Abra a análise da empresa ' + (cnpjE?fmtCNPJ(cnpjE):'da consulta') + ' primeiro (módulo Análise Atual).'); return; }
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para lançar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   const mapa = cfopMapLer(cnpjE);
   const cfops = Object.entries(base.por).sort((a,b)=>b[1]-a[1]);
   const totGeral = cfops.reduce((a,x)=>a+x[1],0) + base.semCfop || 1;
@@ -4508,6 +4510,7 @@ function lrApurar(out, cfg){
 let PARAMS = { anexos: JSON.parse(JSON.stringify(ANEXOS_DEFAULT)), folha: {...FOLHA_PERC_DEFAULT}, escritorio: { respNome:'', respCRC:'', respQualif:'Contador' } };
 let AN = null;          // análise corrente
 let AN_SUJO = false;    // v7.5.7: há importação/edição ainda não salva no banco
+let AN_CARREGANDO = false;   // v7.99.3 · B04: leitura do banco em andamento — nenhuma conclusão na tela e nada editável
 // todo importador chama isto depois de mexer na análise: marca pendência e redesenha
 // ══ v7.63.0 (auditoria A02/A03/A04 · 2ª varredura) · A FAIXA TAMBÉM VALE PARA O QUE VEM DE ARQUIVO ══
 // A primeira correção pôs a validação no anSet (digitação) e na Configuração. A segunda varredura
@@ -4646,6 +4649,7 @@ function anSanear(d){
 }
 function anAplicado(){
   if (anTravada()){ toast('Análise FECHADA 🔒 — a importação não foi gravada. Reabra (🔓) para aplicar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04: nada entra numa análise em carga ou com leitura falhada
   // v7.63.0 · nada entra fora de faixa, venha de onde vier
   { const aj = anSanear(AN);
     if (aj.length) alert('O arquivo trazia ' + aj.length + ' valor(es) impossível(is), que foram ajustados:\n\n'
@@ -5424,6 +5428,7 @@ function anIcmsRestaurar(){
 async function anSimplesMeiPreencher(){
   if (!AN || !AN.cnpj){ toast('Abra a análise de uma empresa primeiro.'); return; }
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para preencher.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   let rs = [];
   try { rs = await supa('GET','atp_fornec',{ params:{ cnpj:'eq.'+limparCNPJ(AN.cnpj), order:'consultado_em.desc', limit:'40', select:'*' } }) || []; }
   catch(e){ toast('Não foi possível ler os fornecedores gravados: ' + (e && e.message || e)); return; }
@@ -5524,6 +5529,7 @@ function faixaDoPath(path){
   return null;
 }
 function anSet(path, m, val, tipo) {
+  if (anBloqueada()){ anBloqueioAviso(); anRenderGrid(); return; }   // v7.99.3 · B04
   AN_SUJO = true;
   const { o,k } = anPath(AN, path);
   const _audDe = o[k][m] == null ? null : +o[k][m], _audOg = ((AN.origem||{})[path]||[])[m] || null;   // v7.94.3
@@ -6225,6 +6231,8 @@ function snAvisoHtml(el) {
 function anRecalcular() {
   setTimeout(()=>{ try{ anTravaRender(); }catch(e){/* silêncio proposital (A10): banner cosmético */} }, 0);   // v7.26.0: banner da trava acompanha o recálculo
   if (!AN) return;
+  if (AN_CARREGANDO) { anRenderCarregando(); return; }      // v7.99.3 · B04: nenhuma conclusão antes da carga
+  if (AN._erroLeitura) { anRenderErroLeitura(); return; }   // v7.99.3 · B04: leitura falhou — nenhum número na tela
   let r;
   try { r = calcular(AN, PARAMS.anexos, folhaPercDaEmpresa()); } catch(e) { console.error(e); return; }
   AN._res = r;
@@ -6361,6 +6369,36 @@ function lrQuadroApuracao(r){
   </div>`;
 }
 
+// ═══ v7.99.3 · B04 — ESTADO "CARREGANDO" E BLOQUEIO EM FALHA DE LEITURA ═══
+// (A04 e achado novo 4 da auditoria de 18/10/2026.) Dois defeitos com a mesma raiz: ao trocar de
+// empresa a tela desenhava uma análise NOVA (receita zero, conclusões calculadas do nada) no
+// intervalo entre o pedido e a resposta do banco; e, se a leitura FALHASSE, o catch criava uma
+// análise em branco SEM a marca de placeholder — editável e gravável por cima da linha existente,
+// porque sem `_verEm` a guarda de conflito de versão nem dispara. Agora: enquanto carrega, os
+// cartões mostram o estado "carregando" e nada pode ser editado, importado ou gravado; se a
+// leitura falhar, a análise fica BLOQUEADA (placeholder + `_erroLeitura`) até uma recarga dar certo.
+function anBloqueada(){
+  if (AN_CARREGANDO) return 'carregando';
+  if (AN && AN._erroLeitura) return 'erro';
+  return '';
+}
+function anBloqueioAviso(){
+  toast(anBloqueada()==='carregando'
+    ? '⏳ A análise ainda está sendo carregada do banco — aguarde a carga terminar.'
+    : '⛔ A leitura desta análise FALHOU — nada pode ser editado ou gravado sobre ela. Selecione a empresa de novo (ou recarregue a página) para tentar outra vez.');
+}
+function anRenderCarregando(){
+  const r = $id('an-resumo'), v = $id('an-veredito'), d = $id('an-detalhe');
+  if (r) r.innerHTML = '<div class="stat" style="grid-column:1/-1;opacity:.8"><div class="n" style="font-size:16px">⏳ Carregando a análise do banco…</div><div class="l">nenhuma conclusão é exibida antes de a carga terminar</div></div>';
+  if (v) v.style.display = 'none';
+  if (d) d.innerHTML = '';
+}
+function anRenderErroLeitura(){
+  const r = $id('an-resumo'), v = $id('an-veredito'), d = $id('an-detalhe');
+  if (r) r.innerHTML = '<div class="stat" style="grid-column:1/-1;border:1px solid var(--danger,#c0392b)"><div class="n" style="font-size:15px;color:var(--danger,#c0392b)">⛔ A leitura desta análise falhou — nenhum número é exibido</div><div class="l">'+esc(String((AN && AN._erroLeitura)||''))+'</div><div class="sub" style="margin-top:6px"><button class="btn" onclick="anTrocarEmpresa()">Tentar de novo</button></div></div>';
+  if (v) v.style.display = 'none';
+  if (d) d.innerHTML = '';
+}
 async function anTrocarEmpresa() {
   const cnpj = $id('an-empresa').value;
   // trocar de empresa/ano recarrega do banco: o que foi importado e não salvo se perderia em silêncio
@@ -6380,6 +6418,7 @@ async function anTrocarEmpresa() {
     if (APP.page==='config') anRenderConfig();
     return;
   }
+  AN_CARREGANDO = true; anRenderCarregando();   // v7.99.3 · B04: nenhuma conclusão aparece antes da carga terminar
   try {
     const rows = await supa('GET','atp_analises',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, limit:'1' } });
     AN = anNormalizar(rows.length ? rows[0].dados : null, cnpj, ano);
@@ -6392,12 +6431,23 @@ async function anTrocarEmpresa() {
       AN._snapshot = rows[0].snapshot || null;
       AN._fechadoPor = rows[0].fechado_por || ''; AN._fechadoEm = rows[0].fechado_em || null;
     }
-  } catch { AN = anNovo(cnpj, ano); }
-  delete AN._placeholder;   // v7.94.1 · carregada (ou criada de propósito para empresa sem linha): deixa de ser placeholder
-  audFotoBase(AN);          // v7.94.3 · retrato do que veio do banco: a próxima importação compara contra isto
-  AN_SUJO = false;
-  anRenderTabs(); anRenderGrid(); anRecalcular();
-  if (APP.page==='config') anRenderConfig();   // v7.44.0: a carga assíncrona redesenha também a Configuração — antes ela podia exibir padrões de fábrica sobre empresa com configuração salva
+    delete AN._placeholder;   // v7.94.1 · carregada (ou criada de propósito para empresa sem linha): deixa de ser placeholder
+    audFotoBase(AN);          // v7.94.3 · retrato do que veio do banco: a próxima importação compara contra isto
+  } catch (e) {
+    // v7.99.3 · B04 (achado novo 4): a leitura falhou — a versão anterior criava aqui uma análise
+    // EM BRANCO, apagava o placeholder e deixava o Salvar passar (sem `_verEm` a guarda de
+    // conflito não dispara). Agora a análise nasce bloqueada e nada é editável ou gravável.
+    console.error('anTrocarEmpresa — leitura falhou:', e);
+    AN = anNovo(cnpj, ano);
+    AN._placeholder = true;   // segue placeholder: anSalvar continua recusando gravar por cima de linha existente
+    AN._erroLeitura = (e && e.message) || String(e);
+    toast('⚠️ A leitura da análise no banco FALHOU — edição e gravação bloqueadas até uma recarga dar certo.');
+  } finally {
+    AN_SUJO = false;
+    AN_CARREGANDO = false;   // v7.99.3 · carga terminou (bem ou mal): o estado some e a tela diz o que houve
+    anRenderTabs(); anRenderGrid(); anRecalcular();
+    if (APP.page==='config') anRenderConfig();   // v7.44.0: a carga assíncrona redesenha também a Configuração — antes ela podia exibir padrões de fábrica sobre empresa com configuração salva
+  }
 }
 // ═══ v7.49.0 · AS ALÍQUOTAS SÃO DA EMPRESA; O ANO SÓ AJUSTA O QUE MUDOU ═══
 // Não existe cadastro central de alíquotas: a configuração vive dentro da análise de cada ano
@@ -6483,7 +6533,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.2';
+const APP_VERSAO = '7.99.3';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -6542,6 +6592,7 @@ function anTravaRender(){
 
 async function anSalvar() {
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para editar e gravar.'); return false; }
+  if (anBloqueada()){ anBloqueioAviso(); return false; }   // v7.99.3 · B04: leitura com erro (ou em andamento) não permite salvar
   if (!AN || !AN.cnpj) { toast('Selecione a empresa no topo (ou importe PGDAS/Faturamento, que o cadastro é automático).'); return false; }
   // ═══ v7.49.0 · rede de segurança: gravar em empresa/ano diferente do que está na tela ═══
   // Duas vezes já perdemos configuração assim (o 💾 da Reforma na v7.48.3 e a Configuração agora).
@@ -6819,6 +6870,7 @@ function anInicioFichaBotaoHtml(c){
 function anInicioDaFichaAplicar(){
   if (!AN) return;
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para alterar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   const de = String(AN.cfg.inicioAtividade||'');
   if (!anInicioDaFicha(AN)){ toast('A ficha da empresa não tem data de abertura no ano-base ou no anterior.'); return; }
   audCelula('cfg.inicioAtividade', null, de || null, AN.cfg.inicioAtividade, 'ficha', { origemPara:'E' });

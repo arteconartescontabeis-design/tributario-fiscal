@@ -5258,6 +5258,25 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.9[5-9]\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bc · v7.99.3 — B04 estado "carregando" e bloqueio em falha de leitura ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    chk('5bc · anBloqueada: "carregando" durante a carga, "erro" após leitura falhada, vazio no estado normal',
+      run('(function(){ const _an=AN, _c=AN_CARREGANDO; let r=[]; AN_CARREGANDO=true; r.push(anBloqueada()); AN_CARREGANDO=false; AN={_erroLeitura:"timeout"}; r.push(anBloqueada()); AN={cnpj:"1"}; r.push(anBloqueada()); AN=_an; AN_CARREGANDO=_c; return r.join("|"); })()') === 'carregando|erro|');
+    chk('5bc · anRecalcular em carga: os cartões mostram "Carregando a análise do banco" e NENHUMA conclusão',
+      (() => { const h = run('(function(){ const _an=AN, _c=AN_CARREGANDO; AN={cnpj:"1",ano:2026}; AN_CARREGANDO=true; document.getElementById("an-resumo").innerHTML="X"; anRecalcular(); const h=document.getElementById("an-resumo").innerHTML; AN=_an; AN_CARREGANDO=_c; return h; })()'); return /Carregando a análise do banco/.test(h) && !/Simples Nacional/.test(h); })());
+    chk('5bc · anRecalcular com leitura falhada: tarja de erro com o motivo e botão "Tentar de novo"',
+      (() => { const h = run('(function(){ const _an=AN; AN={cnpj:"1",ano:2026,_erroLeitura:"HTTP 500"}; anRecalcular(); const h=document.getElementById("an-resumo").innerHTML; AN=_an; return h; })()'); return /leitura desta análise falhou/i.test(h) && /HTTP 500/.test(h) && /anTrocarEmpresa\(\)/.test(h); })());
+    { const ok = await vm.runInContext('(async()=>{ const _an=AN,_su=AN_SUJO; AN={cnpj:"11111111000111",ano:2026,_erroLeitura:"HTTP 500",_status:"aberta"}; const r=await anSalvar(); AN=_an; AN_SUJO=_su; return r; })()', ctx);
+      chk('5bc · leitura com erro NÃO permite salvar: anSalvar recusa e devolve false', ok === false); }
+    chk('5bc · o catch de anTrocarEmpresa guarda o motivo e MANTÉM o placeholder (nada de análise em branco gravável)',
+      /AN\._placeholder = true;[^\n]*\n\s*AN\._erroLeitura =/.test(html) && !/catch \{ AN = anNovo\(cnpj, ano\); \}/.test(html));
+    chk('5bc · a carga desliga o estado e os pontos de edição/importação respeitam o bloqueio (anSet, lançar, aplicar, preencher, alterar, salvar)',
+      /AN_CARREGANDO = true; anRenderCarregando\(\);/.test(html) && (html.match(/if \(anBloqueada\(\)\)\{ anBloqueioAviso\(\);/g)||[]).length >= 6);
+    chk('5bc · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bc · v7.99.3 · badge e changelog', /APP_VERSAO = '7\.99\.\d+'/.test(html) && /<b>v7\.99\.3<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bb · v7.99.2 — B02 prazos legais em tabela única (Res. CGSN 194/2026) + B03 split payment como cenário ═══
   {
     const run = c => vm.runInContext(c, ctx);
@@ -5287,7 +5306,7 @@ console.log('\n■ Integridade da interface');
       /Caixa \(split payment — cenário\)/.test(html) && /Split payment — impacto no caixa \(cenário\)/.test(html));
     chk('5bb · instrução nova impede a IA de dar data de início ao split', /não há data confirmada para sua entrada em operação/.test(html));
     chk('5bb · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
-    chk('5bb · v7.99.2 · badge e changelog', /APP_VERSAO = '7\.99\.2'/.test(html) && /<b>v7\.99\.2<\/b><\/td><td>18\/10\/2026/.test(html));
+    chk('5bb · v7.99.2 · badge e changelog', /APP_VERSAO = '7\.99\.\d+'/.test(html) && /<b>v7\.99\.2<\/b><\/td><td>18\/10\/2026/.test(html));
   }
 
   // ═══ 5ba · v7.99.1 — cadastro único (fase 1): data de abertura e CNAE na ficha da empresa ═══
