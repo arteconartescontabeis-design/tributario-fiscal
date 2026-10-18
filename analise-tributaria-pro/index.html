@@ -803,6 +803,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.99.2</b></td><td>18/10/2026</td><td><b>📅 PRAZOS DA RES. CGSN Nº 194/2026 numa tabela única e SPLIT PAYMENT dito como cenário, nunca como fato. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O problema dos prazos (achado A02 da auditoria externa):</b> a Res. CGSN nº 194/2026 (DOU 28/09/2026) alterou os prazos que a Res. 190/2026 havia fixado — opção pelo Simples para 2027 de <b>1º/09 a 15/10/2026</b> (já encerrada), opção pelo regime regular de IBS/CBS (híbrido) de <b>1º/09 a 30/10/2026</b>, regularização de pendências até 30/10, cancelamento de 03/11 a 20/12; empresas em início de atividade: Simples de 16/10 a 31/12 e IBS/CBS de 31/10 a 31/12 — e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão. <b>(2) A correção estrutural (B02):</b> nasce a tabela <code>PRAZOS_LEGAIS</code> por exercício, única fonte de toda data de prazo legal: o parágrafo de prazos do parecer, os cartões da apresentação (<code>AP_PRAZOS</code>), os "Pontos de atenção" e os resumos derivam dela (<code>prazoD</code>, <code>prazoProximo</code>, <code>prazoVencido</code>), e a suíte acusa data fixa fora da tabela. O resumo da apresentação passa a apontar o <b>próximo prazo em aberto</b> na data da geração, em vez de uma data congelada. <b>(3) Split payment (B03, achado novo 6):</b> o parecer dizia que a CBS e o IBS "passam a ser recolhidos na fonte" — o split como fato consumado. O CGIBS informou em agosto/2026 que o split <b>não</b> estará disponível no início da cobrança efetiva (jan/2027) e não há data confirmada para operar. Todos os textos passam a declarar: mecanismo previsto na LC 214/2025 (art. 33), em regulamentação, sem data para operar; valores = <b>cenário conservador</b> de caixa. O cartão de caixa da apresentação e a seção do parecer ganham o rótulo "(cenário)", e uma instrução nova impede a IA de atribuir data de início ao split. Suíte: bloco 5bb.</td></tr>
                     <tr><td><b>v7.99.1</b></td><td>08/10/2026</td><td><b>📇 Cadastro único da empresa (fase 1): data de abertura, CNAE e situação no Simples/MEI passam a morar NA FICHA, e a análise anual lê a data de abertura de lá. Lacre <code>0a257d66</code> INTOCADO.</b> <b>(1) O problema</b>: o início de atividade era digitado dentro de cada análise anual (só mês/ano), não passava de um ano para o outro, a importação do PGDAS-D o sobrescrevia em silêncio — e a consulta de CNPJ recebia a data de abertura da Receita e a descartava. <b>(2) Ficha da empresa</b> (<code>sql/setup_v7991.sql</code>: colunas <code>data_abertura</code>, <code>cnae_codigo</code>, <code>data_exclusao_simples</code>, <code>data_opcao_simei</code>, <code>data_exclusao_simei</code>, <code>natureza_juridica</code>, <code>receita_consultada_em</code>): "Preencher pela Receita" traz data de abertura, CNAE (código — descrição) e a situação no Simples/MEI com datas; a data de abertura é editável; a lista de empresas ganha a coluna Abertura. <b>(3) A análise lê a ficha</b>: análise nova (troca de empresa, ano novo herdando configuração, empresa adotada na importação) sem início próprio recebe a data de abertura da ficha quando ela é do ano-base ou do anterior (<code>cfg.inicioOrigem = 'E'</code>, selo "E · ficha da empresa" na Configuração); análise existente ganha o botão "Usar a data de abertura da ficha" (evento <i>ficha</i> na trilha). O que já está na análise (digitado ou PGDAS-D) prevalece; editar à mão derruba o selo. Com isso o limite do Simples, o RBT12 e a LC 224 proporcionais passam a partir da data da Receita. <b>(4) Verificar</b>: acusa início da análise diferente da abertura da ficha, ficha com abertura e análise sem início, e ficha sem data. Fases 2 (regime por ano) e 3 (Imobiliária e Classificação lendo a ficha) ficam para depois. Suíte: bloco 5ba.</td></tr>
                     <tr><td><b>v7.99.0</b></td><td>07/10/2026</td><td><b>⚖️ LC 224/2025 — acréscimo de 10% nos percentuais de presunção do Lucro Presumido sobre a receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre). LACRE RE-SELADO <code>8ab9c16a</code> → <code>0a257d66</code>: casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, R$ 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos.</b> <b>(1) A regra</b> (art. 4º da LC 224/2025; IN RFB 2.305/2025, alterada pela IN 2.306/2026): o acréscimo é <b>relativo</b> — 8% → 8,8%, 16% → 17,6%, 32% → 35,2%; CSLL 12% → 13,2% e 32% → 35,2% — e incide só sobre a parcela da receita bruta (de atividades, inclusive exportação; sem financeiras) que ultrapassa o limite. Vigência: IRPJ desde 1º/01/2026 e CSLL desde 1º/04/2026 (noventena). <b>(2) Como o motor aplica</b>: por trimestre, limite de R$ 1,25 mi <b>acumulado</b> no ano (o que sobra de um trimestre compensa nos seguintes; o 4º fecha a conta anual — a variação do excedente acumulado pode ser negativa e devolve acréscimo cobrado antes); acréscimo na base = excedente × 10% × presunção média ponderada do trimestre (equivale ao rateio proporcional por atividade); entra no 3º mês do trimestre, antes do adicional (que também sobe). Empresa que começou no ano tem o limite proporcional aos trimestres de atividade (início de atividade da Configuração). <b>(3) Chave na Configuração</b> — "LC 224/2025 — presunção +10%": <i>Aplicar</i> (padrão) ou <i>Não aplicar (liminar / decisão judicial)</i>; herdada entre anos como parâmetro da empresa (<code>cfg.lc224 === false</code>). As ADIs 7920, 7936, 7944 e 7982 estão pendentes no STF. <b>(4) Onde aparece</b>: memória mensal (linha da base do IRPJ e da CSLL com excedente, limite acumulado, presunção média e fonte), memória anual, premissas (parâmetro próprio), Verificar (aviso quando aplicada ou desligada), regra de texto para a IA do parecer e <code>res.lc224 / T.lc224</code> (trimestre a trimestre). Ano-base anterior a 2026 não muda. Suíte: bloco 5az.</td></tr>
                     <tr><td><b>v7.98.0</b></td><td>07/10/2026</td><td><b>✍️ ISS, PIS e COFINS passam a aceitar valor informado, e toda substituição de valor apurado exige MOTIVO. Até aqui só ICMS e IPI podiam ser substituídos (aba ICMS·IPI); ISS, PIS e COFINS eram sempre fórmula × alíquota. Lacre <code>8ab9c16a</code> INTOCADO.</b> <b>(1) Campos novos</b> — <code>trib.iss</code>, <code>trib.pisLP</code>, <code>trib.cofinsLP</code>, <code>trib.pisLR</code>, <code>trib.cofinsLR</code> (null = automático), editáveis no quadro apurado da aba ICMS·IPI. PIS/COFINS são separados por regime porque o Presumido é cumulativo (0,65%/3%) e o Real não cumulativo (1,65%/7,6%). O ISS informado vale no LP, no LR e no mês impedido do Simples; o PIS/COFINS do Real informado entra na base do lucro (despesa dedutível), antes do IRPJ/CSLL. <b>(2) Motivo obrigatório</b> — ao substituir um valor apurado (ICMS, IPI, ISS, PIS, COFINS) o app pede o motivo (mínimo 5 caracteres); sem ele a alteração não é aplicada. O motivo fica no evento da trilha de alterações (<code>auditoria[].motivo</code>) com usuário, data e hora, junto do valor apurado que valia (<code>deAuto</code>) e do valor novo. Apagar a célula (volta ao automático) e "Restaurar automático" não pedem motivo — a ação é autoexplicativa e também fica registrada. <b>(3) Onde aparece</b> — memória mensal do LP e do LR: a parcela sai como <i>valor informado manualmente — apurado pelo motor R$ X · motivo · quem · quando</i>; memória anual: aviso com a contagem de células substituídas; Trilha de alterações: coluna Ação mostra o motivo; dica da célula: idem. "Restaurar automático" passa a limpar também ISS/PIS/COFINS. Suíte: bloco 5ay.</td></tr>
@@ -6482,7 +6483,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.1';
+const APP_VERSAO = '7.99.2';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -10640,7 +10641,7 @@ function parecerTextosPadrao(D){
     b.enquadramento = 'Empresa optante do Simples Nacional (RBT12 máximo realizado de '+fmtR(D.rbtMax)+'). ' + (D.snTexto||'') + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. Com a reforma, surge uma decisão nova: manter o IBS/CBS dentro do DAS ("por dentro"), recolhê-lo separadamente ("híbrido") ou sair do regime.';
     b.caminho = 'Permanecendo "por dentro" do DAS, a carga do Simples não é alterada pela reforma. Os caminhos alternativos foram quantificados nos quadros a seguir — a decisão depende sobretudo do perfil da clientela (quem aproveita o crédito de IBS/CBS).';
     b.cenarios = D.L33 ? (function(){ const d33 = D.dRef;
-      return 'Em '+D.anoRef+' ('+parAnoRefRotulo(D.anoRef)+'): por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; fora do Simples '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). Como decidir entre eles: o caminho POR DENTRO mantém tudo no DAS — é o de menor burocracia e preserva o caixa (nada é retido na fonte), mas o cliente PJ do regime regular recebe crédito reduzido de IBS/CBS, o que pode pesar no preço quando a clientela é majoritariamente empresarial. O HÍBRIDO (art. 22-A da Res. CGSN 140/2018) desconta do DAS as parcelas de CBS/IBS e recolhe esses tributos por fora, no regime regular: o cliente passa a receber crédito integral — vantagem comercial concreta em vendas B2B —, ao custo de duas apurações, do split payment sobre os recebimentos e de opção semestral nas janelas de setembro e março (art. 40-D). SAIR DO SIMPLES leva ao regime regular pleno ('+D.L33.regNome+' no caso), fazendo sentido quando o crescimento aproxima a empresa do teto ou quando praticamente toda a clientela exige crédito integral. Em resumo: clientela de consumo final favorece o por dentro; clientela PJ relevante pede a comparação entre o ganho comercial do crédito e o custo adicional quantificado acima.'; })() : 'Preencha e salve a aba Reforma para os cenários de '+D.anoRef+'.';
+      return 'Em '+D.anoRef+' ('+parAnoRefRotulo(D.anoRef)+'): por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; fora do Simples '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). Como decidir entre eles: o caminho POR DENTRO mantém tudo no DAS — é o de menor burocracia e preserva o caixa (nada é retido na fonte), mas o cliente PJ do regime regular recebe crédito reduzido de IBS/CBS, o que pode pesar no preço quando a clientela é majoritariamente empresarial. O HÍBRIDO (art. 22-A da Res. CGSN 140/2018) desconta do DAS as parcelas de CBS/IBS e recolhe esses tributos por fora, no regime regular: o cliente passa a receber crédito integral — vantagem comercial concreta em vendas B2B —, ao custo de duas apurações, do split payment sobre os recebimentos (quando o mecanismo entrar em operação) e de opção semestral (art. 40-D — para o 1º semestre/2027: '+prazoD(2027,'ibscbs')+', Res. 194/2026). SAIR DO SIMPLES leva ao regime regular pleno ('+D.L33.regNome+' no caso), fazendo sentido quando o crescimento aproxima a empresa do teto ou quando praticamente toda a clientela exige crédito integral. Em resumo: clientela de consumo final favorece o por dentro; clientela PJ relevante pede a comparação entre o ganho comercial do crédito e o custo adicional quantificado acima.'; })() : 'Preencha e salve a aba Reforma para os cenários de '+D.anoRef+'.';
   } else if (D.variante==='acima'){
     b.enquadramento = (D.snTexto || ('Com RBT12 máximo realizado de '+fmtR(D.rbtMax)+', a empresa está acima do limite de R$ 4,8 milhões e não pode optar pelo Simples Nacional.')) + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. A análise compara os regimes aplicáveis — Lucro Presumido e Lucro Real — e mede, ano a ano, o que passará a pagar a mais ou a menos com a reforma.';
     b.caminho = 'O regime de menor carga em cada ano da transição está identificado nos quadros. O aumento decorrente da reforma é estrutural e atinge todo o mercado: o que está ao alcance da empresa é pagar o menor valor possível em cada exercício e preparar o caixa para o split payment.';
@@ -10649,11 +10650,11 @@ function parecerTextosPadrao(D){
     b.enquadramento = 'A empresa apura hoje pelo regime regular ('+D.regimeHojeNome+'), com RBT12 máximo realizado de '+fmtR(D.rbtMax)+'. ' + (D.snTexto||'') + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. Além do efeito da reforma no regime atual, este parecer simula a entrada no Simples e os três caminhos que ele oferece na transição.';
     b.caminho = 'O comparativo responde duas perguntas: quanto a reforma encarece o regime atual, ano a ano; e se a opção pelo Simples reduziria a carga — inclusive nos cenários "por dentro" e híbrido de 2033.';
     b.cenarios = D.L33 ? (function(){ const d33 = D.dRef;
-      return 'Em '+D.anoRef+': Simples por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; regime regular '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). A leitura é a mesma da seção anterior: o por dentro minimiza burocracia e preserva o caixa, mas limita o crédito repassado ao cliente PJ; o híbrido troca custo e split payment por crédito integral ao cliente (opção semestral — art. 40-D); o regime regular pleno se justifica com clientela quase toda PJ ou crescimento além do teto. A opção pelo Simples é formalizada em setembro, com efeitos a partir de janeiro seguinte.'; })() : '';
+      return 'Em '+D.anoRef+': Simples por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; regime regular '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). A leitura é a mesma da seção anterior: o por dentro minimiza burocracia e preserva o caixa, mas limita o crédito repassado ao cliente PJ; o híbrido troca custo e split payment por crédito integral ao cliente (opção semestral — art. 40-D); o regime regular pleno se justifica com clientela quase toda PJ ou crescimento além do teto. A opção pelo Simples é formalizada no prazo regulamentar ('+prazoD(2027,'simples')+' para 2027 — Res. CGSN nº 194/2026), com efeitos a partir de janeiro seguinte.'; })() : '';
   }
   b.retrato = 'Os quadros desta seção mostram os fatores do negócio que pesaram na conclusão: a composição da receita entre comércio/indústria e serviços e, quando houver PGDAS importado, a decomposição do DAS por tributo.';
   b.split = D.split.fonteMes>0.005
-    ? 'Com a reforma, a CBS e o IBS da própria venda passam a ser recolhidos na fonte (split payment) no momento do pagamento. '+(D.variante==='simples'?'No caminho "por dentro", nada é retido — o IBS/CBS segue no DAS mensal e o caixa é preservado. Nos caminhos híbrido e fora do Simples, ':'')+'a retenção estimada é de '+fmtR(D.split.fonteMes)+' por mês em '+(D.split.ano||2032)+' — '+fmtR(D.split.giroAno)+' por ano que deixam de transitar pelo caixa, com custo financeiro estimado de '+fmtR(D.split.custoAno)+'/ano (15% a.a., mínimo Selic), além da perda de flexibilidade para administrar o imposto.'
+    ? 'A LC 214/2025 (art. 33) prevê o split payment — a separação da CBS e do IBS da própria venda no momento do pagamento —, mecanismo ainda em regulamentação e ainda sem data confirmada para operar: o CGIBS informou, em agosto/2026, que ele não estará disponível no início da cobrança efetiva, em janeiro/2027. Os valores a seguir são cenário conservador do impacto no caixa para quando o mecanismo operar, e não uma retenção vigente. '+(D.variante==='simples'?'No caminho "por dentro", nada é retido — o IBS/CBS segue no DAS mensal e o caixa é preservado. Nos caminhos híbrido e fora do Simples, ':'')+'a retenção estimada é de '+fmtR(D.split.fonteMes)+' por mês em '+(D.split.ano||2032)+' — '+fmtR(D.split.giroAno)+' por ano que deixariam de transitar pelo caixa, com custo financeiro estimado de '+fmtR(D.split.custoAno)+'/ano (15% a.a., mínimo Selic), além da perda de flexibilidade para administrar o imposto.'
     : 'Preencha a aba Reforma para estimar o impacto do split payment no caixa.';
   b.plano = D.variante==='simples' ? [
     {quando:'Agora · '+(RL.dados.ano||''), titulo:'Formalizar o caminho escolhido', texto:'Registrar a decisão sobre o recolhimento do IBS/CBS (por dentro × híbrido) e revisar o enquadramento dos anexos com a contabilidade.'},
@@ -10839,7 +10840,9 @@ function rlParecer(){
         este estudo considera retenção equivalente a <b>100% do débito bruto</b> projetado de IBS/CBS
         no momento do pagamento. <b>Esse percentual é premissa do modelo</b>, adotada para medir o
         pior caso de caixa — <b>não</b> é percentual definitivo fixado pela legislação, que ainda
-        depende de regulamentação. Custo financeiro a 15% a.a. (proxy da Selic mínima) sobre um mês
+        depende de regulamentação. O mecanismo está <b>ainda sem data confirmada para operar</b>: o
+        CGIBS informou, em agosto/2026, que não estará disponível no início da cobrança efetiva, em
+        janeiro/2027. Custo financeiro a 15% a.a. (proxy da Selic mínima) sobre um mês
         de retenção, como saldo médio financiado ao longo do ano.</td></tr>
     </tbody></table>
     <div class="hint" style="margin-top:6px">Este quadro permite a outro profissional reproduzir ou revisar os resultados deste parecer a partir das mesmas premissas.</div>
@@ -10927,7 +10930,7 @@ function rlParecer(){
         ? 'Economia teórica acumulada ao permanecer "por dentro", frente ao 2º melhor caminho — mantidas as premissas do estudo'
         : 'Economia teórica acumulada do regime de menor carga frente ao outro — mantidas as premissas do estudo (não é economia frente à carga atual)'}</div><canvas id="pc-acum" height="130"></canvas></div>`:''}
     ${TX.cenarios?`<p class="pp-p" style="font-size:9.5pt"><b>Leitura dos três caminhos:</b> ${TX.cenarios}</p>`:''}
-    ${secao(++NS,'Split payment — impacto no caixa')}
+    ${secao(++NS,'Split payment — impacto no caixa (cenário)')}
     <div class="pp-split">
       ${D.variante==='simples'?`<div class="pp-card"><div class="t">Por dentro · na fonte</div><div class="v" style="color:#0f7a5a">R$ 0</div><div class="s">IBS/CBS segue no DAS — caixa preservado</div></div>`:''}
       <div class="pp-card"><div class="t">${D.variante==='simples'?'Híbrido/Fora · na fonte':'Recolhido na fonte'}</div><div class="v">${fmtR(D.split.fonteMes)}</div><div class="s">por mês (${D.split.ano||2032}) · retido no pagamento</div></div>
@@ -10935,7 +10938,7 @@ function rlParecer(){
       <div class="pp-card"><div class="t">Custo financeiro</div><div class="v">${fmtR(D.split.custoAno)}</div><div class="s">por ano · 15% a.a. (mín. Selic)</div></div>
     </div>
     <div class="hint" style="margin-top:6px">
-      <b>Como chegamos nesses números:</b> retenção mensal = débito bruto de IBS/CBS projetado para 2032 (regime ${D.variante==='simples'?'híbrido, pior caso':D.L33?D.L33.regNome:'regular'}) ÷ 12 meses — considera <b>100% do débito</b> retido no pagamento (art. 33 da LC 214/2025, sem descontar eventuais créditos do próprio período) e não desconta o prazo entre retenção e apropriação, ainda não regulamentado. Volume anual segregado = retenção mensal × 12 — é o total que passa pelo split ao longo do ano, e <b>não</b> a necessidade simultânea de caixa, que é da ordem de um mês de retenção. Custo financeiro anual = retenção mensal × <b>15% a.a.</b> (taxa Selic mínima estimada, aplicada sobre um mês de retenção como proxy do saldo médio financiado ao longo do ano).
+      <b>Como chegamos nesses números:</b> retenção mensal = débito bruto de IBS/CBS projetado para 2032 (regime ${D.variante==='simples'?'híbrido, pior caso':D.L33?D.L33.regNome:'regular'}) ÷ 12 meses — considera <b>100% do débito</b> retido no pagamento (art. 33 da LC 214/2025, sem descontar eventuais créditos do próprio período) e não desconta o prazo entre retenção e apropriação, ainda não regulamentado. Volume anual segregado = retenção mensal × 12 — é o total que passa pelo split ao longo do ano, e <b>não</b> a necessidade simultânea de caixa, que é da ordem de um mês de retenção. Custo financeiro anual = retenção mensal × <b>15% a.a.</b> (taxa Selic mínima estimada, aplicada sobre um mês de retenção como proxy do saldo médio financiado ao longo do ano). O split ainda não está em operação (CGIBS, ago/2026) — este quadro é cenário conservador para planejamento.
     </div>
     <p class="pp-p">${TX.split}</p>
   </div></div>`;
@@ -10972,9 +10975,9 @@ function rlParecer(){
         fica de fora (LC 214/2025, arts. 47 a 57). A não cumulatividade é ampla, mas <b>não é
         irrestrita</b>. Por isso é essencial <b>exigir o documento fiscal em todas as aquisições</b>:
         sem ele não há crédito, e a análise deixa de refletir a realidade da empresa.</li>
-      <li>A decisão a ser formalizada em <b>setembro/2026</b> valerá para o período de <b>janeiro a junho/2027</b>, com possibilidade de nova opção em <b>março/2027</b>, válida para o segundo semestre (art. 40-D da Res. CGSN 140/2018, incluído pela Res. 190/2026).</li>
+      <li>A opção pelo recolhimento de IBS/CBS no regime regular, formalizada no prazo de <b>${prazoD(2027,'ibscbs')}</b> (Res. CGSN nº 194/2026), valerá para o período de <b>janeiro a junho/2027</b>, com possibilidade de nova opção em <b>março/2027</b>, válida para o segundo semestre (art. 40-D da Res. CGSN 140/2018, incluído pela Res. 190/2026).</li>
     </ol>
-    ${D.variante!=='acima'?`<p class="pp-p" style="font-size:9.5pt"><b>Prazos da Res. CGSN nº 190/2026:</b> a opção pelo Simples Nacional passa a ser formalizada de 1º a 30 de setembro, com efeitos a partir de 1º de janeiro seguinte — para produzir efeitos em 2027, portanto, em setembro/2026 (art. 6º). A opção pelo recolhimento de IBS/CBS no regime regular (cenário híbrido) é semestral, nas janelas de setembro e março (art. 40-D). Quem ingressar no Simples em 1º/01/2027 deve confirmar receitas e folhas anteriores no módulo "Receitas Anteriores à Opção" do PGDAS-D até 20/12/2026 (competências dez/2025 a nov/2026) e até 20/01/2027 (dez/2026); sem manifestação, prevalece o pré-preenchimento da Receita Federal (arts. 144-D e 144-E).</p>`:''}
+    ${D.variante!=='acima'?`<p class="pp-p" style="font-size:9.5pt"><b>Prazos para 2027 (${PRAZOS_LEGAIS[2027].fonte}):</b> ${prazosLegais(2027).map(p=>`<b>${p.t}:</b> ${p.d} — ${p.x}`).join(' ')}</p>`:''}
   </div></div>`;
 
   // ── PÁG: encerramento e assinatura (v7.21.0: a relação de produtos × IBS/CBS virou relatório próprio) ──
@@ -11126,7 +11129,7 @@ function rlRfTribHtml(cen){
     h += `<tr><td>% da receita</td>` + anos.map(a=>`<td class="num">${pctR(totalAno[a])}</td>`).join('') + '</tr>';
     if (cen==='fora') h += `<tr class="hint"><td>Regime adotado no ano</td>` + anos.map(a=>`<td class="num">${(cel._regime?.[a]||0)===1?'Presumido':'Real'}</td>`).join('') + '</tr>';
     h += '</tbody></table></div>';
-    h += `<div class="hint" style="margin-top:8px">Em <b>2026 (ano-teste)</b> não há IBS/CBS a recolher — por isso as linhas aparecem vazias; o PIS/COFINS do ano permanece integral. Alíquotas do ano conforme Parâmetros (Res. CGIBS nº 14/2026); IBS/CBS líquidos repartidos na proporção CBS × IBS UF × IBS Mun. ${cen==='dentro'?'No "por dentro", o DAS permanece devido integralmente; as linhas ↳ abrem a partilha oficial de CBS/IBS dentro do DAS por vigência e a trava da 5ª faixa é recomposta ano a ano (teto do ISS decrescente + IBS pela fórmula própria) — <b>Res. CGSN nº 190/2026</b>, novos Anexos I–V da Res. 140/2018.':cen==='hibrido'?'Híbrido (art. 22-A da Res. CGSN 140/2018, incluído pela <b>Res. 190/2026</b>): DAS deduzido das parcelas de CBS/IBS da faixa/vigência + IBS/CBS por fora, no regime regular, com crédito integral ao cliente. Opção semestral nas janelas de setembro e março (art. 40-D); quem recebeu ressarcimento de créditos fica vedado ao regime único no ano do ressarcimento e no seguinte (art. 40-E).':'Regime regular: melhor entre Presumido e Real em cada ano, com os remanescentes da transição.'}${C.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise.</b>':''}</div>`;
+    h += `<div class="hint" style="margin-top:8px">Em <b>2026 (ano-teste)</b> não há IBS/CBS a recolher — por isso as linhas aparecem vazias; o PIS/COFINS do ano permanece integral. Alíquotas do ano conforme Parâmetros (Res. CGIBS nº 14/2026); IBS/CBS líquidos repartidos na proporção CBS × IBS UF × IBS Mun. ${cen==='dentro'?'No "por dentro", o DAS permanece devido integralmente; as linhas ↳ abrem a partilha oficial de CBS/IBS dentro do DAS por vigência e a trava da 5ª faixa é recomposta ano a ano (teto do ISS decrescente + IBS pela fórmula própria) — <b>Res. CGSN nº 190/2026</b>, novos Anexos I–V da Res. 140/2018.':cen==='hibrido'?'Híbrido (art. 22-A da Res. CGSN 140/2018, incluído pela <b>Res. 190/2026</b>): DAS deduzido das parcelas de CBS/IBS da faixa/vigência + IBS/CBS por fora, no regime regular, com crédito integral ao cliente. Opção semestral (art. 40-D — para o 1º semestre/2027: '+prazoD(2027,'ibscbs')+', Res. 194/2026); quem recebeu ressarcimento de créditos fica vedado ao regime único no ano do ressarcimento e no seguinte (art. 40-E).':'Regime regular: melhor entre Presumido e Real em cada ano, com os remanescentes da transição.'}${C.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise.</b>':''}</div>`;
     return h;
   } catch(e){ console.error('rlRfTribHtml:', e); return '<div class="hint">Não foi possível montar o quadro da Reforma para esta análise.</div>'; }
 }
@@ -11571,6 +11574,11 @@ async function parecerIA(){
         + 'costuma ser 2032 (pior caso de caixa da transição) e pode ser DIFERENTE do ano de '
         + 'referência do estudo. Sempre cite o ano do próprio split ao falar da retenção; nunca '
         + 'escreva "no ano de referência" para esse número sem conferir que os dois coincidem.',
+        // ══ v7.99.2 · B03 — o split payment não é fato consumado ══════════════════════════
+        'O split payment ainda NÃO está em operação e não há data confirmada para sua entrada em operação: '
+        + 'o CGIBS informou, em agosto/2026, que ele não estará disponível no início da cobrança efetiva, '
+        + 'em janeiro/2027. Trate os valores de split SEMPRE como cenário conservador previsto na '
+        + 'LC 214/2025 (art. 33), nunca como retenção vigente — e NUNCA afirme uma data de início.',
       ],
       // v7.84.0 · o payload passa a dizer O QUE são os números, não só quais são
       splitAno: (D.split && D.split.ano) || null,
@@ -13007,16 +13015,47 @@ async function rlSalvarERecarregar(){
 // Os textos curtos vêm dos textos do parecer (IA ou padrão) da MESMA análise; as frases "Em
 // resumo" são geradas do número, nunca da IA.
 const AP_TETO_TXT = 'R$ 4,8 mi';
-const AP_PRAZOS = [
-  { d:'1 a 30 de setembro/2026', t:'Opção pelo Simples Nacional para 2027', x:'A opção passa a ser feita em setembro, com efeitos em 1º de janeiro (art. 6º).', cls:'' },
-  { d:'setembro/2026 e março/2027', t:'Opção pelo híbrido', x:'Escolha semestral: setembro vale para jan–jun/2027; março, para o 2º semestre (art. 40-D).', cls:'pl' },
-  { d:'20/12/2026 e 20/01/2027', t:'Confirmar receitas anteriores no PGDAS-D', x:'Sem manifestação, vale o pré-preenchimento da Receita (arts. 144-D/E).', cls:'wa' } ];
+// ═══ v7.99.2 · B02 — PRAZOS LEGAIS POR EXERCÍCIO: TABELA ÚNICA ═══
+// A Res. CGSN nº 194/2026 (DOU 28/09/2026) ALTEROU os prazos que a Res. 190/2026 havia fixado —
+// e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão.
+// Agora TODA data de prazo legal mora aqui: o parágrafo de prazos do parecer, os cartões da
+// apresentação (AP_PRAZOS), os "Pontos de atenção" e os resumos derivam desta tabela, e a suíte
+// acusa data fixa fora dela. `fim` (ISO) permite dizer se o prazo já venceu (prazoVencido) e
+// qual é o próximo em aberto (prazoProximo).
+const PRAZOS_LEGAIS = {
+  2027: {
+    fonte: 'Res. CGSN nº 194/2026, DOU de 28/09/2026, que alterou a Res. 190/2026',
+    itens: {
+      simples:       { id:'simples', d:'1º/09 a 15/10/2026', fim:'2026-10-15',
+        t:'Opção pelo Simples Nacional para 2027',
+        x:'Formalizada no Portal do Simples, com efeitos a partir de 1º/01/2027 (art. 6º da Res. 190/2026; prazo alterado pela Res. 194/2026). Empresas em início de atividade: de 16/10 a 31/12/2026.', cls:'' },
+      ibscbs:        { id:'ibscbs', d:'1º/09 a 30/10/2026', fim:'2026-10-30',
+        t:'Opção pelo regime regular de IBS/CBS (híbrido) — 1º semestre/2027',
+        x:'Art. 40-D da Res. CGSN 140/2018: a opção é semestral — esta janela vale para jan–jun/2027; a de março/2027, para o 2º semestre. Início de atividade: de 31/10 a 31/12/2026.', cls:'pl' },
+      regularizacao: { id:'regularizacao', d:'até 30/10/2026', fim:'2026-10-30',
+        t:'Regularização de pendências da opção',
+        x:'Pendências que impedem o deferimento da opção pelo Simples devem ser resolvidas até esta data (Res. 194/2026).', cls:'wa' },
+      cancelamento:  { id:'cancelamento', d:'03/11 a 20/12/2026', fim:'2026-12-20',
+        t:'Cancelamento da opção feita para 2027',
+        x:'Janela para desfazer a opção antes do início dos efeitos (Res. 194/2026).', cls:'pl' },
+      pgdas:         { id:'pgdas', d:'20/12/2026 e 20/01/2027', fim:'2027-01-20',
+        t:'Confirmar receitas anteriores no PGDAS-D',
+        x:'Sem manifestação, vale o pré-preenchimento da Receita (arts. 144-D/E da Res. 190/2026): até 20/12/2026 (competências dez/2025–nov/2026) e até 20/01/2027 (dez/2026).', cls:'wa' } } } };
+function prazosLegais(ex){ const E = PRAZOS_LEGAIS[ex]; return E ? Object.values(E.itens) : []; }
+function prazoLegal(ex, id){ const E = PRAZOS_LEGAIS[ex]; return (E && E.itens[id]) || null; }
+function prazoD(ex, id){ const p = prazoLegal(ex, id); return p ? p.d : ''; }
+function prazoVencido(ex, id, hoje){ const p = prazoLegal(ex, id); if (!p || !p.fim) return false;
+  return (hoje || new Date()) > new Date(p.fim + 'T23:59:59'); }
+function prazoProximo(ex, hoje){ return prazosLegais(ex).filter(p => !prazoVencido(ex, p.id, hoje))
+  .sort((a,b) => a.fim < b.fim ? -1 : 1)[0] || null; }
+// v7.99.2 · os cartões da apresentação derivam da tabela — nenhuma data escrita à mão aqui
+const AP_PRAZOS = ['simples','ibscbs','pgdas'].map(k => { const p = prazoLegal(2027, k); return { d:p.d, t:p.t, x:p.x, cls:p.cls }; });
 const AP_ATENCAO = [
   'As alíquotas de IBS e CBS ainda são estimativas de referência (Res. CGIBS nº 14/2026).',
   'Os resultados mudam conforme novos meses forem lançados e a cada nova regulamentação.',
   'Clientes e fornecedores foram avaliados pela situação atual de cada um; a decisão deles altera o resultado.',
   'Sem nota fiscal nas compras não há crédito de IBS/CBS (LC 214/2025, arts. 47 a 57).',
-  'A opção de setembro vale para o 1º semestre de 2027; há nova janela em março.' ];
+  'A opção pelo IBS/CBS por fora ('+prazoD(2027,'ibscbs')+') vale para o 1º semestre de 2027; há nova janela em março.' ];
 
 // primeiras N frases de um texto (os textos da IA não têm tamanho previsível; a tela tem)
 function apFrases(txt, n){
@@ -13122,12 +13161,12 @@ function apTelas(A, modo){
   S.tempo = () => ({ html:`
     ${cab('A Reforma troca os impostos sobre o que a empresa vende','Esta tela mostra <b>quais tributos saem, quais entram e em que ano</b>. PIS, COFINS, ICMS e ISS serão substituídos pela CBS (federal) e pelo IBS (estados e municípios).')}
     <div class="ap-tempo">
-      <div class="ap-etapa"><div class="ano">2026</div><div class="tit">Ano de decidir</div><div class="txt">Nada muda na guia. Mas a opção pelo Simples para 2027 é feita em setembro deste ano.</div></div>
+      <div class="ap-etapa"><div class="ano">2026</div><div class="tit">Ano de decidir</div><div class="txt">Nada muda na guia. Mas a opção pelo Simples para 2027 é formalizada neste ano, no prazo da Res. 194/2026 (${prazoD(2027,'simples')}).</div></div>
       <div class="ap-etapa"><div class="ano">2027</div><div class="tit">A CBS entra</div><div class="txt">PIS e COFINS acabam e viram CBS. IBS começa em teste. ICMS e ISS continuam.</div></div>
       <div class="ap-etapa"><div class="ano">2029–2032</div><div class="tit">Transição</div><div class="txt">A cada ano o IBS sobe um degrau e ICMS/ISS descem o mesmo degrau.</div></div>
       <div class="ap-etapa fim"><div class="ano">2033</div><div class="tit">Modelo completo</div><div class="txt">Só IBS e CBS. Vale para todos os regimes — inclusive para o Simples.</div></div>
     </div>
-    ${resumo('em 2026 a guia não muda, mas a decisão que vale para 2027 é tomada agora, em setembro.')}` });
+    ${resumo('em 2026 a guia não muda, mas a decisão que vale para 2027 é tomada agora ('+prazoD(2027,'simples')+' — Res. 194/2026).')}` });
 
   // ── simplificada ──
   S.hoje = () => ({ html:`
@@ -13191,11 +13230,11 @@ function apTelas(A, modo){
         <p style="font-size:12.5px;margin:10px 0 0">Fornecedor do regime regular gera crédito cheio; do Simples, crédito pequeno; MEI e pessoa física, nenhum.</p>
       </div>
       <div class="ap-cartao">
-        <span class="ap-pill warn">Caixa (split payment)</span>
+        <span class="ap-pill warn">Caixa (split payment — cenário)</span>
         <div class="ap-num m warn" style="margin:12px 0 4px">${apR0(D.split.fonteMes)}/mês</div>
         <div class="ap-rot">retidos na hora do pagamento em ${D.split.ano||2032}${D.variante==='simples'?', se a empresa sair do DAS':''}</div>
         ${D.variante!=='acima' ? `<div style="margin-top:10px;padding:8px 10px;background:var(--ap-okbg);border-radius:8px;font-size:12.5px"><b style="color:var(--ap-ok)">Por dentro do DAS: nada é retido.</b></div>` : ''}
-        <p style="font-size:12.5px;margin:10px 0 0">No split, o imposto é separado antes de o dinheiro chegar à conta da empresa.</p>
+        <p style="font-size:12.5px;margin:10px 0 0">No split, o imposto é separado antes de o dinheiro chegar à conta da empresa. Ainda sem data confirmada para operar — valores de cenário.</p>
       </div>
     </div>
     ${resumo(V ? (V.pctNormal>=50 ? `clientes do regime regular respondem por ${apPct(V.pctNormal,0)} da receita. Se exigirem crédito cheio, o caminho híbrido precisa ser reavaliado — a conversa com eles decide.`
@@ -13208,7 +13247,7 @@ function apTelas(A, modo){
       <div>${(TX.plano||[]).slice(0,4).map((p,i)=>`<div class="ap-passo"><div class="n">${i+1}</div><div><div class="quando">${p.quando}</div><div class="oque">${p.titulo}</div><div class="como">${apFrases(p.texto,2)}</div></div></div>`).join('')}</div>
       <div>${AP_PRAZOS.map(p=>`<div class="ap-prazo"><div class="data ${p.cls}">${p.d}</div><div><b>${p.t}</b><span>${p.x}</span></div></div>`).join('')}</div>
     </div>
-    ${resumo(D.variante==='acima' ? 'a mudança entre Presumido e Real se formaliza com o primeiro recolhimento do ano; o split payment exige planejar o caixa desde 2027.' : 'a opção pelo Simples para 2027 é formalizada entre 1 e 30 de setembro de 2026.')}` });
+    ${resumo(D.variante==='acima' ? 'a mudança entre Presumido e Real se formaliza com o primeiro recolhimento do ano; o split payment — ainda sem data confirmada de início — pede caixa planejado com antecedência.' : 'a opção pelo Simples para 2027 é formalizada em '+prazoD(2027,'simples')+' (Res. CGSN nº 194/2026).')}` });
 
   S.recomendacaoS = () => ({ escuro:true, html:`
     <div class="ap-miolo" style="top:72px">
@@ -13260,7 +13299,7 @@ function apTelas(A, modo){
       <tr><th>Crédito de IBS/CBS</th><td>${A.cl>0.005?fmtR(A.cl)+' de compras do regime regular × '+apPct(A.alq*100,2)+' = '+fmtR(A.credReg)+'. ':''}${A.cs>0.005?fmtR(A.cs)+' de compras do Simples/MEI × '+apPct(A.p58*100,2)+' (art. 58, Res. CGSN 190/2026) = '+fmtR(A.credSimp)+'. ':''}${(A.cl+A.cs)<=0.005?esc(A.compras.texto):'Crédito total no ano de referência: '+fmtR(A.L?A.L.cred:0)+'.'}</td></tr>
       <tr><th>Alíquota de referência ${D.anoRef}</th><td>${apPct(A.alq*100,2)} (CBS + IBS, Res. CGIBS nº 14/2026). É estimativa: a definitiva depende do cálculo do TCU homologado pelo Senado.</td></tr>
       <tr><th>Transição do DAS</th><td>Novos Anexos I–V da Res. CGSN 190/2026: PIS/COFINS viram CBS em 2027; ICMS/ISS descem em degraus até 2033 e o IBS sobe na mesma medida.</td></tr>
-      <tr><th>Split payment</th><td>Premissa conservadora: 100% do débito bruto retido no pagamento; custo financeiro a 15% ao ano sobre um mês retido.</td></tr>
+      <tr><th>Split payment</th><td>Premissa conservadora: 100% do débito bruto retido no pagamento; custo financeiro a 15% ao ano sobre um mês retido. Mecanismo sem data confirmada para operar (CGIBS, ago/2026) — cenário conservador.</td></tr>
     </table>
     ${resumo('nenhuma premissa favorece a empresa: crescimento zero, crédito na menor faixa, split no pior caso. Se a realidade for melhor, o resultado só melhora.')}` });
 
@@ -13318,9 +13357,9 @@ function apTelas(A, modo){
     ${resumo(cam.length>2 ? `o ${cam[1].nome.toLowerCase()} custa ${apDif(cam[1].serie[i0]-cam[kMenor].serie[i0])} por ano a mais; ${cam[2].nome.toLowerCase()}, ${apDif(cam[2].serie[i0]-cam[kMenor].serie[i0])}. ${kMenor===0?'Nenhum dos dois compensa em '+D.anoRef+'.':cam[kMenor].nome+' é o menor em '+D.anoRef+'.'}` : (cam.length?`${cam[kMenor].nome} é o menor em ${D.anoRef}, por ${apDif(Math.abs(cam[0].serie[i0]-cam[1].serie[i0]))} ao ano.`:'preencha a aba Reforma.'),'ok')}` });
 
   S.split = () => ({ html:`
-    ${cab('Split payment: o efeito no caixa','Esta tela mostra <b>quanto ficaria retido na fonte</b>. No split, IBS e CBS são separados no momento do pagamento (LC 214, art. 33).')}
+    ${cab('Split payment: o efeito no caixa','Esta tela mostra <b>quanto ficaria retido na fonte</b>. No split, IBS e CBS são separados no momento do pagamento (LC 214, art. 33) — mecanismo ainda sem data confirmada para operar; os valores são cenário conservador.')}
     <div class="ap-grade" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
-      ${D.variante!=='acima'?`<div class="ap-cartao ok"><div class="ap-num m ok">R$ 0</div><div class="ap-rot">por dentro do DAS: nada retido na fonte</div></div>`:`<div class="ap-cartao warn"><div class="ap-num m warn">na fonte</div><div class="ap-rot">no regime regular a retenção vale desde ${D.sAnos[0]}</div></div>`}
+      ${D.variante!=='acima'?`<div class="ap-cartao ok"><div class="ap-num m ok">R$ 0</div><div class="ap-rot">por dentro do DAS: nada retido na fonte</div></div>`:`<div class="ap-cartao warn"><div class="ap-num m warn">na fonte</div><div class="ap-rot">no regime regular a retenção vale quando o split operar</div></div>`}
       <div class="ap-cartao warn"><div class="ap-num m warn">${fmtR(D.split.fonteMes)}</div><div class="ap-rot">por mês, retido no pagamento (${D.split.ano||2032}, pior ano)</div></div>
       <div class="ap-cartao"><div class="ap-num m">${fmtR(D.split.giroAno)}</div><div class="ap-rot">passa pelo split no ano — não é dinheiro parado</div></div>
       <div class="ap-cartao"><div class="ap-num m">${fmtR(D.split.custoAno)}</div><div class="ap-rot">custo financeiro por ano a 15% a.a.</div></div>
@@ -13367,7 +13406,7 @@ function apTelas(A, modo){
   S.plano = () => ({ html:`
     ${cab('Plano de ação','Esta tela mostra <b>o que fazer, em ordem, de agora até 2027</b>. Os prazos legais que sustentam cada passo estão na tela seguinte.')}
     <div class="ap-grade" style="grid-template-columns:repeat(4,1fr);gap:14px">${(TX.plano||[]).slice(0,4).map((p,i)=>`<div class="ap-cartao" style="min-height:330px"><div class="ap-passo" style="margin:0;flex-direction:column;gap:8px"><div class="n">${i+1}</div><div><div class="quando">${p.quando}</div><div class="oque">${p.titulo}</div><div class="como">${p.texto}</div></div></div></div>`).join('')}</div>
-    ${resumo(D.variante==='acima' ? 'definir o regime do ano seguinte, organizar os créditos e planejar o caixa para o split; reavaliar a cada ano.' : 'formalizar a opção em setembro, organizar os créditos das compras e reavaliar a cada ano da transição.')}` });
+    ${resumo(D.variante==='acima' ? 'definir o regime do ano seguinte, organizar os créditos e planejar o caixa para o split; reavaliar a cada ano.' : 'formalizar a opção no prazo regulamentar ('+prazoD(2027,'simples')+'), organizar os créditos das compras e reavaliar a cada ano da transição.')}` });
 
   S.atencaoPrazos = () => ({ html:`
     ${cab('Pontos de atenção e prazos','Esta tela mostra <b>o que pode alterar o resultado</b> e <b>as janelas da Res. CGSN nº 190/2026</b>. Perder a janela tem efeito por um semestre.')}
@@ -13375,7 +13414,7 @@ function apTelas(A, modo){
       <ul class="ap-lista">${[AP_ATENCAO[0], AP_ATENCAO[1].replace('Os resultados', 'Os dados cobrem '+D.janelaTxt+'; os resultados'), ...AP_ATENCAO.slice(2)].map(a=>`<li>${a}</li>`).join('')}</ul>
       <div>${AP_PRAZOS.map(p=>`<div class="ap-prazo"><div class="data ${p.cls}">${p.d}</div><div><b>${p.t}</b><span>${p.x}</span></div></div>`).join('')}</div>
     </div>
-    ${resumo('as alíquotas são estimativas e o resultado depende dos clientes; a data que não pode passar é 30 de setembro de 2026.','warn')}` });
+    ${resumo('as alíquotas são estimativas e o resultado depende dos clientes; '+(function(){ const p = prazoProximo(2027); return p ? 'a data que não pode passar é '+p.d+' ('+p.t.toLowerCase()+').' : 'os prazos de opção para 2027 já se encerraram.'; })(),'warn')}` });
 
   S.parecer = () => ({ html:`
     ${cab('Parecer e recomendação',`Esta tela mostra <b>a conclusão do estudo</b> para ${A.razao}, com os números que a sustentam.`)}

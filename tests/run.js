@@ -5258,6 +5258,38 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.9[5-9]\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bb · v7.99.2 — B02 prazos legais em tabela única (Res. CGSN 194/2026) + B03 split payment como cenário ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    // B02 · a tabela única existe e traz as datas da Res. 194/2026 (DOU 28/09/2026)
+    const pz = run('typeof PRAZOS_LEGAIS !== "undefined" ? PRAZOS_LEGAIS : null');
+    chk('5bb · PRAZOS_LEGAIS[2027] com os 5 prazos da Res. 194/2026 (simples, ibscbs, regularização, cancelamento, pgdas)',
+      !!(pz && pz[2027] && pz[2027].itens) && ['simples','ibscbs','regularizacao','cancelamento','pgdas'].every(k => pz[2027].itens[k] && pz[2027].itens[k].d && pz[2027].itens[k].t && pz[2027].itens[k].fim));
+    chk('5bb · datas: Simples até 15/10, IBS/CBS até 30/10, cancelamento 03/11 a 20/12, PGDAS-D 20/12 e 20/01',
+      /15\/10\/2026/.test(run('prazoLegal(2027,"simples").d')) && /30\/10\/2026/.test(run('prazoLegal(2027,"ibscbs").d')) && /03\/11 a 20\/12\/2026/.test(run('prazoLegal(2027,"cancelamento").d')) && /20\/12\/2026 e 20\/01\/2027/.test(run('prazoLegal(2027,"pgdas").d')));
+    chk('5bb · início de atividade nos textos: Simples 16/10 a 31/12 e IBS/CBS 31/10 a 31/12',
+      /16\/10 a 31\/12\/2026/.test(run('prazoLegal(2027,"simples").x')) && /31\/10 a 31\/12\/2026/.test(run('prazoLegal(2027,"ibscbs").x')));
+    chk('5bb · prazoVencido lê a tabela: em 18/10/2026 o prazo do Simples JÁ passou e o do IBS/CBS ainda não',
+      run('prazoVencido(2027,"simples", new Date("2026-10-18T12:00:00"))') === true && run('prazoVencido(2027,"ibscbs", new Date("2026-10-18T12:00:00"))') === false);
+    chk('5bb · prazoProximo aponta o próximo prazo em aberto (18/10 → ibscbs; 21/12 → pgdas; depois de tudo → null)',
+      run('prazoProximo(2027, new Date("2026-10-18T12:00:00")).id') === 'ibscbs' && run('prazoProximo(2027, new Date("2026-12-21T12:00:00")).id') === 'pgdas' && run('prazoProximo(2027, new Date("2027-02-01T12:00:00"))') === null);
+    // B02 · todos os lugares leem a tabela; as datas antigas da Res. 190 sumiram do app
+    chk('5bb · AP_PRAZOS e o parágrafo de prazos do parecer derivam da tabela única',
+      /const AP_PRAZOS = \['simples','ibscbs','pgdas'\]\.map/.test(html) && /prazosLegais\(2027\)\.map/.test(html) && /Prazos para 2027 \(\$\{PRAZOS_LEGAIS\[2027\]\.fonte\}\)/.test(html));
+    chk('5bb · nenhuma data fixa fora da tabela: as frases com os prazos da Res. 190 sumiram',
+      !/1 a 30 de setembro\/2026/.test(html) && !/de 1º a 30 de setembro/.test(html) && !/entre 1 e 30 de setembro de 2026/.test(html) && !/a data que não pode passar é 30 de setembro/.test(html) && !/formalizada em setembro, com efeitos/.test(html) && !/é feita em setembro deste ano/.test(html) && !/tomada agora, em setembro/.test(html) && !/formalizar a opção em setembro/.test(html));
+    // B03 · split payment nunca mais como fato consumado
+    chk('5bb · parecer não afirma o split como vigente: a frase "passam a ser recolhidos na fonte" saiu',
+      !/passam a ser recolhidos na fonte \(split payment\)/.test(html));
+    chk('5bb · texto do split declara: previsto na LC 214 (art. 33), SEM data confirmada (CGIBS ago/2026), cenário conservador',
+      /ainda sem data confirmada para operar/.test(html) && /CGIBS informou/.test(html) && (html.match(/cenário conservador/gi)||[]).length >= 2);
+    chk('5bb · cartão de caixa e seção do parecer rotulados como cenário',
+      /Caixa \(split payment — cenário\)/.test(html) && /Split payment — impacto no caixa \(cenário\)/.test(html));
+    chk('5bb · instrução nova impede a IA de dar data de início ao split', /não há data confirmada para sua entrada em operação/.test(html));
+    chk('5bb · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bb · v7.99.2 · badge e changelog', /APP_VERSAO = '7\.99\.2'/.test(html) && /<b>v7\.99\.2<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5ba · v7.99.1 — cadastro único (fase 1): data de abertura e CNAE na ficha da empresa ═══
   {
     const r = c => vm.runInContext(c, ctx);
