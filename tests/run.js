@@ -5258,6 +5258,46 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bi · v7.101.2 — B11 teste automático de consistência entre telas (falha o CI se qualquer total divergir além do arredondamento) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const o = run(`(function(){
+      const _an = AN, _rl = { dados:RL.dados, res:RL.res, reforma:RL.reforma, empresa:RL.empresa, exec:RL.exec, fechada:RL.fechada, cmp:RL.cmp, forn:RL.forn, defasado:RL.defasado, _ia:RL._ia };
+      try {
+        AN = JSON.parse(JSON.stringify(LACRE_CASOS[2].inp)); AN.cnpj = '33333333000399'; AN.ano = 2026;
+        AN_CARREGANDO = false;
+        document.getElementById('an-resumo').innerHTML = '';
+        anRecalcular();   // a MESMA entrada que alimenta cartões, resumo gravado e parecer
+        const r = AN._res, T = Object.assign({}, r.totais, totExib(r));
+        const cards = document.getElementById('an-resumo').innerHTML;
+        const resumo = { simples: r.totais.simples, lp: r.totais.lp, lr: r.totais.lr };   // o que anSalvar grava (fonte do Dashboard)
+        RL.dados = AN; RL.res = r; RL.reforma = AN.reforma || null; RL.empresa = { cnpj: AN.cnpj, regime: 'Simples Nacional' };
+        RL.exec = null; RL.fechada = null; RL.forn = null; RL._ia = null; RL.defasado = null; RL.cmp = null;
+        const D = parecerDados();
+        const C = calcCenariosReforma(r, AN.reforma || null), L2 = C.REF.find(x => x.ano === 2033);
+        const LD = (D.cen && (D.cen.REF || []).find(x => x.ano === 2033)) || null;
+        return { erro: null,
+          cardSimples: cards.indexOf(fmtR(T.simples)) >= 0, cardLp: cards.indexOf(fmtR(T.lp)) >= 0, cardLr: cards.indexOf(fmtR(T.lr)) >= 0,
+          dResumo: Math.max(Math.abs(resumo.simples - T.simples), Math.abs(resumo.lp - T.lp), Math.abs(resumo.lr - T.lr)),
+          dParecer: Math.max(Math.abs(D.T.simples - T.simples), Math.abs(D.T.lp - T.lp), Math.abs(D.T.lr - T.lr)),
+          dHib33: (LD && L2) ? Math.abs(LD.hib - L2.hib) : 1e9,
+          dReg33: (LD && L2) ? Math.abs(LD.regular - L2.regular) : 1e9 };
+      } catch(e){ return { erro: String(e && e.message || e) }; }
+      finally { AN = _an; Object.assign(RL, _rl); }
+    })()`);
+    chk('5bi · a bateria roda sem erro (caso 3 — o mais completo — atravessa cartões, resumo e parecer)', o.erro === null, o.erro || '');
+    chk('5bi · cartões da Análise imprimem exatamente a fórmula única de exibição (totExib), ao centavo',
+      o.erro === null && o.cardSimples && o.cardLp && o.cardLr);
+    chk('5bi · resumo gravado (fonte do Dashboard) × cartões: divergência ≤ R$ 0,06 (arredondamento declarado na v7.42.1)',
+      o.erro === null && o.dResumo <= 0.06, 'Δmax=' + (o.dResumo != null ? (+o.dResumo).toFixed(4) : '?'));
+    chk('5bi · parecer (D.T) × cartões: divergência ≤ R$ 0,06',
+      o.erro === null && o.dParecer <= 0.06, 'Δmax=' + (o.dParecer != null ? (+o.dParecer).toFixed(4) : '?'));
+    chk('5bi · cenários 2033 do parecer = calcCenariosReforma do MESMO resultado, ao centavo (híbrido e regular)',
+      o.erro === null && o.dHib33 < 0.005 && o.dReg33 < 0.005);
+    chk('5bi · lacre 0a257d66 intocado (B11 é teste, não muda número nenhum)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bi · v7.101.2 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.2<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bh · v7.101.1 — B10 histórico com 12+ versões, autor pelo servidor, DELETE só de admin (setup_v71011.sql) ═══
   {
     chk('5bh · o Histórico passa a ler e anunciar as 12 gravações mais recentes (antes: 3)',
