@@ -5258,6 +5258,22 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bh · v7.101.1 — B10 histórico com 12+ versões, autor pelo servidor, DELETE só de admin (setup_v71011.sql) ═══
+  {
+    chk('5bh · o Histórico passa a ler e anunciar as 12 gravações mais recentes (antes: 3)',
+      /atp_analises_hist',\{ params:\{ select:'\*', cnpj:`eq\.\$\{cnpj\}`, ano:`eq\.\$\{ano\}`,\s*order:'gravado_em\.desc', limit:'12'/.test(html)
+      && /As doze gravações mais recentes/.test(html) && !/As três gravações mais recentes/.test(html));
+    { const sql = fs.existsSync(path.join(RAIZ,'banco','atp','setup_v71011.sql')) ? fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v71011.sql'),'utf8') : '';
+      chk('5bh · setup_v71011.sql: autor gravado PELO SERVIDOR (trigger lê auth.jwt, ignora o que o navegador mandar)',
+        /create or replace function public\.atp_hist_autor/.test(sql) && /auth\.jwt\(\) ->> 'email'/.test(sql) && /before insert on public\.atp_analises_hist/.test(sql));
+      chk('5bh · setup_v71011.sql: DELETE só de administrador (política com atp_sou_admin) e poda SECURITY DEFINER preservando 24 versões',
+        /create policy atp_analises_hist_del/.test(sql) && /atp_sou_admin\(\)/.test(sql)
+        && /security definer/.test(sql) && /offset 24/.test(sql)
+        && /rollback/i.test(sql) && /usuário comum não apaga/i.test(sql)); }
+    chk('5bh · lacre 0a257d66 intocado (B10 não toca o motor)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bh · v7.101.1 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.1<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bg · v7.101.0 — B09 registro de execuções imutáveis (atp_execucoes, setup_v7101.sql) ═══
   {
     const run = c => vm.runInContext(c, ctx);
