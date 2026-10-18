@@ -804,6 +804,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.101.3</b></td><td>18/10/2026</td><td><b>🧾 RODAPÉ RASTREÁVEL NOS RELATÓRIOS (B12): todo documento identifica a execução de origem — motor (app + lacre), empresa, ano-base e emissão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1)</b> Os quatro relatórios de fluxo — Consolidado, Conferência de cálculos, Comparativo de Regimes e Reforma — ganham o rodapé impresso <code>rlRodapeExec</code>: análise aberta sai com "recálculo do motor atual — app vX · lacre Y"; análise fechada com execução congelada sai com o motor DO FECHAMENTO (app, lacre e data) e a versão que imprimiu. <b>(2)</b> A apresentação declara o mesmo na tela "Sobre este estudo" (a linha "Números" passa a dizer quando os valores vêm da execução congelada). <b>(3)</b> O parecer já identificava a execução desde a v7.100.0, no rodapé legal. Com isso, nenhum PDF emitido pelo sistema sai sem dizer QUAL execução o produziu — auditável meses depois contra o registro imutável da v7.101.0. Suíte: bloco 5bj.</td></tr>
                     <tr><td><b>v7.101.2</b></td><td>18/10/2026</td><td><b>🧪 TESTE AUTOMÁTICO DE CONSISTÊNCIA ENTRE TELAS (B11): o CI passa a FALHAR se qualquer total divergir além do arredondamento entre os cartões da Análise, o resumo gravado (fonte do Dashboard) e o parecer. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> O bloco novo da suíte (5bi) atravessa o caso-gabarito 3 — o mais completo: art. 24, teto do ISS, exportação, impedimento, Fator R — pelos três caminhos que o usuário vê: <b>(1)</b> os cartões da Análise têm de imprimir exatamente a fórmula única de exibição (<code>totExib</code>, v7.42.1), ao centavo; <b>(2)</b> o resumo que o <code>anSalvar</code> grava (e o Dashboard lê) não pode divergir dos cartões além de R$ 0,06 — a folga de arredondamento declarada na v7.42.1; <b>(3)</b> os totais do parecer (<code>parecerDados</code>) idem; <b>(4)</b> os cenários 2033 do parecer têm de ser idênticos, ao centavo, ao <code>calcCenariosReforma</code> do mesmo resultado. Resultado na implantação: divergência máxima medida de <b>R$ 0,0000</b> — as fórmulas únicas construídas desde a v7.42.1 convergem; o teste existe para DENUNCIAR a próxima mudança que quebrar isso, antes de qualquer publicação. Nenhuma linha do app mudou além do badge e desta nota. Suíte: bloco 5bi.</td></tr>
                     <tr><td><b>v7.101.1</b></td><td>18/10/2026</td><td><b>🕘 HISTÓRICO ROBUSTO (B10): 12 versões na tela (24 preservadas no banco), autor gravado PELO SERVIDOR e DELETE só de administrador. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Pendência 3 do relatório de 18/10/2026: "guarda só 3 versões, o autor vem do navegador e qualquer usuário apaga linhas".) <b>(1) Profundidade:</b> o visor 🕘 Histórico passa a listar as <b>12</b> gravações mais recentes, e a poda do banco preserva <b>24</b> por empresa/ano. <b>(2) Autor confiável:</b> trigger <code>atp_hist_autor</code> grava <code>gravado_por</code> a partir do e-mail do token (auth.jwt) — o que o navegador mandar é descartado; ninguém assina pelo colega. <b>(3) Ninguém apaga:</b> a política de DELETE exige papel <code>admin</code> (<code>atp_sou_admin</code>); a poda roda como SECURITY DEFINER e não depende dela. Tudo em <code>banco/atp/setup_v71011.sql</code> (idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>), que inclui o teste opcional em BEGIN/ROLLBACK provando que <b>usuário comum não apaga histórico</b>, e a consulta para conferir se o setup antigo deixou trigger de poda com outro nome. Sem o SQL aplicado, o app segue como hoje — apenas listando até 12 se existirem. Suíte: bloco 5bh.</td></tr>
                     <tr><td><b>v7.101.0</b></td><td>18/10/2026</td><td><b>📜 REGISTRO DE EXECUÇÕES IMUTÁVEL (B09): cada gravação deixa quem, quando, o motor (app + lacre), as impressões digitais dos parâmetros e os totais — numa tabela que não aceita alteração nem exclusão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O quê:</b> salvar (<code>anSalvar</code>), fechar (<code>anFecharAbrir</code>) e refechar (<code>anRefecharCore</code>) passam a chamar <code>execRegistrar</code>, que insere na tabela nova <code>atp_execucoes</code>: cnpj/ano, data, origem, <code>app</code> (APP_VERSAO), <code>lacre</code> (LACRE_HASH), usuário, totais do ano (receita, Simples, LP, LR, DAS), cenários 2033 e <code>params</code> — hashes dos anexos, da folha, da reforma e do cfg da análise (<code>execParams</code>), que permitem provar depois COM QUE parâmetros o número saiu. <b>(2) Imutável em duas camadas</b> (<code>banco/atp/setup_v7101.sql</code>, idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>): RLS do escritório só com SELECT e INSERT (sem política de UPDATE/DELETE, a API não altera nem apaga) e trigger que recusa UPDATE/DELETE por qualquer caminho, console incluído. <b>(3) Sem o SQL aplicado, nada quebra:</b> o registro falha em silêncio (um aviso por sessão no console) e o app segue normal. <b>(4) Visor:</b> botão <b>📜 Execuções</b> ao lado do Histórico lista o registro da análise aberta. Com o resumo carimbado (v7.99.4) e a execução congelada do fechamento (v7.100.0), fecha-se o circuito da Prioridade 1: a mesma execução dá os mesmos totais no Dashboard, no parecer e na conferência — e agora fica provado QUANDO e COM O QUÊ cada número foi produzido. Suíte: bloco 5bg.</td></tr>
@@ -6621,7 +6622,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.101.2';
+const APP_VERSAO = '7.101.3';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -10319,7 +10320,7 @@ function rlConsolidado(rot, n) {
       <div class="hint" style="margin-top:8px">Transição: PIS/COFINS saem em 2027 (entra a CBS plena); ICMS/ISS caem 10% ao ano de 2029 a 2032 e zeram em 2033 (entra o IBS); IPI apenas até 2026. Reduções de IBS/CBS conforme a classificação cClassTrib das notas importadas.${cen&&cen.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise; use "⚡ Preencher da análise" e salve.</b>':''}</div>
     </div>`;
   }
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h + rlRodapeExec();   // v7.101.3 · B12
 }
 
 // ═══════════ RELATÓRIOS ═══════════
@@ -13245,6 +13246,19 @@ function rlIrRefechar(){
   empAnalisar(cnpj);
   toast('Confira o ano no topo e use 🔁 Refechar com o motor atual, no aviso da análise fechada.');
 }
+// ═══ v7.101.3 · B12 — RODAPÉ RASTREÁVEL: todo relatório de fluxo identifica a execução de origem ═══
+// (O parecer já identifica desde a v7.100.0, no rodapé legal; a apresentação, na tela "Sobre".)
+// Este rodapé IMPRIME — ele é a identificação do documento, não um aviso de tela.
+function rlRodapeExec(){
+  if (!RL || !RL.dados) return '';
+  const emp = RL.empresa || {};
+  const ex = (RL.exec && RL.fechada && RL.fechada.snapshot) ? RL.fechada.snapshot : null;
+  return `<div class="hint" style="margin-top:12px;border-top:1px solid var(--borda,#e5e7eb);padding-top:6px;font-size:10px">
+    Execução de origem: ${ex
+      ? `congelada no fechamento — app v${esc(String(ex.versao||'?'))} · lacre ${esc(String(ex.lacre||'?'))} · fechada em ${ex.em?new Date(ex.em).toLocaleString('pt-BR'):'?'} · impresso pela v${APP_VERSAO}`
+      : `recálculo do motor atual — app v${APP_VERSAO} · lacre ${LACRE_HASH}`}
+    · ${esc(emp.razao_social || fmtCNPJ(RL.dados.cnpj||''))} · ano-base ${RL.dados.ano||'?'} · emitido em ${new Date().toLocaleString('pt-BR')}</div>`;
+}
 function rlAvisoDefasado(){
   const fechada = rlAvisoFechada();   // v7.100.0 · B08: todo relatório declara de onde saem os números
   if (!RL || !RL.defasado || !RL.defasado.length) return fechada;
@@ -13685,12 +13699,13 @@ function apTelas(A, modo){
     </div>
     ${resumo(cam.length ? `${cam[kMenor].nome.toLowerCase()} é o caminho de menor custo em ${D.anoRef}. Reavaliar ${D.variante==='acima'?'a cada ano':'se os clientes exigirem crédito ou'} quando as alíquotas definitivas saírem.` : 'preencha a aba Reforma para concluir.','ok')}` });
 
-  S.encerramento = () => ({ escuro:true, html:`
+  S.encerramento = () => { const _exAp = (RL.exec && RL.fechada && RL.fechada.snapshot) ? RL.fechada.snapshot : null;   // v7.101.3 · B12
+    return { escuro:true, html:`
     <div class="ap-miolo" style="top:72px">
     <h1 style="margin-bottom:22px">Sobre este estudo</h1>
     <div class="ap-grade" style="grid-template-columns:1fr 1fr;gap:34px">
       <div style="font-size:14px;color:#e6eef5;line-height:1.55">
-        <p style="margin:0 0 12px"><b style="color:#fff">Números:</b> calculados pelo Análise Tributária Pro v${APP_VERSAO} sobre os lançamentos reais da empresa. Lacre do motor ${LACRE_HASH} na emissão.</p>
+        <p style="margin:0 0 12px"><b style="color:#fff">Números:</b> calculados pelo Análise Tributária Pro ${_exAp ? `v${esc(String(_exAp.versao||'?'))} — execução congelada no fechamento da análise (lacre ${esc(String(_exAp.lacre||'?'))}, fechada em ${_exAp.em?new Date(_exAp.em).toLocaleDateString('pt-BR'):'?'}; apresentação montada pela v${APP_VERSAO})` : `v${APP_VERSAO} sobre os lançamentos reais da empresa. Lacre do motor ${LACRE_HASH} na emissão`}.</p>
         <p style="margin:0 0 12px"><b style="color:#fff">Textos analíticos:</b> ${A.iaOk?'gerados por inteligência artificial em '+esc(RL._ia.quando)+', a partir dos números apurados. A IA não calcula; p':'textos padrão do sistema. P'}remissas e conclusões foram revisadas pelo responsável técnico.</p>
         <p style="margin:0;font-size:12.5px;color:#c9d8e6">Estimativas em moeda constante do ano-base; alíquotas de IBS/CBS de referência (Res. CGIBS nº 14/2026) sujeitas a recalibração. Não substituem a apuração formal de cada período.</p>
       </div>
@@ -13699,7 +13714,7 @@ function apTelas(A, modo){
         <div style="font-size:14px;color:#c9d8e6">${A.assin.qual}${A.assin.crc?' · CRC '+A.assin.crc:''}<br>Artecon Artes Contábeis · Palhoça/SC · ${A.hoje}</div>
         <div style="margin-top:20px;font-size:13px;color:#9fb3c8">À disposição para esclarecimentos.</div>
       </div>
-    </div></div>` });
+    </div></div>` }; };
 
   const ROTEIRO = modo==='simplificada'
     ? ['capa','tempo','hoje','caminhosS','creditoS','fazerS','recomendacaoS']
@@ -13856,7 +13871,7 @@ function rlRender() {
   $id('rl-cab').style.display='block';
   $id('rl-titulo').textContent = ({regimes:'Comparativo de Regimes Tributários', consolidado:'Consolidado Analítico — Simples · Presumido · Real · Reforma', registros:'Detalhamento dos Registros', reforma:'Reforma Tributária — Transição 2026–2033', parecer:'Parecer — Estudo de Impacto da Reforma Tributária', conferencia:'Conferência de Cálculos — Memória (documento interno)', apresentacao_s:'Apresentação — Estudo de Impacto da Reforma Tributária (simplificada)', apresentacao_c:'Apresentação — Estudo de Impacto da Reforma Tributária (completa)'})[tipo];
   $id('rl-sub').innerHTML = `<b>${emp?.razao_social||''}</b> · CNPJ ${fmtCNPJ(RL.dados.cnpj)} · Ano-base ${RL.dados.ano} · Periodicidade: ${$id('rl-per').selectedOptions[0].text} · Artecon Artes Contábeis`;
-  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlConferencia(); return; }   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
+  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlConferencia() + rlRodapeExec(); return; }   // v7.101.3 · B12   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
   // v7.87.0 (§13) · erro crítico do sublimite BLOQUEIA parecer e apresentações — decisão de 10/09/2026
   { const _crit = (tipo==='parecer' || apres) ? emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano) : null;   // v7.90.0 · sublimite OU memória
     if (_crit) { $id('rl-corpo').innerHTML = subCriticoHtml(_crit) + '<div class="card placeholder"><h2>Emissão bloqueada</h2><p>O parecer não pode ser concluído enquanto a inconsistência do sublimite existir. Corrija na aba RBT12 (informe a RBAA ou importe o PGDAS-D) ou na Configuração da empresa (tratamento do sublimite) e gere de novo. A <b>Conferência de cálculos</b> segue disponível para diagnóstico.</p></div>'; return; } }
@@ -14185,7 +14200,7 @@ function rlRegimes(rot, n) {
   ${usouFallback?'⚠️ Aba Reforma sem dados desta empresa: usei as alíquotas-padrão da transição e a receita da análise, sem créditos de compras nem reduções — preencha a aba Reforma para refinar.':''}
   ${(rfxInfo?.contra?.compras_lrlp||0)+(rfxInfo?.contra?.compras_simples||0)>0?'Créditos de IBS/CBS calculados sobre as compras informadas na aba Reforma.':''}</div></div></div></div>`;
   }
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h + rlRodapeExec();   // v7.101.3 · B12
   // v7.79.4 · o gráfico desenhava a barra do Simples com a mesma cor das demais, e ela é a MENOR:
   // visualmente, a recomendação. Indisponível passa a levar cinza e o rótulo marcado.
   rlChart('ch-seis', { type:'bar', data:{
@@ -14319,7 +14334,7 @@ function rlReforma() {
   for (const L of linhas) h += `<tr${L.ano===2033?' style="font-weight:700"':''}><td>${L.ano}</td><td class="num">${(L.alq*100).toFixed(2)}%</td><td class="num">${fmt(L.deb)}</td><td class="num">${fmt(L.cred)}</td><td class="num">${fmt(L.liq)}</td><td class="num">${fmt(L.is)}</td><td class="num">${fmt(L.rem)}</td><td class="num">${fmt(L.total)}</td></tr>`;
   h += `</tbody></table></div><div class="hint" style="margin-top:8px">Estimativas conforme parâmetros editáveis salvos na análise (EC 132/2023 · LC 214/2025). IS sem direito a crédito; créditos limitados nas aquisições do Simples.</div></div>`;
   if (window.__refCen) h += refCenCard(window.__refCen, RL.res.totais);
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + h + rlRodapeExec();   // v7.101.3 · B12
   rlChart('ch-rf', { type:'line', data:{ labels:anos, datasets:[
     { label:'IBS/CBS líquido + IS', data:linhas.map(l=>l.liq+l.is), borderColor:CORES.simples, backgroundColor:CORES.simples, fill:false },
     { label:'Tributos atuais remanescentes', data:linhas.map(l=>l.rem), borderColor:CORES.lp, backgroundColor:CORES.lp, fill:false },

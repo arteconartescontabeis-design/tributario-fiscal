@@ -5258,6 +5258,30 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bj · v7.101.3 — B12 rodapé rastreável nos relatórios: motor, selo do lacre e execução de origem ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    chk('5bj · rlRodapeExec entra nos quatro relatórios de fluxo (consolidado, conferência, regimes, reforma)',
+      (html.match(/\+ rlRodapeExec\(\)/g)||[]).length >= 4);
+    { const o = run(`(function(){ const _rl = { dados:RL.dados, empresa:RL.empresa, exec:RL.exec, fechada:RL.fechada };
+        try {
+          RL.dados = { cnpj:'11111111000111', ano:2026 }; RL.empresa = { razao_social:'ALFA LTDA' };
+          RL.exec = null; RL.fechada = null;
+          const vivo = rlRodapeExec();
+          RL.exec = { res:{} }; RL.fechada = { snapshot:{ versao:'7.99.0', lacre:'abcd1234', em:'2026-09-24T00:00:00Z' } };
+          const congelado = rlRodapeExec();
+          return { vivo, congelado };
+        } finally { Object.assign(RL, _rl); } })()`);
+      chk('5bj · análise aberta: o rodapé identifica motor atual (app + lacre), empresa, ano-base e emissão',
+        /recálculo do motor atual/.test(o.vivo) && o.vivo.indexOf(run('APP_VERSAO')) >= 0 && o.vivo.indexOf(run('LACRE_HASH')) >= 0 && /ALFA LTDA/.test(o.vivo) && /ano-base 2026/.test(o.vivo));
+      chk('5bj · análise fechada: o rodapé identifica a execução CONGELADA (app e lacre do fechamento) e quem imprimiu',
+        /congelada no fechamento/.test(o.congelado) && /v7\.99\.0/.test(o.congelado) && /abcd1234/.test(o.congelado) && o.congelado.indexOf('impresso pela v' + run('APP_VERSAO')) >= 0); }
+    chk('5bj · a tela "Sobre este estudo" da apresentação também declara a execução de origem',
+      /calculados pelo Análise Tributária Pro \$\{_exAp \? /.test(html) && /execução congelada no fechamento/.test(html));
+    chk('5bj · lacre 0a257d66 intocado (B12 não toca o motor)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bj · v7.101.3 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.3<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bi · v7.101.2 — B11 teste automático de consistência entre telas (falha o CI se qualquer total divergir além do arredondamento) ═══
   {
     const run = c => vm.runInContext(c, ctx);
