@@ -379,7 +379,7 @@ ul.ap-lista li{margin-bottom:7px}
         <div class="stat"><div class="n" id="da-emp">–</div><div class="l">Empresas em análise</div></div>
         <div class="stat"><div class="n" id="da-anal">–</div><div class="l">Análises salvas</div></div>
         <div class="stat"><div class="n" id="da-rec">–</div><div class="l">Receita anual analisada</div></div>
-        <div class="stat"><div class="n" id="da-econ">–</div><div class="l">Economia potencial identificada</div></div>
+        <div class="stat"><div class="n" id="da-econ">–</div><div class="l">Economia potencial — análises no motor atual</div><div class="sub" id="da-econ-desat"></div></div>
       </div>
       <div class="rl-grid" style="margin-top:18px">
         <div class="card"><h3>Comparativo por empresa — Simples × Presumido × Real × Reforma 2033</h3><canvas id="ch-da-comp"></canvas></div>
@@ -803,6 +803,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.99.4</b></td><td>18/10/2026</td><td><b>🏷️ O RESUMO GRAVADO PASSA A DECLARAR O MOTOR QUE O CALCULOU, e o Dashboard marca "desatualizada", alerta VALOR NEGATIVO e separa o total de economia. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achados A01 e novo 3 da auditoria de 18/10/2026.) <b>(1) O problema:</b> o Dashboard lê o resumo do último Salvar de cada análise — calculado pelo motor daquela época. Com 108 das 109 análises gravadas antes da v7.96/v7.97/LC 224, o "Economia potencial identificada" de R$ 7,9 mi somava resultados de motores diferentes, e uma análise exibia Presumido <b>negativo</b> (−R$ 220.249,89, defeito corrigido na v7.96.0) sem aviso algum. <b>(2) Resumo com carimbo:</b> <code>anSalvar</code> e <code>rfSalvar</code> gravam <code>motor:{app, lacre}</code> no resumo; o ramo do rfSalvar que preserva o resumo de outra gravação preserva também o motor dela — carimbar ali seria mentir. Resumo sem carimbo = anterior à v7.99.4 = desatualizado por definição. <b>(3) Dashboard honesto:</b> <code>dashMotorInfo</code> compara o lacre gravado com o atual; a linha ganha o selo <b>"desatualizada"</b> (com o motor de origem no título) e <b>"valor negativo"</b> em vermelho quando o resumo guarda número abaixo de zero; o cartão do topo passa a somar só as análises do motor atual, com a nota "+ R$ X em N análise(s) com motor antigo — fora do total" e o alerta de negativos. Nenhum número gravado muda: a mudança é dizer DE ONDE cada um veio. Suíte: bloco 5bd.</td></tr>
                     <tr><td><b>v7.99.3</b></td><td>18/10/2026</td><td><b>⏳ ESTADO "CARREGANDO" NA TROCA DE EMPRESA e BLOQUEIO TOTAL quando a leitura do banco falha. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Dois defeitos com a mesma raiz (achados A04 e novo 4 da auditoria de 18/10/2026): <b>(1) Conclusão antes da carga.</b> Ao trocar de empresa, a tela desenhava uma análise NOVA — receita zero e conclusões calculadas do nada (confiança "ALTO") — no intervalo entre o pedido e a resposta do banco. Agora a troca liga o estado <code>AN_CARREGANDO</code>: os cartões mostram "⏳ Carregando a análise do banco…", o veredito some e o recálculo não desenha NENHUMA conclusão até a carga terminar. <b>(2) Falha de leitura virava análise em branco gravável.</b> Se a leitura desse erro, o <code>catch</code> criava uma análise vazia e apagava a marca de placeholder; sem <code>_verEm</code>, a guarda de conflito de versão não disparava e o Salvar podia substituir a análise gravada por uma em branco. Agora a falha deixa a análise <b>bloqueada</b>: continua placeholder, ganha <code>_erroLeitura</code> com o motivo, a tela mostra a tarja "⛔ A leitura desta análise falhou" com botão <b>Tentar de novo</b> — e <code>anBloqueada()</code> corta edição (grade e setters), lançamento, importação, preenchimento e gravação (<code>anSalvar</code> recusa e devolve <code>false</code>) tanto durante a carga quanto após a falha. Suíte: bloco 5bc.</td></tr>
                     <tr><td><b>v7.99.2</b></td><td>18/10/2026</td><td><b>📅 PRAZOS DA RES. CGSN Nº 194/2026 numa tabela única e SPLIT PAYMENT dito como cenário, nunca como fato. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O problema dos prazos (achado A02 da auditoria externa):</b> a Res. CGSN nº 194/2026 (DOU 28/09/2026) alterou os prazos que a Res. 190/2026 havia fixado — opção pelo Simples para 2027 de <b>1º/09 a 15/10/2026</b> (já encerrada), opção pelo regime regular de IBS/CBS (híbrido) de <b>1º/09 a 30/10/2026</b>, regularização de pendências até 30/10, cancelamento de 03/11 a 20/12; empresas em início de atividade: Simples de 16/10 a 31/12 e IBS/CBS de 31/10 a 31/12 — e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão. <b>(2) A correção estrutural (B02):</b> nasce a tabela <code>PRAZOS_LEGAIS</code> por exercício, única fonte de toda data de prazo legal: o parágrafo de prazos do parecer, os cartões da apresentação (<code>AP_PRAZOS</code>), os "Pontos de atenção" e os resumos derivam dela (<code>prazoD</code>, <code>prazoProximo</code>, <code>prazoVencido</code>), e a suíte acusa data fixa fora da tabela. O resumo da apresentação passa a apontar o <b>próximo prazo em aberto</b> na data da geração, em vez de uma data congelada. <b>(3) Split payment (B03, achado novo 6):</b> o parecer dizia que a CBS e o IBS "passam a ser recolhidos na fonte" — o split como fato consumado. O CGIBS informou em agosto/2026 que o split <b>não</b> estará disponível no início da cobrança efetiva (jan/2027) e não há data confirmada para operar. Todos os textos passam a declarar: mecanismo previsto na LC 214/2025 (art. 33), em regulamentação, sem data para operar; valores = <b>cenário conservador</b> de caixa. O cartão de caixa da apresentação e a seção do parecer ganham o rótulo "(cenário)", e uma instrução nova impede a IA de atribuir data de início ao split. Suíte: bloco 5bb.</td></tr>
                     <tr><td><b>v7.99.1</b></td><td>08/10/2026</td><td><b>📇 Cadastro único da empresa (fase 1): data de abertura, CNAE e situação no Simples/MEI passam a morar NA FICHA, e a análise anual lê a data de abertura de lá. Lacre <code>0a257d66</code> INTOCADO.</b> <b>(1) O problema</b>: o início de atividade era digitado dentro de cada análise anual (só mês/ano), não passava de um ano para o outro, a importação do PGDAS-D o sobrescrevia em silêncio — e a consulta de CNPJ recebia a data de abertura da Receita e a descartava. <b>(2) Ficha da empresa</b> (<code>sql/setup_v7991.sql</code>: colunas <code>data_abertura</code>, <code>cnae_codigo</code>, <code>data_exclusao_simples</code>, <code>data_opcao_simei</code>, <code>data_exclusao_simei</code>, <code>natureza_juridica</code>, <code>receita_consultada_em</code>): "Preencher pela Receita" traz data de abertura, CNAE (código — descrição) e a situação no Simples/MEI com datas; a data de abertura é editável; a lista de empresas ganha a coluna Abertura. <b>(3) A análise lê a ficha</b>: análise nova (troca de empresa, ano novo herdando configuração, empresa adotada na importação) sem início próprio recebe a data de abertura da ficha quando ela é do ano-base ou do anterior (<code>cfg.inicioOrigem = 'E'</code>, selo "E · ficha da empresa" na Configuração); análise existente ganha o botão "Usar a data de abertura da ficha" (evento <i>ficha</i> na trilha). O que já está na análise (digitado ou PGDAS-D) prevalece; editar à mão derruba o selo. Com isso o limite do Simples, o RBT12 e a LC 224 proporcionais passam a partir da data da Receita. <b>(4) Verificar</b>: acusa início da análise diferente da abertura da ficha, ficha com abertura e análise sem início, e ficha sem data. Fases 2 (regime por ano) e 3 (Imobiliária e Classificação lendo a ficha) ficam para depois. Suíte: bloco 5ba.</td></tr>
@@ -6533,7 +6534,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.3';
+const APP_VERSAO = '7.99.4';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -6627,7 +6628,8 @@ async function anSalvar() {
   }
   const T = AN._res?.totais || {};
   const body = [{ cnpj:AN.cnpj, ano:AN.ano, dados:{...AN, _res:undefined, _verEm:undefined, _placeholder:undefined},
-    resumo:{ receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto }, atualizado_em:new Date().toISOString() }];
+    resumo:{ receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto,
+      motor:{ app: APP_VERSAO, lacre: LACRE_HASH } }, atualizado_em:new Date().toISOString() }];   // v7.99.4 · B05: o resumo declara o motor que o calculou
   try { await supa('POST','atp_analises?on_conflict=cnpj,ano',{ body }); AN_SUJO = false; AN._verEm = body[0].atualizado_em;
     await anHistGravar(body[0]);
     if (AN._cfgHerdadaDe) delete AN._cfgHerdadaDe;   // v7.49.0: gravado — deixa de ser herança
@@ -8358,7 +8360,8 @@ async function rfSalvar() {
   const T = (_mesmo && AN._res?.totais) ? AN._res.totais : (dados._res?.totais || {});
   const _resumo = _mesmo || !_resumoAtual
     ? { receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto, reforma2033: RF._res?.linhas?.at(-1)?.total,
-        snElegivel: (AN?._sn?.estado || 'elegivel') !== 'inelegivel' }
+        snElegivel: (AN?._sn?.estado || 'elegivel') !== 'inelegivel',
+        motor:{ app: APP_VERSAO, lacre: LACRE_HASH } }   // v7.99.4 · B05 (o ramo abaixo preserva o resumo — e o motor — de quem o gravou)
     : { ..._resumoAtual, reforma2033: RF._res?.linhas?.at(-1)?.total };   // preserva o resumo do ano
   try { await supa('POST','atp_analises?on_conflict=cnpj,ano',{ body:[{ cnpj:RF.cnpj, ano:RF.ano, dados,
     resumo:_resumo, atualizado_em:new Date().toISOString() }] });
@@ -14128,26 +14131,47 @@ function rlReforma() {
 }
 
 // ═══════════ DASHBOARD DE ANÁLISES ═══════════
+// ═══ v7.99.4 · B05 — O RESUMO GRAVADO CARREGA O MOTOR QUE O CALCULOU ═══
+// (Achados A01 e novo 3 da auditoria de 18/10/2026.) O Dashboard lê o resumo do último Salvar —
+// que pode ter sido calculado por um motor antigo (108 das 109 análises eram anteriores à v7.96/
+// v7.97/LC 224). O total de economia somava maçã com laranja, e uma análise guardava Presumido
+// NEGATIVO (−R$ 220.249,89, corrigido na v7.96.0) sem nenhum aviso. Agora o resumo gravado leva
+// `motor:{ app, lacre }`; o Dashboard compara o lacre gravado com o atual, marca a linha
+// "desatualizada", alerta valor negativo e separa o total de economia em atualizadas ×
+// desatualizadas. Resumo sem motor gravado = anterior à v7.99.4 = desatualizado por definição.
+function dashMotorInfo(r){
+  const mot = (r && r.motor) || null;
+  const desatualizada = !mot || mot.lacre !== LACRE_HASH;
+  const negativo = !!r && [r.simples, r.lp, r.lr].some(v => v!=null && +v < -0.005);
+  return { mot, desatualizada, negativo,
+    rotulo: desatualizada ? (mot && mot.app ? 'motor v'+mot.app : 'motor anterior à v7.99.4') : 'motor atual' };
+}
 async function dashAnalises() {
   let emps = [], anals = [];
   try { emps = await supa('GET','atp_empresas',{ params:{ select:'*', analise:'is.true', order:'razao_social.asc', limit:'500' } }); } catch {}
   try { anals = await supa('GET','atp_analises',{ params:{ select:'cnpj,ano,resumo,atualizado_em', order:'atualizado_em.desc', limit:'500' } }); } catch {}
   $id('da-emp').textContent = emps.length;
   $id('da-anal').textContent = anals.length;
-  let recTot = 0, econTot = 0;
+  let recTot = 0, econAtu = 0, econDesat = 0, nAtu = 0, nDesat = 0, nNeg = 0;
   const linhas = [];
   for (const e of emps) {
     const as = anals.filter(a=>a.cnpj===e.cnpj).sort((a,b)=>b.ano-a.ano);
     if (!as.length) { linhas.push({e, a:null}); continue; }
     const a = as[0], r = a.resumo||{};
     recTot += +r.receita||0;
+    const _mi = dashMotorInfo(r);   // v7.99.4 · B05
+    if (_mi.negativo) nNeg++;
     if (r.simples!=null && r.lp!=null && r.lr!=null) {
-      const ord = (r.lrIncompleto ? [+r.simples,+r.lp] : [+r.simples,+r.lp,+r.lr]).sort((x,y)=>x-y); econTot += ord[1]-ord[0];   // v7.88.0 (P1-01)
+      const ord = (r.lrIncompleto ? [+r.simples,+r.lp] : [+r.simples,+r.lp,+r.lr]).sort((x,y)=>x-y);   // v7.88.0 (P1-01)
+      if (_mi.desatualizada) { econDesat += ord[1]-ord[0]; nDesat++; } else { econAtu += ord[1]-ord[0]; nAtu++; }
     }
     linhas.push({e, a});
   }
   $id('da-rec').textContent = recTot ? fmtR(recTot) : '–';
-  $id('da-econ').textContent = econTot ? fmtR(econTot) : '–';
+  $id('da-econ').textContent = (nAtu || !nDesat) ? (econAtu ? fmtR(econAtu) : '–') : '–';
+  $id('da-econ-desat').innerHTML =
+    (nDesat ? `+ ${fmtR(econDesat)} em ${nDesat} análise(s) gravada(s) com motor antigo — fora do total; abra e salve para atualizar` : (nAtu ? 'todas as análises no motor atual' : ''))
+    + (nNeg ? `<div style="color:var(--danger,#c0392b)"><b>⚠️ ${nNeg} análise(s) com valor NEGATIVO gravado — reabra, recalcule e salve</b></div>` : '');
   // gráficos comparativos
   try { window._chDa1?.destroy(); window._chDa2?.destroy(); } catch {}
   const comAnalise = linhas.filter(x=>x.a?.resumo && x.a.resumo.simples!=null);
@@ -14169,6 +14193,10 @@ async function dashAnalises() {
   }
   $id('da-tbody').innerHTML = linhas.length ? linhas.map(({e,a})=>{
     const r = a?.resumo||{};
+    // v7.99.4 · B05: a linha diz com que motor o resumo foi gravado — e grita se houver valor negativo
+    const _mi = a ? dashMotorInfo(r) : null;
+    const marcas = _mi ? ((_mi.desatualizada ? ` <span class="badge" style="background:#b9770e;color:#fff;font-size:10px" title="Resumo gravado com ${_mi.rotulo} — o motor atual (lacre ${LACRE_HASH}) pode dar outro resultado. Abra a análise e salve para atualizar.">desatualizada</span>` : '')
+      + (_mi.negativo ? ` <span class="badge" style="background:#c0392b;color:#fff;font-size:10px" title="Há valor NEGATIVO gravado neste resumo — reabra a análise, recalcule e salve.">valor negativo</span>` : '')) : '';
     let melhor = '—', econ = null;
     if (r.simples!=null && r.lp!=null && r.lr!=null) {
       // v7.77.0 · a MESMA guarda que o gráfico ao lado já usava: empresa inelegível não tem o
@@ -14183,7 +14211,7 @@ async function dashAnalises() {
       const ord = cands.slice().sort((x,y)=>x-y); econ = ord.length>1 ? ord[1]-ord[0] : null;
     }
     return `<tr><td><b>${e.razao_social||fmtCNPJ(e.cnpj)}</b><div class="hint">${fmtCNPJ(e.cnpj)}</div></td>
-      <td>${e.regime||'—'}</td><td>${a?a.ano:'<span class="hint">sem análise</span>'}</td>
+      <td>${e.regime||'—'}</td><td>${a?a.ano+marcas:'<span class="hint">sem análise</span>'}</td>
       <td class="num">${r.receita!=null?fmt(r.receita):'—'}</td><td class="num">${r.simples!=null?fmt(r.simples):'—'}</td>
       <td class="num">${r.lp!=null?fmt(r.lp):'—'}</td><td class="num">${r.lr!=null?fmt(r.lr):'—'}</td>
       <td>${melhor!=='—'?`<span class="badge ok">${melhor}</span>`:'—'}</td><td class="num">${econ!=null?fmt(econ):'—'}</td>

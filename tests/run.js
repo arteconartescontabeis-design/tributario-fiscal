@@ -5258,6 +5258,38 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.9[5-9]\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bd · v7.99.4 — B05 versão do motor no resumo; Dashboard marca "desatualizada" e alerta valor negativo ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    chk('5bd · dashMotorInfo: sem motor gravado = desatualizada; motor atual = ok; valor negativo = alerta',
+      run('dashMotorInfo({ simples:1, lp:2, lr:3 }).desatualizada') === true
+      && run('dashMotorInfo({ simples:1, lp:2, lr:3, motor:{ app:APP_VERSAO, lacre:LACRE_HASH } }).desatualizada') === false
+      && run('dashMotorInfo({ simples:1, lp:-220249.89, lr:3, motor:{ app:"7.96.0", lacre:"xxxx" } })').negativo === true
+      && run('dashMotorInfo({ simples:1, lp:2, lr:3, motor:{ app:APP_VERSAO, lacre:LACRE_HASH } }).negativo') === false);
+    chk('5bd · anSalvar e rfSalvar gravam o motor (app + lacre) no resumo; o ramo que preserva resumo alheio NÃO carimba motor novo',
+      (html.match(/motor:\{ app: APP_VERSAO, lacre: LACRE_HASH \}/g)||[]).length >= 2
+      && /\{ \.\.\._resumoAtual, reforma2033: RF\._res\?\.linhas\?\.at\(-1\)\?\.total \}/.test(html));
+    { const o = await vm.runInContext(`(async()=>{ const _supa = supa;
+        supa = async (m,t,op)=> t==='atp_empresas'
+          ? [{cnpj:'11111111000111', razao_social:'ALFA LTDA', regime:'Simples', analise:true},
+             {cnpj:'22222222000122', razao_social:'BETA SA', regime:'Presumido', analise:true}]
+          : (t==='atp_analises'
+          ? [{cnpj:'11111111000111', ano:2026, resumo:{ receita:1000000, simples:80000, lp:120000, lr:150000, snElegivel:true, motor:{app:APP_VERSAO, lacre:LACRE_HASH} }, atualizado_em:'2026-10-18'},
+             {cnpj:'22222222000122', ano:2026, resumo:{ receita:2000000, simples:300000, lp:-220249.89, lr:450197.60, snElegivel:true }, atualizado_em:'2026-08-31'}] : []);
+        try { await dashAnalises(); } finally { supa = _supa; }
+        return { econ: document.getElementById('da-econ').textContent,
+                 sub: document.getElementById('da-econ-desat').innerHTML,
+                 tb: document.getElementById('da-tbody').innerHTML }; })()`, ctx);
+      chk('5bd · total de economia separa atualizadas de desatualizadas: só a análise no motor atual entra no número do topo',
+        /40\.000/.test(o.econ) && !/520\.249/.test(o.econ) && /520\.249,89/.test(o.sub) && /motor antigo/.test(o.sub));
+      chk('5bd · o Dashboard alerta o valor NEGATIVO gravado (achado novo 2: Presumido −R$ 220.249,89)',
+        /NEGATIVO/.test(o.sub) && /valor negativo/.test(o.tb));
+      chk('5bd · linha com motor mais antigo vem marcada "desatualizada"; a do motor atual não',
+        /desatualizada/.test(o.tb) && (o.tb.match(/desatualizada/g)||[]).length === 1 && /-220\.249,89|220\.249,89/.test(o.tb)); }
+    chk('5bd · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bd · v7.99.4 · badge e changelog', /APP_VERSAO = '7\.99\.\d+'/.test(html) && /<b>v7\.99\.4<\/b><\/td><td>18\/10\/2026/.test(html));
+  }
+
   // ═══ 5bc · v7.99.3 — B04 estado "carregando" e bloqueio em falha de leitura ═══
   {
     const run = c => vm.runInContext(c, ctx);
