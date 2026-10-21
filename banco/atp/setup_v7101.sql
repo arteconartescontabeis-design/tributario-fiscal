@@ -2,6 +2,8 @@
 --  Análise Tributária Pro v7.101.0 — Registro de execuções (B09, execução imutável)
 --  Rodar no SQL Editor do Supabase (idempotente: pode rodar mais de uma vez).
 --
+--  ✅ APLICADO em produção em 21/10/2026 (autorizado pelo escritório). Prova: tabela criada com RLS (só SELECT+INSERT) e trigger de imutabilidade; teste: UPDATE e DELETE recusados.
+--
 --  ⚠️ NADA é aplicado pelo aplicativo: este arquivo existe para a SUA revisão e
 --  execução manual. Sem ele o app segue funcionando normalmente — apenas avisa no
 --  console, uma vez por sessão, que a execução não foi registrada.

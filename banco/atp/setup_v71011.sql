@@ -2,6 +2,13 @@
 --  Análise Tributária Pro v7.101.1 — Histórico robusto (B10)
 --  Rodar no SQL Editor do Supabase (idempotente: pode rodar mais de uma vez).
 --
+--  ✅ APLICADO em produção em 21/10/2026 (autorizado pelo escritório), com as provas:
+--     · trigger antigo de poda (atp_hist_podar_trg) MANTIDO — a função que ele chama
+--       (atp_hist_podar) foi substituída in-place: limit 24 + SECURITY DEFINER;
+--     · política de DELETE ajustada por ALTER POLICY (exige atp_sou_admin);
+--     · teste: operador apagou 0 linhas; autor gravado pelo servidor mesmo com
+--       payload falso do navegador. Este arquivo espelha o estado aplicado.
+--
 --  ⚠️ NADA é aplicado pelo aplicativo: este arquivo existe para a SUA revisão e
 --  execução manual. Sem ele o Histórico continua como hoje (frágil): autor vindo
 --  do navegador e qualquer usuário autenticado podendo apagar linhas.
@@ -43,12 +50,9 @@ create trigger atp_hist_autor_tg
 comment on function public.atp_hist_autor is 'v7.101.1 · B10: gravado_por sai do auth.jwt (servidor), nunca do payload do navegador.';
 
 -- 2) DELETE só de administrador --------------------------------------------------
--- Remove qualquer política de DELETE anterior (nomes usados pelos setups antigos)
-drop policy if exists atp_analises_hist_del on public.atp_analises_hist;
-drop policy if exists atp_hist_del          on public.atp_analises_hist;
-
-create policy atp_analises_hist_del on public.atp_analises_hist
-  for delete
+-- A política já existia (atp_analises_hist_del): o predicado é TROCADO por alter policy,
+-- que é idempotente e não exige drop.
+alter policy atp_analises_hist_del on public.atp_analises_hist
   using (
     public.atp_sou_admin()
     and cnpj in (select cnpj from public.atp_empresas
@@ -56,25 +60,30 @@ create policy atp_analises_hist_del on public.atp_analises_hist
   );
 
 -- 3) Poda preservando 24 versões por empresa/ano ----------------------------------
-create or replace function public.atp_hist_poda()
-returns trigger language plpgsql security definer set search_path = public as $fn$
+-- O trigger antigo (atp_hist_podar_trg, do setup_v712) é MANTIDO; a função que ele
+-- chama é substituída in-place — passa de "limit 3" para "limit 24" e vira SECURITY
+-- DEFINER, para a poda não depender da política de DELETE (que agora exige admin).
+create or replace function public.atp_hist_podar()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $function$
 begin
   delete from public.atp_analises_hist h
-   where h.cnpj = new.cnpj and h.ano = new.ano
-     and h.id in (
+   where h.cnpj = new.cnpj
+     and h.ano  = new.ano
+     and h.id not in (
        select id from public.atp_analises_hist
         where cnpj = new.cnpj and ano = new.ano
-        order by gravado_em desc
-        offset 24);
+        order by gravado_em desc, id desc
+        limit 24
+     );
   return null;
-end $fn$;
+end;
+$function$;
 
-drop trigger if exists atp_hist_poda_tg on public.atp_analises_hist;
-create trigger atp_hist_poda_tg
-  after insert on public.atp_analises_hist
-  for each row execute function public.atp_hist_poda();
-
-comment on function public.atp_hist_poda is 'v7.101.1 · B10: preserva as 24 gravações mais recentes por empresa/ano (o app lista 12).';
+comment on function public.atp_hist_podar is 'v7.101.1 · B10: preserva as 24 gravações mais recentes por empresa/ano (o app lista 12). SECURITY DEFINER para não depender da política de DELETE.';
 
 commit;
 

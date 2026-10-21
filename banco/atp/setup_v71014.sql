@@ -2,6 +2,8 @@
 --  Análise Tributária Pro v7.101.4 — Perfil de demonstração isolado (B18 · LGPD)
 --  Rodar no SQL Editor do Supabase (idempotente: pode rodar mais de uma vez).
 --
+--  ✅ APLICADO em produção em 21/10/2026 (autorizado pelo escritório). Prova: conta de teste passou a ver 1 empresa (a fictícia) e 0 análises/históricos/consultas; escritório real não vê a fictícia.
+--
 --  ⚠️ NADA é aplicado pelo aplicativo: este arquivo existe para a SUA revisão e
 --  execução manual.
 --

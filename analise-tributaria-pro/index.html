@@ -386,6 +386,8 @@ ul.ap-lista li{margin-bottom:7px}
         <div class="card"><h3>Melhor regime na carteira analisada</h3><canvas id="ch-da-melhor" style="max-height:300px"></canvas></div>
       </div>
       <div class="card" style="margin-top:18px">
+        <div class="toolbar" style="margin:0 0 6px"><button class="btn" onclick="dashCongelarFechadas()" title="Varre as análises FECHADAS sem execução congelada: as que recalculam idênticas ao centavo são refechadas com a execução congelada (nada muda no emitido); as divergentes saem numa lista para decisão caso a caso. v7.101.5">🧊 Congelar análises fechadas</button></div>
+        <div id="da-congelar-rel"></div>
         <h3>Empresas cadastradas para análise</h3>
         <div style="overflow-x:auto"><table>
           <thead><tr><th>Empresa</th><th>Regime atual</th><th>Ano</th><th class="num">Receita</th><th class="num">Simples</th><th class="num">Presumido</th><th class="num">Real</th><th>Melhor regime</th><th class="num">Economia/ano</th><th class="num">Reforma 2033</th><th></th></tr></thead>
@@ -804,6 +806,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.101.5</b></td><td>21/10/2026</td><td><b>🧊 CONGELADOR DE ANÁLISES FECHADAS EM LOTE — o B08 aplicado à carteira inteira, com a regra de ouro: congelar nunca muda um número emitido. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> As 73 análises fechadas antes da v7.100.0 não têm execução congelada (seus relatórios ainda saem do recálculo). O botão <b>🧊 Congelar análises fechadas</b>, no Dashboard, varre as fechadas e, para cada uma sem execução: recalcula com o motor atual e compara com o snapshot do fechamento — totais, DAS mês a mês e cenários 2033, com tolerância de um centavo. <b>Bateu</b> → refecha na hora com a execução congelada: o emitido não muda em NADA, só ganha a proteção; quem fechou e quando são preservados, o snapshot anterior vai ao histórico (evento <i>congelada</i>) e a execução entra no registro imutável (origem <i>refechar</i>). <b>Divergiu</b> → não toca: a análise sai numa lista nominal com as diferenças (é o caso da auditoria: 10 de 73), para decisão caso a caso pelo 🔁 Refechar — adotar número novo é decisão profissional, nunca automática. <b>Também nesta versão:</b> a fonte da tabela de prazos passa a citar a <b>Res. 186/2026</b> como a norma cujo calendário a Res. 194/2026 alterou (conferido na imprensa oficial em 21/10/2026 — as datas em uso não mudam). Suíte: bloco 5bl.</td></tr>
                     <tr><td><b>v7.101.4</b></td><td>18/10/2026</td><td><b>🛡️ PERFIL DE DEMONSTRAÇÃO ISOLADO (B18 · LGPD): a conta de teste deixa de enxergar a carteira real. Motor e lacre <code>0a257d66</code> INTOCADOS — esta versão é banco e política, não código de cálculo.</b> (Achado novo 5 da auditoria de 18/10/2026, <b>confirmado por leitura direta do banco em 18/10</b>: um único escritório cadastrado e a conta <code>teste@artecon.cnt.br</code> vinculada a ele, enxergando as 263 empresas reais — CNPJ, receita e valores.) A correção usa o isolamento multi-tenant que JÁ existe desde a v7.37.0 (RLS por <code>escritorio_id</code>): <code>banco/atp/setup_v71014.sql</code> (idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>) <b>(1)</b> cria o escritório "Demonstração"; <b>(2)</b> move a conta de teste para ele — a RLS passa a esconder todas as empresas, análises, históricos e consultas do escritório real; <b>(3)</b> semeia UMA empresa fictícia rotulada ("EMPRESA DEMONSTRAÇÃO LTDA (FICTÍCIA)", CNPJ inválido de propósito) para a demonstração não abrir vazia — nenhuma empresa real é tocada (não há UPDATE nem DELETE em <code>atp_empresas</code>); <b>(4)</b> traz o <b>teste de acesso negativo</b> em BEGIN/ROLLBACK: a conta de teste tem de ver 1 empresa (a fictícia) e 0 análises reais, e a contraprova mostra que o escritório real não vê a fictícia. A análise de exemplo da demonstração deve ser montada pelo próprio app, logado na conta de teste, com dados inventados. Suíte: bloco 5bk.</td></tr>
                     <tr><td><b>v7.101.3</b></td><td>18/10/2026</td><td><b>🧾 RODAPÉ RASTREÁVEL NOS RELATÓRIOS (B12): todo documento identifica a execução de origem — motor (app + lacre), empresa, ano-base e emissão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1)</b> Os quatro relatórios de fluxo — Consolidado, Conferência de cálculos, Comparativo de Regimes e Reforma — ganham o rodapé impresso <code>rlRodapeExec</code>: análise aberta sai com "recálculo do motor atual — app vX · lacre Y"; análise fechada com execução congelada sai com o motor DO FECHAMENTO (app, lacre e data) e a versão que imprimiu. <b>(2)</b> A apresentação declara o mesmo na tela "Sobre este estudo" (a linha "Números" passa a dizer quando os valores vêm da execução congelada). <b>(3)</b> O parecer já identificava a execução desde a v7.100.0, no rodapé legal. Com isso, nenhum PDF emitido pelo sistema sai sem dizer QUAL execução o produziu — auditável meses depois contra o registro imutável da v7.101.0. Suíte: bloco 5bj.</td></tr>
                     <tr><td><b>v7.101.2</b></td><td>18/10/2026</td><td><b>🧪 TESTE AUTOMÁTICO DE CONSISTÊNCIA ENTRE TELAS (B11): o CI passa a FALHAR se qualquer total divergir além do arredondamento entre os cartões da Análise, o resumo gravado (fonte do Dashboard) e o parecer. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> O bloco novo da suíte (5bi) atravessa o caso-gabarito 3 — o mais completo: art. 24, teto do ISS, exportação, impedimento, Fator R — pelos três caminhos que o usuário vê: <b>(1)</b> os cartões da Análise têm de imprimir exatamente a fórmula única de exibição (<code>totExib</code>, v7.42.1), ao centavo; <b>(2)</b> o resumo que o <code>anSalvar</code> grava (e o Dashboard lê) não pode divergir dos cartões além de R$ 0,06 — a folga de arredondamento declarada na v7.42.1; <b>(3)</b> os totais do parecer (<code>parecerDados</code>) idem; <b>(4)</b> os cenários 2033 do parecer têm de ser idênticos, ao centavo, ao <code>calcCenariosReforma</code> do mesmo resultado. Resultado na implantação: divergência máxima medida de <b>R$ 0,0000</b> — as fórmulas únicas construídas desde a v7.42.1 convergem; o teste existe para DENUNCIAR a próxima mudança que quebrar isso, antes de qualquer publicação. Nenhuma linha do app mudou além do badge e desta nota. Suíte: bloco 5bi.</td></tr>
@@ -6623,7 +6626,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.101.4';
+const APP_VERSAO = '7.101.5';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -13295,11 +13298,11 @@ const AP_TETO_TXT = 'R$ 4,8 mi';
 // qual é o próximo em aberto (prazoProximo).
 const PRAZOS_LEGAIS = {
   2027: {
-    fonte: 'Res. CGSN nº 194/2026, DOU de 28/09/2026, que alterou a Res. 190/2026',
+    fonte: 'Res. CGSN nº 194/2026, DOU de 28/09/2026, que alterou o calendário da Res. 186/2026',   // v7.101.5 · conferido na imprensa oficial em 21/10/2026
     itens: {
       simples:       { id:'simples', d:'1º/09 a 15/10/2026', fim:'2026-10-15',
         t:'Opção pelo Simples Nacional para 2027',
-        x:'Formalizada no Portal do Simples, com efeitos a partir de 1º/01/2027 (art. 6º da Res. 190/2026; prazo alterado pela Res. 194/2026). Empresas em início de atividade: de 16/10 a 31/12/2026.', cls:'' },
+        x:'Formalizada no Portal do Simples, com efeitos a partir de 1º/01/2027 (prazo da Res. 194/2026, DOU 28/09/2026). Empresas em início de atividade: de 16/10 a 31/12/2026.', cls:'' },
       ibscbs:        { id:'ibscbs', d:'1º/09 a 30/10/2026', fim:'2026-10-30',
         t:'Opção pelo regime regular de IBS/CBS (híbrido) — 1º semestre/2027',
         x:'Art. 40-D da Res. CGSN 140/2018: a opção é semestral — esta janela vale para jan–jun/2027; a de março/2027, para o 2º semestre. Início de atividade: de 31/10 a 31/12/2026.', cls:'pl' },
@@ -14362,6 +14365,66 @@ function dashMotorInfo(r){
   const negativo = !!r && [r.simples, r.lp, r.lr].some(v => v!=null && +v < -0.005);
   return { mot, desatualizada, negativo,
     rotulo: desatualizada ? (mot && mot.app ? 'motor v'+mot.app : 'motor anterior à v7.99.4') : 'motor atual' };
+}
+// ═══ v7.101.5 — CONGELADOR DE ANÁLISES FECHADAS EM LOTE (o B08 aplicado à carteira) ═══
+// As análises fechadas ANTES da v7.100.0 não têm execução congelada: seus relatórios ainda saem
+// do recálculo. Este botão varre as fechadas e, para cada uma sem execução: recalcula com o motor
+// atual e compara com o snapshot do fechamento (totais, DAS mês a mês e cenários 2033, ao
+// centavo). BATEU → refecha na hora com a execução congelada: os números emitidos não mudam em
+// nada, só ganham a proteção; quem fechou e quando fechou são preservados, o snapshot anterior
+// vai para o histórico (evento "congelada") e a execução entra no registro imutável. DIVERGIU →
+// NÃO toca: a análise sai numa lista para decisão caso a caso (reabrir/refechar pelo 🔁, que
+// adota os números do motor atual — decisão profissional, nunca automática).
+async function dashCongelarFechadas(){
+  const el = $id('da-congelar-rel');
+  if (!confirm('Congelar as análises FECHADAS cujo recálculo bate ao centavo com o snapshot?\n\nAs que baterem são refechadas com a execução congelada — os números emitidos NÃO mudam, só ficam protegidos contra atualizações do motor. As divergentes não são tocadas: saem numa lista para decisão caso a caso.')) return;
+  let rows = [];
+  try { rows = await supa('GET','atp_analises',{ params:{ select:'cnpj,ano,status,snapshot,dados,fechado_por,fechado_em', status:'eq.fechada', order:'ano.desc', limit:'500' } }) || []; }
+  catch(e){ toast('Não consegui ler as análises fechadas: ' + e.message); return; }
+  const rel = { congeladas:[], jaCongeladas:0, divergentes:[], erros:[] };
+  let i = 0;
+  for (const r of rows){
+    i++; if (el) el.innerHTML = `<div class="hint">🧊 Congelando… ${i}/${rows.length}</div>`;
+    try {
+      if (r.snapshot && r.snapshot.exec && r.snapshot.exec.res){ rel.jaCongeladas++; continue; }
+      const an = anNormalizar(JSON.parse(JSON.stringify(r.dados||{})), r.cnpj, r.ano); an.cnpj = r.cnpj; an.ano = r.ano;
+      const res = calcular(an, PARAMS.anexos, folhaPercDaEmpresa(an.cfg));
+      const S = (r.snapshot && r.snapshot.totais) || {};
+      const difs = [];
+      for (const [k,rot] of [['simples','Simples'],['lp','Presumido'],['lr','Real'],['das','DAS']]){
+        const a = +S[k]||0, b = +res.totais[k]||0;
+        if (Math.abs(a-b) > 0.015) difs.push(`${rot}: ${fmtR(a)} → ${fmtR(b)}`);
+      }
+      const dm = (r.snapshot && r.snapshot.dasMeses) || null;
+      if (dm) for (let m=0; m<12; m++) if (Math.abs((+dm[m]||0) - (+(res.meses[m]||{}).das||0)) > 0.015){ difs.push(`DAS de ${MESES[m]}: ${fmtR(+dm[m]||0)} → ${fmtR(+(res.meses[m]||{}).das||0)}`); break; }
+      let cenNovo = null;
+      try { const C = calcCenariosReforma(res, an.reforma||null); const L33 = C.REF[C.REF.length-1];
+        cenNovo = { dentro: cenDentro(res.totais, L33), hib: L33.hib, regular: L33.regular }; } catch(e){/* silêncio proposital (A10): sem cenários, o congelador compara só totais e DAS */}
+      const cenAnt = r.snapshot && r.snapshot.cen2033;
+      if (cenAnt && cenNovo) for (const k of ['dentro','hib','regular'])
+        if (Math.abs((+cenAnt[k]||0) - (+cenNovo[k]||0)) > 0.015){ difs.push(`Reforma 2033 (${k}): ${fmtR(+cenAnt[k]||0)} → ${fmtR(+cenNovo[k]||0)}`); break; }
+      if (difs.length){ rel.divergentes.push({ cnpj:r.cnpj, ano:r.ano, difs }); continue; }
+      // bate ao centavo: congela pelo MESMO caminho do refechamento, preservando quem fechou
+      const _an = AN;
+      let snap; try { AN = an; AN._status = 'fechada'; AN._res = res; snap = anSnapshotCalc(); } finally { AN = _an; }
+      await supa('PATCH', `atp_analises?cnpj=eq.${r.cnpj}&ano=eq.${r.ano}`,
+        { body:{ snapshot: snap, fechado_por: r.fechado_por || APP?.user?.email || '', fechado_em: r.fechado_em || snap.em } });
+      await anHistGravar({ cnpj:r.cnpj, ano:r.ano, dados:{...an,_res:undefined},
+        resumo:{ evento:'congelada', de:'app v'+String((r.snapshot||{}).versao||'?'), para:'app v'+APP_VERSAO,
+                 snapshotAnterior: r.snapshot || null, por: APP?.user?.email||'' } });
+      await execRegistrar('refechar', r.cnpj, r.ano, res, an.reforma||null, an.cfg);
+      rel.congeladas.push({ cnpj:r.cnpj, ano:r.ano });
+    } catch(e){ rel.erros.push({ cnpj:r.cnpj, ano:r.ano, erro: (e && e.message) || String(e) }); }
+  }
+  if (el) el.innerHTML = `<div class="card" style="border-left:4px solid #1a5276;margin-top:10px">
+    <b>🧊 Congelamento das análises fechadas — resultado</b>
+    <div class="hint" style="margin-top:6px">${rel.congeladas.length} congelada(s) agora (números idênticos ao centavo — nada mudou no que foi emitido) · ${rel.jaCongeladas} já estavam congeladas · ${rel.divergentes.length} divergente(s), não tocadas · ${rel.erros.length} erro(s).</div>
+    ${rel.congeladas.length ? `<div class="hint" style="margin-top:4px">Congeladas: ${rel.congeladas.map(x=>esc(empNomeDe(x.cnpj)||fmtCNPJ(x.cnpj))+' · '+x.ano).join(' — ')}</div>` : ''}
+    ${rel.divergentes.length ? `<div style="margin-top:8px;padding:8px 10px;border-left:4px solid #b9770e;background:#fef6e7;font-size:12px"><b>Divergentes — o motor atual dá números DIFERENTES do fechamento; decida caso a caso (abra a análise e use 🔁 Refechar para adotar os novos):</b><br>${rel.divergentes.map(d=>`<b>${esc(empNomeDe(d.cnpj)||fmtCNPJ(d.cnpj))} · ${d.ano}</b>: ${d.difs.map(esc).join(' · ')}`).join('<br>')}</div>` : ''}
+    ${rel.erros.length ? `<div class="hint" style="margin-top:4px;color:var(--danger,#c0392b)">Erros: ${rel.erros.map(d=>esc(fmtCNPJ(d.cnpj))+' · '+d.ano+' ('+esc(d.erro)+')').join(' — ')}</div>` : ''}
+  </div>`;
+  toast(`🧊 ${rel.congeladas.length} congelada(s) · ${rel.divergentes.length} divergente(s) para decisão · ${rel.jaCongeladas} já congeladas.`);
+  dashAnalises();
 }
 async function dashAnalises() {
   let emps = [], anals = [];

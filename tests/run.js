@@ -5258,6 +5258,60 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bl · v7.101.5 — congelador de análises fechadas em lote (B08 aplicado à carteira) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    { const o = await vm.runInContext(`(async()=>{ const _supa = supa; const patches = [], hist = [], execs = [];
+        // caso A: fechada SEM execução cujo recálculo bate ao centavo → congela
+        const inpA = JSON.parse(JSON.stringify(LACRE_CASOS[1].inp)); inpA.cnpj='55555555000155'; inpA.ano=2026;
+        const anA = anNormalizar(JSON.parse(JSON.stringify(inpA)), '55555555000155', 2026);
+        const resA = calcular(anA, PARAMS.anexos, folhaPercDaEmpresa(anA.cfg));
+        const cenA = calcCenariosReforma(resA, anA.reforma||null); const L33 = cenA.REF[cenA.REF.length-1];
+        const snapA = { versao:'7.95.2', em:'2026-09-01T00:00:00Z',
+          totais:{ receita:resA.totais.receita, simples:resA.totais.simples, lp:resA.totais.lp, lr:resA.totais.lr, das:resA.totais.das },
+          cen2033:{ dentro: cenDentro(resA.totais, L33), hib:L33.hib, regular:L33.regular },
+          dasMeses: resA.meses.map(M=>+(M.das||0).toFixed(2)) };
+        // caso B: fechada SEM execução cujo snapshot DIVERGE → não toca, lista
+        const snapB = JSON.parse(JSON.stringify(snapA)); snapB.totais = { ...snapA.totais, lp: -220249.89 };
+        // caso C: fechada JÁ congelada → pula
+        const rows = [
+          { cnpj:'55555555000155', ano:2026, status:'fechada', snapshot:snapA, dados:inpA, fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' },
+          { cnpj:'66666666000166', ano:2026, status:'fechada', snapshot:snapB, dados:JSON.parse(JSON.stringify(inpA)), fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' },
+          { cnpj:'77777777000177', ano:2026, status:'fechada', snapshot:{ ...JSON.parse(JSON.stringify(snapA)), exec:{ res:{ totais:{} } } }, dados:JSON.parse(JSON.stringify(inpA)), fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' } ];
+        supa = async (m,t,op)=>{
+          if (m==='GET' && t==='atp_analises') return JSON.parse(JSON.stringify(rows));
+          if (m==='PATCH') { patches.push({ t, body: op.body }); return []; }
+          if (m==='POST' && t==='atp_analises_hist') { hist.push(op.body[0]); return []; }
+          if (m==='POST' && t==='atp_execucoes') { execs.push(op.body[0]); return []; }
+          return []; };
+        document.getElementById('da-congelar-rel').innerHTML = '';
+        try { await dashCongelarFechadas(); } finally { supa = _supa; }
+        const rel = document.getElementById('da-congelar-rel').innerHTML;
+        // um timer de anAplicarConfig (teste anterior) pode disparar anSalvar no meio — por isso
+        // as asserções procuram o evento CERTO em vez de confiar na ordem dos registros
+        const hcong = hist.find(h => h && h.resumo && h.resumo.evento === 'congelada') || null;
+        const erefe = execs.find(x => x && x.origem === 'refechar') || null;
+        return { nPatch: patches.length, alvo: patches[0] && patches[0].t,
+          congelouComExec: !!(patches[0] && patches[0].body.snapshot && patches[0].body.snapshot.exec && patches[0].body.snapshot.exec.res),
+          preservouFechadoPor: patches[0] && patches[0].body.fechado_por === 't',
+          histEvento: hcong && hcong.resumo.evento,
+          histGuardaAnterior: !!(hcong && hcong.resumo.snapshotAnterior),
+          execOrigem: erefe && erefe.origem,
+          relTemDivergente: /66\.666\.666|66666666000166/.test(rel) && /Presumido/.test(rel),
+          relNaoCongelaDivergente: patches.every(p => String(p.t).indexOf('66666666000166') < 0) }; })()`, ctx);
+      chk('5bl · congela SÓ a fechada que bate ao centavo: PATCH com snapshot.exec, preservando quem fechou',
+        o.nPatch === 1 && String(o.alvo).indexOf('55555555000155') >= 0 && o.congelouComExec === true && o.preservouFechadoPor === true);
+      chk('5bl · histórico ganha o evento "congelada" com o snapshot anterior preservado; execução registrada como refechar',
+        o.histEvento === 'congelada' && o.histGuardaAnterior === true && o.execOrigem === 'refechar',
+        'evento=' + o.histEvento + ' anterior=' + o.histGuardaAnterior + ' exec=' + o.execOrigem);
+      chk('5bl · a divergente NÃO é tocada e aparece no relatório para decisão caso a caso',
+        o.relTemDivergente === true && o.relNaoCongelaDivergente === true); }
+    chk('5bl · Dashboard tem o botão 🧊 Congelar análises fechadas', /onclick="dashCongelarFechadas\(\)"/.test(html) && /id="da-congelar-rel"/.test(html));
+    chk('5bl · a fonte dos prazos cita a Res. 186/2026 (a 194 alterou o calendário dela — conferido em 21/10)', /que alterou o calendário da Res\. 186\/2026/.test(html));
+    chk('5bl · lacre 0a257d66 intocado', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bl · v7.101.5 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.5<\/b><\/td><td>21\/10\/2026/.test(html));
+  }
+
   // ═══ 5bk · v7.101.4 — B18 perfil de demonstração isolado (LGPD) + teste de acesso negativo (setup_v71014.sql) ═══
   {
     const sql = fs.existsSync(path.join(RAIZ,'banco','atp','setup_v71014.sql')) ? fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v71014.sql'),'utf8') : '';
@@ -5346,9 +5400,9 @@ console.log('\n■ Integridade da interface');
       chk('5bh · setup_v71011.sql: autor gravado PELO SERVIDOR (trigger lê auth.jwt, ignora o que o navegador mandar)',
         /create or replace function public\.atp_hist_autor/.test(sql) && /auth\.jwt\(\) ->> 'email'/.test(sql) && /before insert on public\.atp_analises_hist/.test(sql));
       chk('5bh · setup_v71011.sql: DELETE só de administrador (política com atp_sou_admin) e poda SECURITY DEFINER preservando 24 versões',
-        /create policy atp_analises_hist_del/.test(sql) && /atp_sou_admin\(\)/.test(sql)
-        && /security definer/.test(sql) && /offset 24/.test(sql)
-        && /rollback/i.test(sql) && /usuário comum não apaga/i.test(sql)); }
+        /alter policy atp_analises_hist_del/.test(sql) && /atp_sou_admin\(\)/.test(sql)
+        && /security definer/.test(sql) && /limit 24/.test(sql)
+        && /rollback/i.test(sql) && /usuário comum não apaga/i.test(sql)); }   // v7.101.5: o arquivo espelha o APLICADO em produção (alter policy; função do trigger antigo substituída in-place)
     chk('5bh · lacre 0a257d66 intocado (B10 não toca o motor)', /LACRE_HASH = '0a257d66'/.test(html));
     chk('5bh · v7.101.1 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.101\.1<\/b><\/td><td>18\/10\/2026/.test(html));
   }
