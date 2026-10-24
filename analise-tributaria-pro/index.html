@@ -678,6 +678,14 @@ ul.ap-lista li{margin-bottom:7px}
           <select id="rl-proj" onchange="rlProjTrocar(this.value)"></select></div>
         <div style="width:230px;display:none" id="rl-anoref-wrap"><label>Ano de referência <span class="hint" style="font-weight:400">(neste documento)</span></label>
           <select id="rl-anoref" onchange="rlAnoRefTrocar(this.value)"></select></div>
+        <div style="width:200px;display:none" id="rl-periodo-wrap"><label>Período do documento <span class="hint" style="font-weight:400">(plano do cliente)</span></label>
+          <select id="rl-periodo" onchange="rlPeriodoTrocar(this.value)" title="Restringe o documento ao período de apuração do plano do cliente com a Artecon. Só cortes alinhados a trimestre: IRPJ/CSLL do Presumido, adicional e LC 224 são trimestrais — a soma dos meses do corte é exata. v7.106.0">
+            <option value="ano">Ano completo</option>
+            <option value="s1">1º semestre</option><option value="s2">2º semestre</option>
+            <option value="t1">1º trimestre</option><option value="t2">2º trimestre</option>
+            <option value="t3">3º trimestre</option><option value="t4">4º trimestre</option>
+          </select></div>
+        <div style="align-self:flex-end;display:none" id="rl-entrega-wrap"><button class="btn" onclick="rlRegistrarEntrega()" title="Registra no Histórico da análise a entrega deste documento no período selecionado (evento entrega-periodo, com totais, vencedor, autor, app e lacre) — a prova, meses depois, do que foi entregue no ciclo do plano. v7.106.0">📬 Registrar entrega do período</button></div>
         <div><label>Periodicidade</label><select id="rl-per" onchange="rlRender()">
           <option value="1">Mensal</option><option value="2">Bimestral</option>
           <option value="3" selected>Trimestral</option><option value="6">Semestral</option>
@@ -757,6 +765,14 @@ ul.ap-lista li{margin-bottom:7px}
           <div><label>CNAE principal <span class="hint" style="font-weight:400">— código e descrição, pela Receita</span></label><input id="emp-cnae" placeholder="0000-0/00 — descrição"></div>
           <div><label>Simples / MEI <span class="hint" style="font-weight:400">— pela Receita</span></label><div id="emp-receita-info" class="hint" style="padding:7px 0;min-height:18px">—</div></div>
         </div>
+        <!-- v7.106.0 · plano do cliente com a Artecon: define o ciclo de apuração dos documentos (Relatórios → Período do documento) -->
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:14px;margin-top:12px">
+          <div><label>Plano de apuração — Artecon <span class="hint" style="font-weight:400">(ciclo de entrega)</span></label>
+            <select id="emp-plano" title="O ciclo contratado pelo cliente: define o período padrão dos documentos em Relatórios (grava plano_apuracao em atp_empresas — setup_v7106.sql).">
+              <option value="">Anual (padrão)</option><option value="semestral">Semestral</option><option value="trimestral">Trimestral</option>
+            </select></div>
+          <div class="hint" style="align-self:end;padding-bottom:7px">O Período do documento (aba Relatórios) abre no último período do plano com receita lançada — e pode ser trocado por documento.</div>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px;margin-top:12px">
           <div><label>UF / Município</label><input id="emp-ufmun" placeholder="SC / Palhoça"></div>
           <div><label>Atividade principal <span class="hint" style="font-weight:400">— item da LC 116; usado para estimar as reduções da Reforma quando não há notas</span></label>
@@ -807,6 +823,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.106.0</b></td><td>24/10/2026</td><td><b>📅 APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral · semestral · anual) passa a orientar os documentos. Motor e lacre <code>795f5d26</code> INTOCADOS: o período é a SOMA dos meses do corte, nunca um segundo cálculo.</b> <b>(1) Por quê:</b> clientes com plano trimestral/semestral recebiam documentos sempre anuais — e 71 das 72 análises fechadas de 2026 têm exatamente jan–jun lançado, prontas para uma entrega de 1º semestre. <b>(2) Plano na ficha:</b> a empresa ganha o campo "Plano de apuração — Artecon" (coluna <code>plano_apuracao</code>, <code>banco/atp/setup_v7106.sql</code>). <b>(3) Período do documento:</b> Comparativo de regimes, Conferência e Parecer ganham o seletor (Ano · 1º/2º semestre · T1–T4), que abre no último período do plano com receita lançada. Só cortes alinhados a trimestre: IRPJ/CSLL do Presumido, o adicional e a LC 224 são trimestrais, então a soma dos meses do corte é EXATA — a suíte crava a partição t1+t2+t3+t4 = ano ao centavo. <b>(4) O que cada documento mostra no corte:</b> o Comparativo elege o vencedor DO PERÍODO e recalcula todas as tabelas sobre os meses do corte; a Conferência ganha o cartão "Apuração do período"; o Parecer declara o corte na capa e ganha a página "Apuração do período". Honestidades declaradas: Lucro Real em apuração ANUAL aparece como estimativa no corte (o ajuste é anual); 13º e provisões ficam nos meses deles; os cenários da Reforma são do EXERCÍCIO e permanecem no documento anual — comparar trimestre com ano pleno seria desonesto. <b>(5) 📬 Registrar entrega do período:</b> cada emissão do ciclo pode ser registrada no Histórico (evento <code>entrega-periodo</code>, com corte, totais, vencedor, autor, app e lacre) — a prova, meses depois, do que foi entregue em cada ciclo do plano. Suíte: bloco 5br (partição ao centavo, eleição do corte, padrão pelo plano, comparativo funcional com e sem corte, entrega no Histórico).</td></tr>
                     <tr><td><b>v7.105.1</b></td><td>24/10/2026</td><td><b>🔁 REFECHAMENTO EM LOTE DAS DIVERGENTES — decisão tomada caso a caso, execução em um clique. Motor e lacre <code>795f5d26</code> INTOCADOS.</b> O 🧊 (v7.101.5) congela as fechadas que batem ao centavo e LISTA as divergentes para decisão profissional; faltava o passo seguinte: decidida a adoção dos números novos (como em 24/10/2026, com o quadro das 11 divergentes analisado caso a caso), cada análise ainda precisava ser aberta e refechada uma a uma. O botão <b>"🔁 Refechar divergentes em lote"</b> (Dashboard, ao lado do 🧊) executa a decisão: varre as fechadas sem execução congelada, recalcula com o motor atual e refecha SÓ as divergentes, pelo MESMO caminho do 🔁 individual — <b>quem executa o lote assume o fechamento</b> (fechado_por), o Histórico ganha o evento <code>refechada</code> com <code>de/para</code> das versões e o <b>snapshot anterior preservado</b> (os números antigos ficam guardados), e cada refechamento entra no registro imutável de execuções (B09). A idêntica ao centavo NÃO é tocada (congelar é com o 🧊) e a já congelada é pulada. O relatório na tela lista cada refechada com os valores antigo → novo e lembra: <b>parecer entregue com números antigos deve ser reimpresso</b>. Suíte: bloco 5bq (refecha só a divergente; histórico com snapshot anterior; execução registrada; idêntica intocada).</td></tr>
                     <tr><td><b>v7.105.0</b></td><td>24/10/2026</td><td><b>⚖️ LC 224/2025 PROJETADA NOS ANOS FUTUROS DA REFORMA (B17), com LACRE RE-SELADO <code>0a257d66</code> → <code>795f5d26</code> — mudança de motor aprovada pelo escritório em 24/10/2026, com relatório prévio (docs/RELATORIO_previo_B16_B17.md) e laboratório de deltas ANTES do código.</b> <b>(1) O problema:</b> o cenário "regime regular" (2026–2033) carregava o IRPJ/CSLL do ano-base congelado para todos os anos projetados — análise de ano-base 2025 projetava o Presumido SEM o acréscimo da LC 224 (que vigora desde 2026), e a de 2026 carregava a CSLL de 3 trimestres (noventena da IN RFB 2.305) para anos cheios que teriam 4; Presumido subestimado podia vencer indevidamente a comparação de regimes dos anos projetados. <b>(2) A regra nova:</b> para cada ano projetado, o acréscimo é recalculado pela VIGÊNCIA DAQUELE ANO — três estados: antes de 2026, sem a lei; 2026, IRPJ no ano cheio e CSLL desde abril; 2027 em diante, ano cheio nos dois — rodando o motor de novo com o ano do cenário, a mesma técnica do exercício seguinte (v7.88.0). Só o "resto" do LP muda (IRPJ + adicional + CSLL); PIS/COFINS/ICMS/IPI/ISS não dependem do ano (premissa conferida em laboratório e vigiada pela suíte). <code>cfg.lc224 === false</code> (liminar) desliga também as projeções; o realizado do ano-base NUNCA muda; análise fechada congelada (v7.100.0) não recalcula; linha antiga sem a entrada mantém o comportamento anterior, declarado em <code>lc224Proj</code>. <b>(3) Deltas selados</b> (medidos no laboratório e cravados na suíte): caso 3 do lacre (2026, R$ 7,97 mi) — regular 2027-2032 de 2.075.750,14 para 2.076.440,07 e 2033 de 2.781.812,37 para 2.782.502,30 (<b>+689,93 cada</b>, o complemento da CSLL do 1º trimestre); ano-base 2025 acima do limite ganha 12.762,05 em 2026 e 13.451,98/ano de 2027 em diante; casos 1, 2 e 4, totais anuais e cenários "dentro"/"híbrido" idênticos ao centavo. <b>(4) Nota de sensibilidade no parecer:</b> quando a projeção inclui a lei, o parecer declara o valor por ano cheio e lembra que as ADIs 7920/7936/7944/7982 estão pendentes no STF — se a lei cair, o Presumido projetado reduz nesse valor. Tabela de Regras (B14) ganha a linha <code>lc224-projecao</code> com o registro da aprovação. Suíte: bloco 5bp (gabarito transcrito da lei: Δ 22.352,00 no realizado de 2026 e 23.936,00 no ano cheio, caso uniforme de 600 mil/mês). Varredura: diffs APENAS em <code>regular/regLP</code> de anos projetados dos casos acima de R$ 1,25 mi/trimestre.</td></tr>
                     <tr><td><b>v7.104.0</b></td><td>24/10/2026</td><td><b>🏷️ REGIME TRIBUTÁRIO POR ANO-BASE (B15): o regime deixa de vir só da ficha da empresa — cada análise pode registrar o regime vigente NAQUELE ano em Configurações da análise (campo "Regime tributário do ano-base"), e o app passa a usar essa informação onde o regime aparece. Motor e lacre <code>0a257d66</code> INTOCADOS: nenhum número muda.</b> Como funciona: a nova função <code>regimeDoAno(dados, empresa)</code> responde <code>cfg.regimeAno</code> quando preenchido e, na falta dele, o regime da ficha (comportamento de hoje) — e passou a ser usada nos três pontos que exibiam <code>empresa.regime</code>: a comparação ficha × elegibilidade do parecer (que avisa quando a ficha diverge), a capa do parecer impresso e o contexto enviado à consulta de IA. O campo herda para o ano seguinte via <code>CFG_HERDA</code> (como o Fator R e a LC 224) e entra na trilha de auditoria de configurações com rótulo próprio. Por que importa: empresa que ERA Lucro Presumido em 2024 e virou Simples em 2025 tinha o parecer de 2024 reimpresso com o regime atual da ficha; agora cada ano guarda o seu. Suíte: bloco 5bo (precedência da função, parecer funcional com regime do ano ≠ ficha, gravação/limpeza em Config, herança e auditoria). Varredura: 24 casos idênticos ao backup v7.99.1.</td></tr>
@@ -6642,7 +6659,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.105.1';
+const APP_VERSAO = '7.106.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -7051,6 +7068,7 @@ const empItemLC = v => { const m = String(v||'').match(/^\s*(\d{1,2}\.\d{2})/); 
 function empNova(){ EMP_EDIT=null; EMP_RECEITA=null; ['emp-cnpj','emp-razao','emp-ufmun','emp-obs','emp-atividade','emp-abertura','emp-cnae'].forEach(i=>{ const el=$id(i); if (el) el.value=''; });
   if ($id('emp-receita-info')) $id('emp-receita-info').innerHTML = '—';   // v7.99.1
   $id('emp-regime').value='A definir';
+  if ($id('emp-plano')) $id('emp-plano').value='';   // v7.106.0
   $id('emp-form-titulo').textContent='Nova empresa'; $id('emp-form-card').style.display='block'; }
 function empEditar(cnpj){ const e = EMPRESAS.find(x=>x.cnpj===cnpj); if(!e) return;
   EMP_EDIT=cnpj; $id('emp-cnpj').value=fmtCNPJ(e.cnpj); $id('emp-razao').value=e.razao_social||'';
@@ -7062,6 +7080,7 @@ function empEditar(cnpj){ const e = EMPRESAS.find(x=>x.cnpj===cnpj); if(!e) retu
   if ($id('emp-abertura')) $id('emp-abertura').value = String(e.data_abertura||'').slice(0,10);
   if ($id('emp-cnae')) $id('emp-cnae').value = [e.cnae_codigo, e.cnae].filter(Boolean).join(' — ');
   if ($id('emp-receita-info')) $id('emp-receita-info').innerHTML = empReceitaInfoHtml(e);
+  if ($id('emp-plano')) $id('emp-plano').value = (e.plano_apuracao==='trimestral'||e.plano_apuracao==='semestral') ? e.plano_apuracao : '';   // v7.106.0
   $id('emp-form-titulo').textContent='Editar empresa'; $id('emp-form-card').style.display='block'; }
 async function empSalvar() {
   const cnpj = limparCNPJ($id('emp-cnpj').value);
@@ -7075,7 +7094,8 @@ async function empSalvar() {
   const _ab = ($id('emp-abertura')?.value||'').trim();
   const _cnaeTx = ($id('emp-cnae')?.value||'').trim(), _cnaeM = _cnaeTx.match(/^\s*([\d][\d.\-\/]{2,12})\s*(?:—|-)?\s*(.*)$/);
   const ficha = { data_abertura: /^\d{4}-\d{2}-\d{2}$/.test(_ab) ? _ab : null,
-    cnae_codigo: _cnaeM ? _cnaeM[1] : (_cnaeTx && !/\s/.test(_cnaeTx) ? _cnaeTx : null), cnae: _cnaeM ? (_cnaeM[2]||null) : (_cnaeTx || null) };
+    cnae_codigo: _cnaeM ? _cnaeM[1] : (_cnaeTx && !/\s/.test(_cnaeTx) ? _cnaeTx : null), cnae: _cnaeM ? (_cnaeM[2]||null) : (_cnaeTx || null),
+    plano_apuracao: ($id('emp-plano')?.value === 'trimestral' || $id('emp-plano')?.value === 'semestral') ? $id('emp-plano').value : 'anual' };   // v7.106.0 · plano do cliente
   if (EMP_RECEITA && limparCNPJ(EMP_RECEITA.cnpj||'') === cnpj){
     for (const k of ['situacao','simei','data_opcao_simples','data_exclusao_simples','data_opcao_simei','data_exclusao_simei','natureza_juridica','porte','fonte'])
       if (EMP_RECEITA[k] !== undefined && EMP_RECEITA[k] !== '') ficha[k] = EMP_RECEITA[k];
@@ -7087,7 +7107,9 @@ async function empSalvar() {
     try { await salvar({ ...base, ...ficha, atividade_lc }); }
     catch(e){
       // coluna ainda não existe no banco — grava o resto e avisa qual setup rodar
-      if (/data_abertura|cnae_codigo|data_exclusao|data_opcao_simei|natureza_juridica|receita_consultada_em/i.test(e.message||'')) { await salvar({ ...base, atividade_lc });
+      if (/plano_apuracao/i.test(e.message||'')) { const { plano_apuracao, ..._f2 } = ficha; await salvar({ ...base, ..._f2, atividade_lc });
+        toast('Empresa salva. O plano de apuração não foi gravado — rode o banco/atp/setup_v7106.sql no Supabase.'); }   // v7.106.0
+      else if (/data_abertura|cnae_codigo|data_exclusao|data_opcao_simei|natureza_juridica|receita_consultada_em/i.test(e.message||'')) { await salvar({ ...base, atividade_lc });
         toast('Empresa salva. Data de abertura/CNAE não foram gravados — rode o sql/setup_v7991.sql no Supabase.'); }
       else if (/atividade_lc/i.test(e.message||'')) { await salvar(base);
         toast('Empresa salva. A atividade não foi gravada — rode o setup_v716.sql no Supabase.'); }
@@ -10435,6 +10457,48 @@ const PER_ROTULOS = { 1:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','
 // v7.93.1 · soma com precisão integral (antes somava cada mês já arredondado): as colunas de período e a coluna Total
 // do Consolidado e do Detalhamento passam a fechar com o total do motor — a regra única de exibição.
 const agrupar = (arr, n) => { const out=[]; for(let i=0;i<12;i+=n) out.push(arr.slice(i,i+n).reduce((a,b)=>a+(+b||0),0)); return out; };
+// ═══ v7.106.0 · APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral/semestral/anual) ═══
+// O motor é MENSAL e as apurações internas são trimestrais (IRPJ/CSLL do Presumido, adicional, LC 224),
+// então o número do período é a SOMA dos meses do corte — nunca um segundo cálculo. Por isso só são
+// oferecidos cortes alinhados a trimestre. A suíte (bloco 5br) crava a partição: t1+t2+t3+t4 == ano.
+const PERIODOS_DOC = {
+  ano:{ ini:0, fim:11, rot:'Ano completo',  curto:a=>'Ano-base '+a },
+  s1: { ini:0, fim:5,  rot:'1º semestre',   curto:a=>'1º semestre/'+a },
+  s2: { ini:6, fim:11, rot:'2º semestre',   curto:a=>'2º semestre/'+a },
+  t1: { ini:0, fim:2,  rot:'1º trimestre',  curto:a=>'1º trimestre/'+a },
+  t2: { ini:3, fim:5,  rot:'2º trimestre',  curto:a=>'2º trimestre/'+a },
+  t3: { ini:6, fim:8,  rot:'3º trimestre',  curto:a=>'3º trimestre/'+a },
+  t4: { ini:9, fim:11, rot:'4º trimestre',  curto:a=>'4º trimestre/'+a } };
+function periodoInfo(p){ return PERIODOS_DOC[p] || PERIODOS_DOC.ano; }
+// Totais do corte: as MESMAS somas mensais de out.totais, restritas aos meses do período. Chaves que
+// não são soma de meses (lrIncompleto, lc224, sublimiteVig, saldos do ICMS…) viajam do ano, declaradas.
+function periodoTotais(res, p){
+  const I = periodoInfo(p), M = (res.meses||[]).slice(I.ini, I.fim+1);
+  const S = f => M.reduce((s,x)=>s+(+f(x)||0),0);
+  return Object.assign({}, res.totais, {
+    receita: S(x=>x.receita), receitaExp: S(x=>x.recExp||0),
+    simples: S(x=>x.simples.total), lp: S(x=>x.lp.total), lr: S(x=>x.lr.total),
+    das: S(x=>x.das), dasGuia: S(x=>x.dasGuia), fgts: S(x=>x.fgts),
+    sublimite: S(x=>x.simples.sublimite), dasPisCof: S(x=>x.dasPisCof), dasIcmsIss: S(x=>x.dasIcmsIss),
+    recCom: S(x=>x.recCom), recServ: S(x=>x.recServ), recTransp: S(x=>x.recTransp||0),
+    issRetido: S(x=>x.simples.issRetido||0), cppRetida: S(x=>x.simples.cppRetida||0),
+    cppForaDAS: S(x=>x.simples.inssPatrForaDAS||0),
+    __periodo: p });
+}
+function periodoEleicao(res, p, snVale){
+  const T = periodoTotais(res, p);
+  const R = regimesAtuais(T, snVale !== false);
+  return { T, menor: R.menor, nome: R.nome, ord: R.ord };
+}
+// Padrão do seletor pelo PLANO da ficha: o último período do plano que tem receita lançada.
+function periodoPadrao(empresa, res){
+  const plano = String((empresa||{}).plano_apuracao||'').toLowerCase();
+  if (!res || !res.meses || (plano !== 'trimestral' && plano !== 'semestral')) return 'ano';
+  const tem = (i,f) => res.meses.slice(i,f+1).some(x=>+x.receita>0.005);
+  if (plano === 'semestral') return tem(6,11) ? 's2' : 's1';
+  for (const [q,i,f] of [[4,9,11],[3,6,8],[2,3,5]]) if (tem(i,f)) return 't'+q;
+  return 't1';
+}
 
 async function rlCarregar() {
   const cnpj = $id('rl-empresa').value, ano = +$id('rl-ano').value;
@@ -11116,11 +11180,29 @@ function rlParecer(){
     </div><div id="pp-regua"></div>${avisoOrigem}${premissaCred?`<div class="hint" style="margin-top:6px;padding:8px 10px;background:#fbf3e2;border-left:3px solid #d99a2b;border-radius:0 6px 6px 0">${premissaCred}</div>`:''}</div>`;
 
   // ── CAPA ──
+  // v7.106.0 · corte do documento (plano do cliente): declarado na capa e numa página própria
+  const _pDoc = rlPeriodoAtual('parecer'), _PIDoc = periodoInfo(_pDoc), _corteDoc = _pDoc !== 'ano';
   h += `<div class="pp-page pp-capa"><img class="pp-bg" src="capa.jpg" onerror="this.style.display='none';this.parentNode.classList.add('pp-semarte')">
     <div class="pp-capa-cliente"><div class="pp-capa-lbl">Estudo elaborado para</div>
       <div class="pp-capa-nome">${esc(emp.razao_social)||RL.dados.cnpj||''}</div>
       <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${regimeDoAno(RL.dados, RL.empresa)?' · '+esc(regimeDoAno(RL.dados, RL.empresa)):''}</div>
-      <div class="pp-capa-data">Ano-base ${anoTx} · ${hoje}</div></div></div>`;
+      <div class="pp-capa-data">Ano-base ${anoTx}${_corteDoc?' · Apuração: '+_PIDoc.curto(anoTx):''} · ${hoje}</div></div></div>`;
+
+  // ── PÁG: apuração do período (v7.106.0 · só quando o documento tem corte) ──
+  if (_corteDoc){
+    const _ELp = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+    const _elp = periodoEleicao(RL.res, _pDoc, !_ELp || _ELp.estado !== 'inelegivel');
+    const _lrAnualDoc = String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral') === 'anual';
+    h += `<div class="pp-page"><img class="pp-bg" src="timbrado.jpg" onerror="this.style.display='none'"><div class="pp-miolo">
+      <h3 class="pp-sec">Apuração do período — ${_PIDoc.curto(anoTx)}</h3>
+      <div class="hint" style="margin-bottom:8px">Documento emitido no ciclo do plano do cliente. Os valores desta página são a soma dos meses do período, apurados mês a mês pelo motor; IRPJ/CSLL do Presumido, adicional e LC 224 são trimestrais, por isso o corte alinhado é exato.</div>
+      <table class="pp-tab"><thead><tr><th>Receita do período</th><th class="num">Simples (DAS${_elp.T.sublimite>0.005?' + sublimite':''})</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th>Menor carga</th></tr></thead>
+      <tbody><tr><td>${fmt(_elp.T.receita)}</td><td class="num">${fmt(_elp.T.simples)}</td><td class="num">${fmt(_elp.T.lp)}</td><td class="num">${fmt(_elp.T.lr)}</td><td><b>${esc(_elp.nome)}</b> · ${fmt(_elp.menor)}</td></tr></tbody></table>
+      <p class="pp-p" style="font-size:9.5pt"><b>Leitura:</b> no período, a menor carga foi do <b>${esc(_elp.nome)}</b> (${fmt(_elp.menor)}), com diferença de ${fmt(_elp.ord[1]-_elp.ord[0])} para a segunda opção.
+      ${_lrAnualDoc?'<b>Lucro Real em apuração ANUAL:</b> o valor do período é estimativa — o ajuste é anual. ':''}O 13º salário e as provisões permanecem nos meses em que ocorrem.
+      As projeções do ano e os cenários da Reforma Tributária das páginas seguintes referem-se ao exercício completo, não ao período desta página.</p>
+    </div></div>`;
+  }
 
   // ── PÁG: introdução + enquadramento (v7.38.3: separada do "caminho" — a combinada estourava e cortava o parágrafo final) ──
   h += `<div class="pp-page"><img class="pp-bg" src="timbrado.jpg" onerror="this.style.display='none'"><div class="pp-miolo">
@@ -13936,10 +14018,55 @@ document.addEventListener('click', e => {
 document.addEventListener('fullscreenchange', apAjustar);
 window.addEventListener('resize', apAjustar);
 
+// ═══ v7.106.0 · corte do documento (plano do cliente) ═══
+const RL_PERIODO_DOCS = ['regimes','conferencia','parecer'];   // o trio aprovado em 24/10/2026
+function rlPeriodoAtual(tipo){
+  if (tipo && RL_PERIODO_DOCS.indexOf(tipo) < 0) return 'ano';
+  const el = $id('rl-periodo');
+  return (el && PERIODOS_DOC[el.value]) ? el.value : 'ano';
+}
+function rlPeriodoTrocar(v){ const el = $id('rl-periodo'); if (el){ el.value = v; el.dataset.manual = '1'; } rlRender(); }
+// Cartão do período (Conferência): totais e vencedor do corte + as declarações de honestidade.
+function rlPeriodoCard(){
+  const p = rlPeriodoAtual($id('rl-tipo') ? $id('rl-tipo').value : '');
+  if (p === 'ano' || !RL.res) return '';
+  const I = periodoInfo(p), ano = (RL.dados||{}).ano || '';
+  const _EL = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+  const el = periodoEleicao(RL.res, p, !_EL || _EL.estado !== 'inelegivel');
+  const lrAnual = String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral') === 'anual';
+  return `<div class="card" style="border-left:5px solid #1a5276;margin-bottom:12px">
+    <h3>Apuração do período — ${I.curto(ano)} <span class="hint" style="font-weight:400">(plano do cliente · v7.106.0)</span></h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Receita</th><th class="num">Simples (DAS${el.T.sublimite>0.005?' + sublimite':''})</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th>Menor carga do período</th></tr></thead>
+    <tbody><tr><td>${fmtR(el.T.receita)}</td><td class="num">${fmtR(el.T.simples)}</td><td class="num">${fmtR(el.T.lp)}</td><td class="num">${fmtR(el.T.lr)}</td><td><b>${esc(el.nome)}</b> · ${fmtR(el.menor)}</td></tr></tbody></table></div>
+    <div class="hint" style="margin-top:6px">O período é a <b>soma dos meses do corte</b>, calculados pelo motor mensal — IRPJ/CSLL do Presumido, adicional e LC 224 são trimestrais, por isso só há cortes alinhados a trimestre. ${lrAnual?'<b>Lucro Real em apuração ANUAL:</b> o valor do corte é estimativa — o ajuste é anual. ':''}13º e provisões ficam nos meses deles. Projeções e cenários da Reforma referem-se ao exercício e seguem no documento anual.</div>
+  </div>`;
+}
+// 📬 Entrega do período: a prova, meses depois, do que foi entregue no ciclo do plano do cliente.
+async function rlRegistrarEntrega(){
+  if (!RL.dados || !RL.dados.cnpj || !RL.res){ toast('Abra a empresa e o ano primeiro.'); return; }
+  const tipo = $id('rl-tipo') ? $id('rl-tipo').value : 'regimes';
+  const p = rlPeriodoAtual(tipo), I = periodoInfo(p), ano = RL.dados.ano;
+  if (!confirm('Registrar no Histórico a ENTREGA deste documento?\n\nPeríodo: ' + I.curto(ano) + '\nDocumento: ' + tipo + '\n\nO registro guarda corte, totais, vencedor, autor, app e lacre — é a prova do que foi entregue no ciclo do plano do cliente.')) return;
+  const _EL = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+  const el = periodoEleicao(RL.res, p, !_EL || _EL.estado !== 'inelegivel');
+  try {
+    await anHistGravar({ cnpj: RL.dados.cnpj, ano, dados: {...RL.dados, _res:undefined, _verEm:undefined},
+      resumo: { evento:'entrega-periodo', periodo: p, rotulo: I.curto(ano), doc: tipo,
+        totais: { receita: el.T.receita, simples: el.T.simples, lp: el.T.lp, lr: el.T.lr, das: el.T.das },
+        vencedor: el.nome, por: APP?.user?.email||'', app: APP_VERSAO, lacre: LACRE_HASH } });
+    toast('📬 Entrega registrada no Histórico — ' + I.curto(ano) + ' (' + tipo + ').');
+  } catch(e){ toast('Não foi possível registrar a entrega: ' + e.message); }
+}
 function rlRender() {
   rlLimparCharts();
   apPrintCss(false);                                       // v7.86.0: @page paisagem só na apresentação
   const tipo = $id('rl-tipo').value, n = +$id('rl-per').value;
+  // v7.106.0 · corte do documento: visível só no trio; padrão segue o PLANO da ficha até o 1º ajuste manual
+  { const pw = $id('rl-periodo-wrap'), ew = $id('rl-entrega-wrap'), ps = $id('rl-periodo');
+    const mostra = RL_PERIODO_DOCS.indexOf(tipo) >= 0;
+    if (pw) pw.style.display = mostra ? '' : 'none';
+    if (ew) ew.style.display = mostra ? '' : 'none';
+    if (mostra && ps && !ps.dataset.manual && RL.res) ps.value = periodoPadrao(RL.empresa, RL.res); }
   // parecer e Reforma são documentos formatados: comparação entre anos não entra neles
   const w = $id('rl-ano2-wrap'); const apres = tipo==='apresentacao_s' || tipo==='apresentacao_c';   // v7.86.0
   if (w) w.style.display = (tipo==='parecer' || tipo==='reforma' || tipo==='conferencia' || tipo==='cnpj' || tipo==='produtos' || apres) ? 'none' : '';
@@ -13978,8 +14105,9 @@ function rlRender() {
   const emp = RL.empresa;
   $id('rl-cab').style.display='block';
   $id('rl-titulo').textContent = ({regimes:'Comparativo de Regimes Tributários', consolidado:'Consolidado Analítico — Simples · Presumido · Real · Reforma', registros:'Detalhamento dos Registros', reforma:'Reforma Tributária — Transição 2026–2033', parecer:'Parecer — Estudo de Impacto da Reforma Tributária', conferencia:'Conferência de Cálculos — Memória (documento interno)', apresentacao_s:'Apresentação — Estudo de Impacto da Reforma Tributária (simplificada)', apresentacao_c:'Apresentação — Estudo de Impacto da Reforma Tributária (completa)'})[tipo];
-  $id('rl-sub').innerHTML = `<b>${emp?.razao_social||''}</b> · CNPJ ${fmtCNPJ(RL.dados.cnpj)} · Ano-base ${RL.dados.ano} · Periodicidade: ${$id('rl-per').selectedOptions[0].text} · Artecon Artes Contábeis`;
-  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlConferencia() + rlRodapeExec(); return; }   // v7.101.3 · B12   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
+  const _pDoc = rlPeriodoAtual(tipo);   // v7.106.0 · corte do documento (plano do cliente)
+  $id('rl-sub').innerHTML = `<b>${emp?.razao_social||''}</b> · CNPJ ${fmtCNPJ(RL.dados.cnpj)} · Ano-base ${RL.dados.ano}${_pDoc!=='ano'?` · <b>Período: ${periodoInfo(_pDoc).curto(RL.dados.ano)}</b>`:''} · Periodicidade: ${$id('rl-per').selectedOptions[0].text} · Artecon Artes Contábeis`;
+  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlPeriodoCard() + rlConferencia() + rlRodapeExec(); return; }   // v7.106.0 · cartão do período antes da memória   // v7.101.3 · B12   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
   // v7.87.0 (§13) · erro crítico do sublimite BLOQUEIA parecer e apresentações — decisão de 10/09/2026
   { const _crit = (tipo==='parecer' || apres) ? emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano) : null;   // v7.90.0 · sublimite OU memória
     if (_crit) { $id('rl-corpo').innerHTML = subCriticoHtml(_crit) + '<div class="card placeholder"><h2>Emissão bloqueada</h2><p>O parecer não pode ser concluído enquanto a inconsistência do sublimite existir. Corrija na aba RBT12 (informe a RBAA ou importe o PGDAS-D) ou na Configuração da empresa (tratamento do sublimite) e gere de novo. A <b>Conferência de cálculos</b> segue disponível para diagnóstico.</p></div>'; return; } }
@@ -13988,10 +14116,21 @@ function rlRender() {
 }
 
 function rlRegimes(rot, n) {
-  const M = RL.res.meses, T = Object.assign({}, RL.res.totais, totExib(RL.res));   // v7.42.1: fórmula única
-  const g = f => agrupar(M.map(f), n);
+  // ══ v7.106.0 · CORTE DO DOCUMENTO (plano do cliente): 'ano' reproduz o comportamento de sempre ══
+  // Com corte, M e T passam a ser os meses e as somas do período; a eleição do vencedor e todas as
+  // tabelas saem do corte. Os cenários da Reforma (2033) são do EXERCÍCIO — comparar trimestre com
+  // ano pleno seria desonesto — então ficam no documento anual, com a nota dizendo onde estão.
+  const _p = rlPeriodoAtual('regimes'), _PI = periodoInfo(_p), _corte = _p !== 'ano';
+  const _anoTx = RL.dados.ano, _rotPer = _corte ? _PI.curto(_anoTx) : ('regime atual · ' + _anoTx);
+  const M = _corte ? RL.res.meses.slice(_PI.ini, _PI.fim+1) : RL.res.meses;
+  const T = _corte ? periodoTotais(RL.res, _p) : Object.assign({}, RL.res.totais, totExib(RL.res));   // v7.42.1: fórmula única
+  if (_corte){ const nomes = PER_ROTULOS[1].slice(_PI.ini, _PI.fim+1); const o=[];
+    for (let i=0;i<nomes.length;i+=n){ const gg = nomes.slice(i,i+n); o.push(gg.length>1 ? gg[0]+'–'+gg[gg.length-1] : gg[0]); }
+    rot = o; }
+  const g = f => { const a = M.map(f), out=[]; for(let i=0;i<a.length;i+=n) out.push(a.slice(i,i+n).reduce((x,y)=>x+(+y||0),0)); return out; };
   const sim = g(x=>x.simples.total), lp = g(x=>x.lp.total), lr = g(x=>x.lr.total), recA = g(x=>x.receita);
-  const dasDecl = RL.dados._pgdas ? agrupar(RL.dados._pgdas.das, n) : null;
+  const _dasDeclArr = RL.dados._pgdas ? (_corte ? RL.dados._pgdas.das.slice(_PI.ini, _PI.fim+1) : RL.dados._pgdas.das) : null;
+  const dasDecl = _dasDeclArr ? (() => { const out=[]; for(let i=0;i<_dasDeclArr.length;i+=n) out.push(_dasDeclArr.slice(i,i+n).reduce((a,b)=>a+(+b||0),0)); return out; })() : null;
   // v7.77.0 · mesma guarda: regime indisponível não é eleito nem aqui
   const _EL2 = (typeof snElegibilidade === 'function')
     ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
@@ -14002,7 +14141,7 @@ function rlRegimes(rot, n) {
 
   // cenários da Reforma (2033) — calculados já no topo para o painel executivo
   let REF=null, usouFallback=true, rfxInfo=null;
-  try { const C = calcCenariosReforma(RL.res, RL.reforma); REF=C.REF; usouFallback=C.usouFallback; rfxInfo=C.rfx; }
+  try { if (!_corte){ const C = calcCenariosReforma(RL.res, RL.reforma); REF=C.REF; usouFallback=C.usouFallback; rfxInfo=C.rfx; } }   // v7.106.0 · cenários da Reforma são do EXERCÍCIO: fora do corte
   catch(e){ console.error('Cenários da Reforma:', e); }
   const R33 = REF ? REF[REF.length-1] : null;
 
@@ -14014,9 +14153,9 @@ function rlRegimes(rot, n) {
     // anunciando o Simples como melhor opção para empresa acima do limite.
     const _inelegivel = !_snVale2;   // v7.79.1 · o nome nesta função é _snVale2
     const CEN = [
-    { nome:'Simples Nacional', sub:'regime atual · '+RL.dados.ano, v:T.simples, cor:'#1a5276', sn:true },
-    { nome:'Lucro Presumido', sub:'regime atual · '+RL.dados.ano, v:T.lp, cor:'#b9770e' },
-    { nome:'Lucro Real', sub:'regime atual · '+RL.dados.ano, v:T.lr, cor:'#943126' },
+    { nome:'Simples Nacional', sub:_rotPer, v:T.simples, cor:'#1a5276', sn:true },
+    { nome:'Lucro Presumido', sub:_rotPer, v:T.lp, cor:'#b9770e' },
+    { nome:'Lucro Real', sub:_rotPer, v:T.lr, cor:'#943126' },
     ...(R33 ? [
     { nome:'Simples "por dentro"', sub:'Reforma · pleno 2033', v:cenDentro(T, R33), cor:'#2874a6', sn:true },
     { nome:'Simples híbrido', sub:'Reforma · pleno 2033 (LC 214)', v:R33.hib, cor:'#7d3c98', sn:true },
@@ -14037,7 +14176,12 @@ function rlRegimes(rot, n) {
   const ord33 = R33 ? (_inelegivel ? [R33.regular] : _RK33d.cand.map(c=>c.v)).sort((a,b)=>a-b) : null;
   const nome33 = R33 ? (ord33[0]===dentro33?'Simples "por dentro"':ord33[0]===R33.hib?'Simples híbrido':'Fora do Simples') : '';
 
-  let h = `${_inelegivel ? `<div class="card" style="border-left:5px solid var(--danger,#943126);background:#fdedec;color:#7b241c;margin-bottom:12px">
+  let h = `${_corte ? `<div class="card" style="border-left:5px solid #1a5276;margin-bottom:12px">
+      <b>📅 Documento do período: ${_PI.curto(_anoTx)}</b> <span class="hint">(plano do cliente · v7.106.0)</span><br>
+      <span class="hint">Totais, vencedor e tabelas abaixo são a <b>soma dos meses do corte</b>, apurados pelo motor mensal (IRPJ/CSLL, adicional e LC 224 são trimestrais — cortes alinhados são exatos).
+      ${String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral')==='anual'?'<b>Lucro Real em apuração ANUAL:</b> o valor do corte é estimativa — o ajuste é anual. ':''}13º e provisões ficam nos meses deles.
+      Os cenários da Reforma referem-se ao exercício e estão no <b>documento anual</b> (Período: Ano completo).</span>
+    </div>` : ''}` + `${_inelegivel ? `<div class="card" style="border-left:5px solid var(--danger,#943126);background:#fdedec;color:#7b241c;margin-bottom:12px">
       <b style="font-size:15px">⛔ Esta empresa NÃO pode optar pelo Simples Nacional.</b><br>
       A receita do mercado interno em ${RL.dados.ano} (${fmtR(T.receita)}) ultrapassa o limite de
       ${fmtR(4800000)} (LC 123/2006, art. 3º, II). Os cenários do Simples aparecem abaixo apenas como
@@ -14056,7 +14200,7 @@ function rlRegimes(rot, n) {
         + `<div class="l">${c.nome}${_ind?' <span style="color:var(--danger,#943126)">'+(c.fora?'⚠️':'⛔')+'</span>':''}</div>`
         + `<div class="sub">${_ind?'<b style="color:var(--danger,#943126)">'+(c.fora||'INDISPONÍVEL')+'</b> — referência apenas':c.sub+' · '+pctR(c.v)}</div></div>`;
     }).join('')}
-    <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${fmtR(ord[1]-ord[0])}</div><div class="l">Economia anual hoje — ${nomeMenor}</div><div class="sub">frente à 2ª melhor opção do regime atual</div></div>
+    <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${fmtR(ord[1]-ord[0])}</div><div class="l">Economia ${_corte?'do período':'anual hoje'} — ${nomeMenor}</div><div class="sub">frente à 2ª melhor opção do regime atual</div></div>
   </div>
   ${R33 ? `<div class="grid c4" style="margin-top:12px">
     ${CEN.slice(3).map(c=>{
@@ -14069,7 +14213,7 @@ function rlRegimes(rot, n) {
     <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${ord33.length>1?fmtR(ord33[1]-ord33[0]):'—'}</div><div class="l">${ord33.length>1?'Economia anual 2033 — '+nome33:'Cenário único em 2033 — '+nome33}</div><div class="sub">${ord33.length>1?'frente ao 2º melhor cenário da Reforma':'os cenários de Simples não se aplicam a esta empresa'}</div></div>
   </div>` : ''}
 
-  <div class="card" style="margin-top:14px"><h3>Todos os cenários lado a lado — carga anual</h3><canvas id="ch-seis" style="max-height:340px"></canvas></div>
+  <div class="card" style="margin-top:14px"><h3>Todos os cenários lado a lado — carga ${_corte?'do período':'anual'}</h3><canvas id="ch-seis" style="max-height:340px"></canvas></div>
 
   <div class="card" style="margin-top:14px"><h3>Resumo executivo — ranking dos cenários</h3><div style="overflow-x:auto"><table>
     <thead><tr><th>#</th><th>Cenário</th><th>Contexto</th><th class="num">Carga anual</th><th class="num">% da receita</th><th class="num">Diferença p/ o melhor</th></tr></thead><tbody>
@@ -14092,7 +14236,7 @@ function rlRegimes(rot, n) {
           return _disp.map((c,i)=>_linha(c, i+1)).join('') + _ind.map(c=>_linha(c, null)).join('');
         })()}
     </tbody></table></div>
-    <div class="hint" style="margin-top:6px">Os cenários do regime atual referem-se ao ano-base ${RL.dados.ano}; os da Reforma, ao regime pleno (2033). O "por dentro" assume manutenção da carga do Simples no patamar atual, conforme a leitura corrente da LC 214 — as repartições definitivas dependem de regulamentação do CGSN.</div></div>`;
+    <div class="hint" style="margin-top:6px">${_corte ? `Os cenários referem-se ao período ${_PI.curto(_anoTx)}; os cenários da Reforma são do exercício e estão no documento anual.` : `Os cenários do regime atual referem-se ao ano-base ${RL.dados.ano}; os da Reforma, ao regime pleno (2033). O "por dentro" assume manutenção da carga do Simples no patamar atual, conforme a leitura corrente da LC 214 — as repartições definitivas dependem de regulamentação do CGSN.`}</div></div>`;
 
   h += `<div class="rl-grid" style="margin-top:18px">
     <div class="card"><h3>Carga por regime e período</h3><canvas id="ch-reg"></canvas></div>
@@ -14102,10 +14246,10 @@ function rlRegimes(rot, n) {
     <thead><tr><th>Período</th><th class="num">Receita</th><th class="num">Simples</th>${dasDecl?'<th class="num">DAS declarado (PGDAS)</th><th class="num">Δ simulado×declarado</th>':''}<th class="num">Presumido</th><th class="num">Real</th><th>Melhor</th></tr></thead><tbody>`;
   // v7.79.0 · gráfico mês a mês: o Simples não é destacado como melhor se a empresa não pode optar
       rot.forEach((r,i)=>{ const mn=_snVale2 ? Math.min(sim[i],lp[i],lr[i]) : Math.min(lp[i],lr[i]);
-    const dasS = agrupar(M.map(x=>x.das), n)[i];
+    const dasS = g(x=>x.das)[i];   // v7.106.0 · agrupamento pelo tamanho do corte
     h += `<tr><td>${r}</td><td class="num">${fmt(recA[i])}</td><td class="num">${fmt(sim[i])}</td>${dasDecl?`<td class="num">${fmt(dasDecl[i])}</td><td class="num">${fmt(dasS-dasDecl[i])}</td>`:''}<td class="num">${fmt(lp[i])}</td><td class="num">${fmt(lr[i])}</td><td>${mn===sim[i]?'Simples':mn===lp[i]?'Presumido':'Real'}</td></tr>`; });
   h += `<tr style="font-weight:700"><td>TOTAL</td><td class="num">${fmt(T.receita)}</td><td class="num">${fmt(T.simples)}</td>${dasDecl?`<td class="num">${fmt(dasDecl.reduce((a,b)=>a+b,0))}</td><td></td>`:''}<td class="num">${fmt(T.lp)}</td><td class="num">${fmt(T.lr)}</td><td>${nomeMenor}</td></tr></tbody></table></div></div>
-  <div class="card"><h3>Detalhamento tributo a tributo (ano)</h3><div style="overflow-x:auto"><table>
+  <div class="card"><h3>Detalhamento tributo a tributo (${_corte?'período':'ano'})</h3><div style="overflow-x:auto"><table>
     <thead><tr><th>Tributo</th><th class="num">Simples</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th></tr></thead><tbody>`;
   const S = k => M.reduce((s,x)=>s+(x.lp[k]!=null?0:0),0);
   const somaLP = k => M.reduce((s,x)=>s+(+x.lp[k]||0),0), somaLR = k => M.reduce((s,x)=>s+(+x.lr[k]||0),0);

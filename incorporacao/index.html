@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.105.1 (lacre 795f5d26) em 2026-10-24T13:38:15.524Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.106.0 (lacre 795f5d26) em 2026-10-24T21:30:46.179Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3657,6 +3657,48 @@ const PER_ROTULOS = { 1:['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','
 // v7.93.1 · soma com precisão integral (antes somava cada mês já arredondado): as colunas de período e a coluna Total
 // do Consolidado e do Detalhamento passam a fechar com o total do motor — a regra única de exibição.
 const agrupar = (arr, n) => { const out=[]; for(let i=0;i<12;i+=n) out.push(arr.slice(i,i+n).reduce((a,b)=>a+(+b||0),0)); return out; };
+// ═══ v7.106.0 · APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral/semestral/anual) ═══
+// O motor é MENSAL e as apurações internas são trimestrais (IRPJ/CSLL do Presumido, adicional, LC 224),
+// então o número do período é a SOMA dos meses do corte — nunca um segundo cálculo. Por isso só são
+// oferecidos cortes alinhados a trimestre. A suíte (bloco 5br) crava a partição: t1+t2+t3+t4 == ano.
+const PERIODOS_DOC = {
+  ano:{ ini:0, fim:11, rot:'Ano completo',  curto:a=>'Ano-base '+a },
+  s1: { ini:0, fim:5,  rot:'1º semestre',   curto:a=>'1º semestre/'+a },
+  s2: { ini:6, fim:11, rot:'2º semestre',   curto:a=>'2º semestre/'+a },
+  t1: { ini:0, fim:2,  rot:'1º trimestre',  curto:a=>'1º trimestre/'+a },
+  t2: { ini:3, fim:5,  rot:'2º trimestre',  curto:a=>'2º trimestre/'+a },
+  t3: { ini:6, fim:8,  rot:'3º trimestre',  curto:a=>'3º trimestre/'+a },
+  t4: { ini:9, fim:11, rot:'4º trimestre',  curto:a=>'4º trimestre/'+a } };
+function periodoInfo(p){ return PERIODOS_DOC[p] || PERIODOS_DOC.ano; }
+// Totais do corte: as MESMAS somas mensais de out.totais, restritas aos meses do período. Chaves que
+// não são soma de meses (lrIncompleto, lc224, sublimiteVig, saldos do ICMS…) viajam do ano, declaradas.
+function periodoTotais(res, p){
+  const I = periodoInfo(p), M = (res.meses||[]).slice(I.ini, I.fim+1);
+  const S = f => M.reduce((s,x)=>s+(+f(x)||0),0);
+  return Object.assign({}, res.totais, {
+    receita: S(x=>x.receita), receitaExp: S(x=>x.recExp||0),
+    simples: S(x=>x.simples.total), lp: S(x=>x.lp.total), lr: S(x=>x.lr.total),
+    das: S(x=>x.das), dasGuia: S(x=>x.dasGuia), fgts: S(x=>x.fgts),
+    sublimite: S(x=>x.simples.sublimite), dasPisCof: S(x=>x.dasPisCof), dasIcmsIss: S(x=>x.dasIcmsIss),
+    recCom: S(x=>x.recCom), recServ: S(x=>x.recServ), recTransp: S(x=>x.recTransp||0),
+    issRetido: S(x=>x.simples.issRetido||0), cppRetida: S(x=>x.simples.cppRetida||0),
+    cppForaDAS: S(x=>x.simples.inssPatrForaDAS||0),
+    __periodo: p });
+}
+function periodoEleicao(res, p, snVale){
+  const T = periodoTotais(res, p);
+  const R = regimesAtuais(T, snVale !== false);
+  return { T, menor: R.menor, nome: R.nome, ord: R.ord };
+}
+// Padrão do seletor pelo PLANO da ficha: o último período do plano que tem receita lançada.
+function periodoPadrao(empresa, res){
+  const plano = String((empresa||{}).plano_apuracao||'').toLowerCase();
+  if (!res || !res.meses || (plano !== 'trimestral' && plano !== 'semestral')) return 'ano';
+  const tem = (i,f) => res.meses.slice(i,f+1).some(x=>+x.receita>0.005);
+  if (plano === 'semestral') return tem(6,11) ? 's2' : 's1';
+  for (const [q,i,f] of [[4,9,11],[3,6,8],[2,3,5]]) if (tem(i,f)) return 't'+q;
+  return 't1';
+}
 
 
 // ┌── copiado do index.html: bloco "rlCharts" ──
@@ -5297,10 +5339,21 @@ function rlAvisoDefasado(){
 
 // ┌── copiado do index.html: bloco "rlRegimes" ──
 function rlRegimes(rot, n) {
-  const M = RL.res.meses, T = Object.assign({}, RL.res.totais, totExib(RL.res));   // v7.42.1: fórmula única
-  const g = f => agrupar(M.map(f), n);
+  // ══ v7.106.0 · CORTE DO DOCUMENTO (plano do cliente): 'ano' reproduz o comportamento de sempre ══
+  // Com corte, M e T passam a ser os meses e as somas do período; a eleição do vencedor e todas as
+  // tabelas saem do corte. Os cenários da Reforma (2033) são do EXERCÍCIO — comparar trimestre com
+  // ano pleno seria desonesto — então ficam no documento anual, com a nota dizendo onde estão.
+  const _p = rlPeriodoAtual('regimes'), _PI = periodoInfo(_p), _corte = _p !== 'ano';
+  const _anoTx = RL.dados.ano, _rotPer = _corte ? _PI.curto(_anoTx) : ('regime atual · ' + _anoTx);
+  const M = _corte ? RL.res.meses.slice(_PI.ini, _PI.fim+1) : RL.res.meses;
+  const T = _corte ? periodoTotais(RL.res, _p) : Object.assign({}, RL.res.totais, totExib(RL.res));   // v7.42.1: fórmula única
+  if (_corte){ const nomes = PER_ROTULOS[1].slice(_PI.ini, _PI.fim+1); const o=[];
+    for (let i=0;i<nomes.length;i+=n){ const gg = nomes.slice(i,i+n); o.push(gg.length>1 ? gg[0]+'–'+gg[gg.length-1] : gg[0]); }
+    rot = o; }
+  const g = f => { const a = M.map(f), out=[]; for(let i=0;i<a.length;i+=n) out.push(a.slice(i,i+n).reduce((x,y)=>x+(+y||0),0)); return out; };
   const sim = g(x=>x.simples.total), lp = g(x=>x.lp.total), lr = g(x=>x.lr.total), recA = g(x=>x.receita);
-  const dasDecl = RL.dados._pgdas ? agrupar(RL.dados._pgdas.das, n) : null;
+  const _dasDeclArr = RL.dados._pgdas ? (_corte ? RL.dados._pgdas.das.slice(_PI.ini, _PI.fim+1) : RL.dados._pgdas.das) : null;
+  const dasDecl = _dasDeclArr ? (() => { const out=[]; for(let i=0;i<_dasDeclArr.length;i+=n) out.push(_dasDeclArr.slice(i,i+n).reduce((a,b)=>a+(+b||0),0)); return out; })() : null;
   // v7.77.0 · mesma guarda: regime indisponível não é eleito nem aqui
   const _EL2 = (typeof snElegibilidade === 'function')
     ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
@@ -5311,7 +5364,7 @@ function rlRegimes(rot, n) {
 
   // cenários da Reforma (2033) — calculados já no topo para o painel executivo
   let REF=null, usouFallback=true, rfxInfo=null;
-  try { const C = calcCenariosReforma(RL.res, RL.reforma); REF=C.REF; usouFallback=C.usouFallback; rfxInfo=C.rfx; }
+  try { if (!_corte){ const C = calcCenariosReforma(RL.res, RL.reforma); REF=C.REF; usouFallback=C.usouFallback; rfxInfo=C.rfx; } }   // v7.106.0 · cenários da Reforma são do EXERCÍCIO: fora do corte
   catch(e){ console.error('Cenários da Reforma:', e); }
   const R33 = REF ? REF[REF.length-1] : null;
 
@@ -5323,9 +5376,9 @@ function rlRegimes(rot, n) {
     // anunciando o Simples como melhor opção para empresa acima do limite.
     const _inelegivel = !_snVale2;   // v7.79.1 · o nome nesta função é _snVale2
     const CEN = [
-    { nome:'Simples Nacional', sub:'regime atual · '+RL.dados.ano, v:T.simples, cor:'#1a5276', sn:true },
-    { nome:'Lucro Presumido', sub:'regime atual · '+RL.dados.ano, v:T.lp, cor:'#b9770e' },
-    { nome:'Lucro Real', sub:'regime atual · '+RL.dados.ano, v:T.lr, cor:'#943126' },
+    { nome:'Simples Nacional', sub:_rotPer, v:T.simples, cor:'#1a5276', sn:true },
+    { nome:'Lucro Presumido', sub:_rotPer, v:T.lp, cor:'#b9770e' },
+    { nome:'Lucro Real', sub:_rotPer, v:T.lr, cor:'#943126' },
     ...(R33 ? [
     { nome:'Simples "por dentro"', sub:'Reforma · pleno 2033', v:cenDentro(T, R33), cor:'#2874a6', sn:true },
     { nome:'Simples híbrido', sub:'Reforma · pleno 2033 (LC 214)', v:R33.hib, cor:'#7d3c98', sn:true },
@@ -5346,7 +5399,12 @@ function rlRegimes(rot, n) {
   const ord33 = R33 ? (_inelegivel ? [R33.regular] : _RK33d.cand.map(c=>c.v)).sort((a,b)=>a-b) : null;
   const nome33 = R33 ? (ord33[0]===dentro33?'Simples "por dentro"':ord33[0]===R33.hib?'Simples híbrido':'Fora do Simples') : '';
 
-  let h = `${_inelegivel ? `<div class="card" style="border-left:5px solid var(--danger,#943126);background:#fdedec;color:#7b241c;margin-bottom:12px">
+  let h = `${_corte ? `<div class="card" style="border-left:5px solid #1a5276;margin-bottom:12px">
+      <b>📅 Documento do período: ${_PI.curto(_anoTx)}</b> <span class="hint">(plano do cliente · v7.106.0)</span><br>
+      <span class="hint">Totais, vencedor e tabelas abaixo são a <b>soma dos meses do corte</b>, apurados pelo motor mensal (IRPJ/CSLL, adicional e LC 224 são trimestrais — cortes alinhados são exatos).
+      ${String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral')==='anual'?'<b>Lucro Real em apuração ANUAL:</b> o valor do corte é estimativa — o ajuste é anual. ':''}13º e provisões ficam nos meses deles.
+      Os cenários da Reforma referem-se ao exercício e estão no <b>documento anual</b> (Período: Ano completo).</span>
+    </div>` : ''}` + `${_inelegivel ? `<div class="card" style="border-left:5px solid var(--danger,#943126);background:#fdedec;color:#7b241c;margin-bottom:12px">
       <b style="font-size:15px">⛔ Esta empresa NÃO pode optar pelo Simples Nacional.</b><br>
       A receita do mercado interno em ${RL.dados.ano} (${fmtR(T.receita)}) ultrapassa o limite de
       ${fmtR(4800000)} (LC 123/2006, art. 3º, II). Os cenários do Simples aparecem abaixo apenas como
@@ -5365,7 +5423,7 @@ function rlRegimes(rot, n) {
         + `<div class="l">${c.nome}${_ind?' <span style="color:var(--danger,#943126)">'+(c.fora?'⚠️':'⛔')+'</span>':''}</div>`
         + `<div class="sub">${_ind?'<b style="color:var(--danger,#943126)">'+(c.fora||'INDISPONÍVEL')+'</b> — referência apenas':c.sub+' · '+pctR(c.v)}</div></div>`;
     }).join('')}
-    <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${fmtR(ord[1]-ord[0])}</div><div class="l">Economia anual hoje — ${nomeMenor}</div><div class="sub">frente à 2ª melhor opção do regime atual</div></div>
+    <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${fmtR(ord[1]-ord[0])}</div><div class="l">Economia ${_corte?'do período':'anual hoje'} — ${nomeMenor}</div><div class="sub">frente à 2ª melhor opção do regime atual</div></div>
   </div>
   ${R33 ? `<div class="grid c4" style="margin-top:12px">
     ${CEN.slice(3).map(c=>{
@@ -5378,7 +5436,7 @@ function rlRegimes(rot, n) {
     <div class="stat"><div class="n" style="font-size:19px;color:var(--ok)">${ord33.length>1?fmtR(ord33[1]-ord33[0]):'—'}</div><div class="l">${ord33.length>1?'Economia anual 2033 — '+nome33:'Cenário único em 2033 — '+nome33}</div><div class="sub">${ord33.length>1?'frente ao 2º melhor cenário da Reforma':'os cenários de Simples não se aplicam a esta empresa'}</div></div>
   </div>` : ''}
 
-  <div class="card" style="margin-top:14px"><h3>Todos os cenários lado a lado — carga anual</h3><canvas id="ch-seis" style="max-height:340px"></canvas></div>
+  <div class="card" style="margin-top:14px"><h3>Todos os cenários lado a lado — carga ${_corte?'do período':'anual'}</h3><canvas id="ch-seis" style="max-height:340px"></canvas></div>
 
   <div class="card" style="margin-top:14px"><h3>Resumo executivo — ranking dos cenários</h3><div style="overflow-x:auto"><table>
     <thead><tr><th>#</th><th>Cenário</th><th>Contexto</th><th class="num">Carga anual</th><th class="num">% da receita</th><th class="num">Diferença p/ o melhor</th></tr></thead><tbody>
@@ -5401,7 +5459,7 @@ function rlRegimes(rot, n) {
           return _disp.map((c,i)=>_linha(c, i+1)).join('') + _ind.map(c=>_linha(c, null)).join('');
         })()}
     </tbody></table></div>
-    <div class="hint" style="margin-top:6px">Os cenários do regime atual referem-se ao ano-base ${RL.dados.ano}; os da Reforma, ao regime pleno (2033). O "por dentro" assume manutenção da carga do Simples no patamar atual, conforme a leitura corrente da LC 214 — as repartições definitivas dependem de regulamentação do CGSN.</div></div>`;
+    <div class="hint" style="margin-top:6px">${_corte ? `Os cenários referem-se ao período ${_PI.curto(_anoTx)}; os cenários da Reforma são do exercício e estão no documento anual.` : `Os cenários do regime atual referem-se ao ano-base ${RL.dados.ano}; os da Reforma, ao regime pleno (2033). O "por dentro" assume manutenção da carga do Simples no patamar atual, conforme a leitura corrente da LC 214 — as repartições definitivas dependem de regulamentação do CGSN.`}</div></div>`;
 
   h += `<div class="rl-grid" style="margin-top:18px">
     <div class="card"><h3>Carga por regime e período</h3><canvas id="ch-reg"></canvas></div>
@@ -5411,10 +5469,10 @@ function rlRegimes(rot, n) {
     <thead><tr><th>Período</th><th class="num">Receita</th><th class="num">Simples</th>${dasDecl?'<th class="num">DAS declarado (PGDAS)</th><th class="num">Δ simulado×declarado</th>':''}<th class="num">Presumido</th><th class="num">Real</th><th>Melhor</th></tr></thead><tbody>`;
   // v7.79.0 · gráfico mês a mês: o Simples não é destacado como melhor se a empresa não pode optar
       rot.forEach((r,i)=>{ const mn=_snVale2 ? Math.min(sim[i],lp[i],lr[i]) : Math.min(lp[i],lr[i]);
-    const dasS = agrupar(M.map(x=>x.das), n)[i];
+    const dasS = g(x=>x.das)[i];   // v7.106.0 · agrupamento pelo tamanho do corte
     h += `<tr><td>${r}</td><td class="num">${fmt(recA[i])}</td><td class="num">${fmt(sim[i])}</td>${dasDecl?`<td class="num">${fmt(dasDecl[i])}</td><td class="num">${fmt(dasS-dasDecl[i])}</td>`:''}<td class="num">${fmt(lp[i])}</td><td class="num">${fmt(lr[i])}</td><td>${mn===sim[i]?'Simples':mn===lp[i]?'Presumido':'Real'}</td></tr>`; });
   h += `<tr style="font-weight:700"><td>TOTAL</td><td class="num">${fmt(T.receita)}</td><td class="num">${fmt(T.simples)}</td>${dasDecl?`<td class="num">${fmt(dasDecl.reduce((a,b)=>a+b,0))}</td><td></td>`:''}<td class="num">${fmt(T.lp)}</td><td class="num">${fmt(T.lr)}</td><td>${nomeMenor}</td></tr></tbody></table></div></div>
-  <div class="card"><h3>Detalhamento tributo a tributo (ano)</h3><div style="overflow-x:auto"><table>
+  <div class="card"><h3>Detalhamento tributo a tributo (${_corte?'período':'ano'})</h3><div style="overflow-x:auto"><table>
     <thead><tr><th>Tributo</th><th class="num">Simples</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th></tr></thead><tbody>`;
   const S = k => M.reduce((s,x)=>s+(x.lp[k]!=null?0:0),0);
   const somaLP = k => M.reduce((s,x)=>s+(+x.lp[k]||0),0), somaLR = k => M.reduce((s,x)=>s+(+x.lr[k]||0),0);
@@ -6553,11 +6611,29 @@ function rlParecer(){
     </div><div id="pp-regua"></div>${avisoOrigem}${premissaCred?`<div class="hint" style="margin-top:6px;padding:8px 10px;background:#fbf3e2;border-left:3px solid #d99a2b;border-radius:0 6px 6px 0">${premissaCred}</div>`:''}</div>`;
 
   // ── CAPA ──
+  // v7.106.0 · corte do documento (plano do cliente): declarado na capa e numa página própria
+  const _pDoc = rlPeriodoAtual('parecer'), _PIDoc = periodoInfo(_pDoc), _corteDoc = _pDoc !== 'ano';
   h += `<div class="pp-page pp-capa"><img class="pp-bg" src="capa.jpg" onerror="this.style.display='none';this.parentNode.classList.add('pp-semarte')">
     <div class="pp-capa-cliente"><div class="pp-capa-lbl">Estudo elaborado para</div>
       <div class="pp-capa-nome">${esc(emp.razao_social)||RL.dados.cnpj||''}</div>
       <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${regimeDoAno(RL.dados, RL.empresa)?' · '+esc(regimeDoAno(RL.dados, RL.empresa)):''}</div>
-      <div class="pp-capa-data">Ano-base ${anoTx} · ${hoje}</div></div></div>`;
+      <div class="pp-capa-data">Ano-base ${anoTx}${_corteDoc?' · Apuração: '+_PIDoc.curto(anoTx):''} · ${hoje}</div></div></div>`;
+
+  // ── PÁG: apuração do período (v7.106.0 · só quando o documento tem corte) ──
+  if (_corteDoc){
+    const _ELp = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+    const _elp = periodoEleicao(RL.res, _pDoc, !_ELp || _ELp.estado !== 'inelegivel');
+    const _lrAnualDoc = String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral') === 'anual';
+    h += `<div class="pp-page"><img class="pp-bg" src="timbrado.jpg" onerror="this.style.display='none'"><div class="pp-miolo">
+      <h3 class="pp-sec">Apuração do período — ${_PIDoc.curto(anoTx)}</h3>
+      <div class="hint" style="margin-bottom:8px">Documento emitido no ciclo do plano do cliente. Os valores desta página são a soma dos meses do período, apurados mês a mês pelo motor; IRPJ/CSLL do Presumido, adicional e LC 224 são trimestrais, por isso o corte alinhado é exato.</div>
+      <table class="pp-tab"><thead><tr><th>Receita do período</th><th class="num">Simples (DAS${_elp.T.sublimite>0.005?' + sublimite':''})</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th>Menor carga</th></tr></thead>
+      <tbody><tr><td>${fmt(_elp.T.receita)}</td><td class="num">${fmt(_elp.T.simples)}</td><td class="num">${fmt(_elp.T.lp)}</td><td class="num">${fmt(_elp.T.lr)}</td><td><b>${esc(_elp.nome)}</b> · ${fmt(_elp.menor)}</td></tr></tbody></table>
+      <p class="pp-p" style="font-size:9.5pt"><b>Leitura:</b> no período, a menor carga foi do <b>${esc(_elp.nome)}</b> (${fmt(_elp.menor)}), com diferença de ${fmt(_elp.ord[1]-_elp.ord[0])} para a segunda opção.
+      ${_lrAnualDoc?'<b>Lucro Real em apuração ANUAL:</b> o valor do período é estimativa — o ajuste é anual. ':''}O 13º salário e as provisões permanecem nos meses em que ocorrem.
+      As projeções do ano e os cenários da Reforma Tributária das páginas seguintes referem-se ao exercício completo, não ao período desta página.</p>
+    </div></div>`;
+  }
 
   // ── PÁG: introdução + enquadramento (v7.38.3: separada do "caminho" — a combinada estourava e cortava o parágrafo final) ──
   h += `<div class="pp-page"><img class="pp-bg" src="timbrado.jpg" onerror="this.style.display='none'"><div class="pp-miolo">
@@ -7685,6 +7761,45 @@ document.addEventListener('click', e => {
 document.addEventListener('fullscreenchange', apAjustar);
 window.addEventListener('resize', apAjustar);
 
+// ═══ v7.106.0 · corte do documento (plano do cliente) ═══
+const RL_PERIODO_DOCS = ['regimes','conferencia','parecer'];   // o trio aprovado em 24/10/2026
+function rlPeriodoAtual(tipo){
+  if (tipo && RL_PERIODO_DOCS.indexOf(tipo) < 0) return 'ano';
+  const el = $id('rl-periodo');
+  return (el && PERIODOS_DOC[el.value]) ? el.value : 'ano';
+}
+function rlPeriodoTrocar(v){ const el = $id('rl-periodo'); if (el){ el.value = v; el.dataset.manual = '1'; } rlRender(); }
+// Cartão do período (Conferência): totais e vencedor do corte + as declarações de honestidade.
+function rlPeriodoCard(){
+  const p = rlPeriodoAtual($id('rl-tipo') ? $id('rl-tipo').value : '');
+  if (p === 'ano' || !RL.res) return '';
+  const I = periodoInfo(p), ano = (RL.dados||{}).ano || '';
+  const _EL = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+  const el = periodoEleicao(RL.res, p, !_EL || _EL.estado !== 'inelegivel');
+  const lrAnual = String(((RL.dados||{}).cfg||{}).lrPeriodo||'trimestral') === 'anual';
+  return `<div class="card" style="border-left:5px solid #1a5276;margin-bottom:12px">
+    <h3>Apuração do período — ${I.curto(ano)} <span class="hint" style="font-weight:400">(plano do cliente · v7.106.0)</span></h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Receita</th><th class="num">Simples (DAS${el.T.sublimite>0.005?' + sublimite':''})</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th>Menor carga do período</th></tr></thead>
+    <tbody><tr><td>${fmtR(el.T.receita)}</td><td class="num">${fmtR(el.T.simples)}</td><td class="num">${fmtR(el.T.lp)}</td><td class="num">${fmtR(el.T.lr)}</td><td><b>${esc(el.nome)}</b> · ${fmtR(el.menor)}</td></tr></tbody></table></div>
+    <div class="hint" style="margin-top:6px">O período é a <b>soma dos meses do corte</b>, calculados pelo motor mensal — IRPJ/CSLL do Presumido, adicional e LC 224 são trimestrais, por isso só há cortes alinhados a trimestre. ${lrAnual?'<b>Lucro Real em apuração ANUAL:</b> o valor do corte é estimativa — o ajuste é anual. ':''}13º e provisões ficam nos meses deles. Projeções e cenários da Reforma referem-se ao exercício e seguem no documento anual.</div>
+  </div>`;
+}
+// 📬 Entrega do período: a prova, meses depois, do que foi entregue no ciclo do plano do cliente.
+async function rlRegistrarEntrega(){
+  if (!RL.dados || !RL.dados.cnpj || !RL.res){ toast('Abra a empresa e o ano primeiro.'); return; }
+  const tipo = $id('rl-tipo') ? $id('rl-tipo').value : 'regimes';
+  const p = rlPeriodoAtual(tipo), I = periodoInfo(p), ano = RL.dados.ano;
+  if (!confirm('Registrar no Histórico a ENTREGA deste documento?\n\nPeríodo: ' + I.curto(ano) + '\nDocumento: ' + tipo + '\n\nO registro guarda corte, totais, vencedor, autor, app e lacre — é a prova do que foi entregue no ciclo do plano do cliente.')) return;
+  const _EL = (typeof snElegibilidade === 'function') ? snElegibilidade(RL.res, ((RL.dados)||{}).cfg||{}) : null;
+  const el = periodoEleicao(RL.res, p, !_EL || _EL.estado !== 'inelegivel');
+  try {
+    await anHistGravar({ cnpj: RL.dados.cnpj, ano, dados: {...RL.dados, _res:undefined, _verEm:undefined},
+      resumo: { evento:'entrega-periodo', periodo: p, rotulo: I.curto(ano), doc: tipo,
+        totais: { receita: el.T.receita, simples: el.T.simples, lp: el.T.lp, lr: el.T.lr, das: el.T.das },
+        vencedor: el.nome, por: APP?.user?.email||'', app: APP_VERSAO, lacre: LACRE_HASH } });
+    toast('📬 Entrega registrada no Histórico — ' + I.curto(ano) + ' (' + tipo + ').');
+  } catch(e){ toast('Não foi possível registrar a entrega: ' + e.message); }
+}
 
 // ┌── copiado do index.html: bloco "rlRegistros" ──
 function rlRegistros(rot, n) {
