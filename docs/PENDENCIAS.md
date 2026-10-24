@@ -1,6 +1,17 @@
 # Pendências — Análise Tributária Pro
 
-Registro do que ficou para depois, com o motivo. Atualizado em 08/10/2026 (entrega v7.96.0 → v7.99.1).
+Registro do que ficou para depois, com o motivo. Atualizado em 24/10/2026 (entrega v7.99.2 → v7.105.0).
+
+## Atualização de 24/10/2026 — o que o backlog de 18/10 resolveu
+
+| Pendência abaixo | Situação |
+|---|---|
+| 3. Histórico de versões frágil | **Resolvida na v7.101.1 (B10)**, aplicada em produção em 21/10: 24 versões no banco (12 na tela), autor pelo servidor (auth.jwt), DELETE só de administrador |
+| 4. Cadastro único — fase 2 (regime por ano) | **Resolvida na v7.104.0 (B15)**: `cfg.regimeAno` por análise, herdado entre anos, usado no parecer/capa/IA |
+| 4. Cadastro único — fase 3 (Imobiliária/Classificação lerem a ficha) | Segue em aberto |
+| 1. Secret `IA_GATEWAY_TOKEN_IMOBILIARIO` · 2. Validar parecer da Imobiliária | Seguem em aberto (operacionais, fora do app) |
+
+Também em 24/10: **B17 implementado na v7.105.0** (LC 224 projetada nos anos futuros do cenário regular, lacre re-selado `0a257d66` → `795f5d26`, aprovação expressa do escritório); **B16 encerrado por diagnóstico** (motor único já é a arquitetura; teste E3 verde); **A08 (duas teses jurídicas: ISS retido na dedução da base do IBS/CBS — decisão 8.9 — e MEI/Simples juntos no crédito) encaminhado ao jurídico do escritório — nada foi alterado nesses dois pontos.**
 
 ## Resolvido nesta entrega (07–08/10/2026)
 

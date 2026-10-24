@@ -807,6 +807,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.105.0</b></td><td>24/10/2026</td><td><b>⚖️ LC 224/2025 PROJETADA NOS ANOS FUTUROS DA REFORMA (B17), com LACRE RE-SELADO <code>0a257d66</code> → <code>795f5d26</code> — mudança de motor aprovada pelo escritório em 24/10/2026, com relatório prévio (docs/RELATORIO_previo_B16_B17.md) e laboratório de deltas ANTES do código.</b> <b>(1) O problema:</b> o cenário "regime regular" (2026–2033) carregava o IRPJ/CSLL do ano-base congelado para todos os anos projetados — análise de ano-base 2025 projetava o Presumido SEM o acréscimo da LC 224 (que vigora desde 2026), e a de 2026 carregava a CSLL de 3 trimestres (noventena da IN RFB 2.305) para anos cheios que teriam 4; Presumido subestimado podia vencer indevidamente a comparação de regimes dos anos projetados. <b>(2) A regra nova:</b> para cada ano projetado, o acréscimo é recalculado pela VIGÊNCIA DAQUELE ANO — três estados: antes de 2026, sem a lei; 2026, IRPJ no ano cheio e CSLL desde abril; 2027 em diante, ano cheio nos dois — rodando o motor de novo com o ano do cenário, a mesma técnica do exercício seguinte (v7.88.0). Só o "resto" do LP muda (IRPJ + adicional + CSLL); PIS/COFINS/ICMS/IPI/ISS não dependem do ano (premissa conferida em laboratório e vigiada pela suíte). <code>cfg.lc224 === false</code> (liminar) desliga também as projeções; o realizado do ano-base NUNCA muda; análise fechada congelada (v7.100.0) não recalcula; linha antiga sem a entrada mantém o comportamento anterior, declarado em <code>lc224Proj</code>. <b>(3) Deltas selados</b> (medidos no laboratório e cravados na suíte): caso 3 do lacre (2026, R$ 7,97 mi) — regular 2027-2032 de 2.075.750,14 para 2.076.440,07 e 2033 de 2.781.812,37 para 2.782.502,30 (<b>+689,93 cada</b>, o complemento da CSLL do 1º trimestre); ano-base 2025 acima do limite ganha 12.762,05 em 2026 e 13.451,98/ano de 2027 em diante; casos 1, 2 e 4, totais anuais e cenários "dentro"/"híbrido" idênticos ao centavo. <b>(4) Nota de sensibilidade no parecer:</b> quando a projeção inclui a lei, o parecer declara o valor por ano cheio e lembra que as ADIs 7920/7936/7944/7982 estão pendentes no STF — se a lei cair, o Presumido projetado reduz nesse valor. Tabela de Regras (B14) ganha a linha <code>lc224-projecao</code> com o registro da aprovação. Suíte: bloco 5bp (gabarito transcrito da lei: Δ 22.352,00 no realizado de 2026 e 23.936,00 no ano cheio, caso uniforme de 600 mil/mês). Varredura: diffs APENAS em <code>regular/regLP</code> de anos projetados dos casos acima de R$ 1,25 mi/trimestre.</td></tr>
                     <tr><td><b>v7.104.0</b></td><td>24/10/2026</td><td><b>🏷️ REGIME TRIBUTÁRIO POR ANO-BASE (B15): o regime deixa de vir só da ficha da empresa — cada análise pode registrar o regime vigente NAQUELE ano em Configurações da análise (campo "Regime tributário do ano-base"), e o app passa a usar essa informação onde o regime aparece. Motor e lacre <code>0a257d66</code> INTOCADOS: nenhum número muda.</b> Como funciona: a nova função <code>regimeDoAno(dados, empresa)</code> responde <code>cfg.regimeAno</code> quando preenchido e, na falta dele, o regime da ficha (comportamento de hoje) — e passou a ser usada nos três pontos que exibiam <code>empresa.regime</code>: a comparação ficha × elegibilidade do parecer (que avisa quando a ficha diverge), a capa do parecer impresso e o contexto enviado à consulta de IA. O campo herda para o ano seguinte via <code>CFG_HERDA</code> (como o Fator R e a LC 224) e entra na trilha de auditoria de configurações com rótulo próprio. Por que importa: empresa que ERA Lucro Presumido em 2024 e virou Simples em 2025 tinha o parecer de 2024 reimpresso com o regime atual da ficha; agora cada ano guarda o seu. Suíte: bloco 5bo (precedência da função, parecer funcional com regime do ano ≠ ficha, gravação/limpeza em Config, herança e auditoria). Varredura: 24 casos idênticos ao backup v7.99.1.</td></tr>
                     <tr><td><b>v7.103.0</b></td><td>24/10/2026</td><td><b>📖 TABELA DE REGRAS DO MOTOR (B14): toda regra legal que o motor aplica agora está catalogada com VIGÊNCIA, FONTE, versão que a implementou, selo da entrega e registro de aprovação — na aba Versões, entre o lacre e o changelog. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> São 16 regras em <code>REGRAS_VIGENCIA</code>: das faixas da LC 123 (com os limites "até" inclusivos) à LC 224/2025 (IRPJ desde jan/2026, CSLL desde abr/2026), passando pela trava do sublimite, pelo RBT12 proporcionalizado, pelo Tema 69, pelo crédito de ICMS de MEI/Simples, pelo Lucro Real trimestral com trava de 30%, pela partilha da Res. 190/2026, pela decisão 8.9 do ISS retido, pelo art. 58 e pelos prazos da Res. 194/2026. <b>O princípio que a tabela torna visível e a suíte prova:</b> regra nova entra com data de início e <b>cálculo antigo não muda</b> — o lacre mantém os casos históricos ao centavo, e o teste de vigência mostra o mesmo caso da LC 224 em ano-base 2025 saindo SEM o acréscimo, batendo com a fórmula legal ao centavo. Alterar uma regra é re-selar: fica registrado na tabela, no changelog e no selo. Suíte: bloco 5bn.</td></tr>
                     <tr><td><b>v7.102.0</b></td><td>24/10/2026</td><td><b>⚖️ SUÍTE INDEPENDENTE (B13): 16 casos com o valor esperado TRANSCRITO DA LEI, calculados fora do motor — e o motor fechou TODOS ao centavo, sem nenhuma "diferença aceita" a registrar. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Até aqui, a suíte provava que o motor não MUDOU (lacre, gabaritos históricos); faltava provar que ele está CERTO contra uma referência externa. O bloco novo da suíte (seção 1b) traz 16 gabaritos cuja expectativa é a fórmula legal escrita à mão, sem chamar nenhuma função do app: <b>(1-9)</b> as nove fronteiras de faixa do Anexo I — 180.000,00 em cima e 180.000,12 logo acima, e assim por diante até 3.599.999,88 (LC 123, art. 18: "até" é inclusivo); <b>(10)</b> a 6ª faixa com a trava do ICMS nos TRÊS estados do art. 24 da Res. 140/2018 — RBA abaixo do sublimite (RBT12 efetivo do mês, premissa declarada desde a v7.42), o mês do cruzamento dos R$ 3,6 mi rateado, e dali em diante a alíquota efetiva máxima da 5ª faixa; <b>(11-12)</b> Fator R dos dois lados dos 28% (art. 18, § 5º-J); <b>(13-14)</b> Lucro Presumido sem e com adicional trimestral de IRPJ (Lei 9.249, art. 3º, § 1º); <b>(15)</b> LC 224/2025 com o excedente acumulado de R$ 1,25 mi/tri e a noventena da CSLL (IN RFB 2.305); <b>(16)</b> Lucro Real trimestral com prejuízo no 1º trimestre e a trava de 30% da compensação (Lei 9.065, art. 15), com o adicional sobre a base DEPOIS de compensar. Divergência máxima medida na implantação: <b>R$ 0,0000</b>. O CI passa a falhar se qualquer versão futura afastar o motor da lei nesses pontos. Suíte: seção 1b + bloco 5bm.</td></tr>
@@ -4713,7 +4714,7 @@ const fmtR = v => 'R$ ' + fmt(v);
 function lc224Regra(lc){
   return 'LC 224/2025 (art. 4º; IN RFB 2.305/2025 e 2.306/2026): a parcela da receita bruta acima de R$ 1,25 milhão por trimestre (R$ 5 milhões no ano, acumulado) tem os percentuais de presunção do IRPJ e da CSLL do Lucro Presumido acrescidos em 10% (ex.: 32% → 35,2%; 8% → 8,8%; CSLL 12% → 13,2%); IRPJ desde jan/2026 e CSLL desde abr/2026. Nesta análise o acréscimo foi de '
     + fmtR((+lc.irpj||0) + (+lc.csll||0)) + ' em IRPJ e CSLL do Presumido no ano (sem contar o adicional) sobre um excedente de ' + fmtR(+lc.excIR||0)
-    + '. Cite a regra ao explicar a carga do Presumido, sem recalcular, e não a apresente como definitiva: as ADIs 7920, 7936, 7944 e 7982 estão pendentes no STF.';
+    + '. Nos anos projetados do cenário do regime regular da Reforma o acréscimo está incluído pela vigência de cada ano (2026: IRPJ no ano e CSLL desde abril; 2027 em diante: ano-calendário cheio) — v7.105.0, B17. Cite a regra ao explicar a carga do Presumido, sem recalcular, e não a apresente como definitiva: as ADIs 7920, 7936, 7944 e 7982 estão pendentes no STF.';
 }
 // v7.39.1: percentual no padrão do documento — vírgula decimal, como o resto dos números
 const fmtP = (v, d=1) => (v==null||isNaN(v)) ? '—' : (+v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -6640,7 +6641,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.104.0';
+const APP_VERSAO = '7.105.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -7921,6 +7922,39 @@ function calcCenariosReforma(res, reforma) {
   const lpIssRet = meses.reduce((s,x)=>s+(+x.issRetLPLR||0),0);
   const lpResto = T.lp - lpPis - lpCof - lpIcms - lpIpi - lpIss;
   const lrResto = T.lr - lrPis - lrCof - lrIcms - lrIpi - lrIss;
+  // ══ v7.105.0 · B17 (aprovado pelo escritório em 24/10/2026) — LC 224/2025 PROJETADA NO ANO DO CENÁRIO ══
+  // O cenário "regime regular" carregava o IRPJ/CSLL do ano-base congelado para 2026-2033: análise de
+  // ano-base 2025 projetava o Presumido SEM o acréscimo da LC 224 (que vigora desde 2026), e a de 2026
+  // carregava a CSLL de 3 trimestres (noventena) para anos projetados que teriam 4. O acréscimo passa a
+  // ser recalculado com a VIGÊNCIA DO ANO PROJETADO — três estados: <2026 sem a lei; 2026 IRPJ no ano
+  // cheio + CSLL desde abril; ≥2027 ano cheio nos dois — rodando o motor de novo com inp.ano = ano do
+  // estado, a MESMA técnica do exercício seguinte (v7.88.0, P0-02). Só o "resto" do LP muda (IRPJ +
+  // adicional + CSLL + INSS): as parcelas de PIS/COFINS/ICMS/IPI/ISS não dependem do ano-calendário
+  // (premissa conferida no laboratório de 24/10 e vigiada pela suíte, bloco 5bp). cfg.lc224 === false
+  // (liminar registrada na Configuração) desliga tudo, como no realizado. Linha antiga sem res._inp
+  // (snapshot) mantém o comportamento anterior e declara isso em lc224Proj. O Lucro Real não tem
+  // presunção — não muda. Deltas selados: caso 3 do lacre +689,93 em 2027-2033; casos 1, 2 e 4 idênticos.
+  const _vig224 = x => x < 2026 ? 0 : (x === 2026 ? 1 : 2);
+  // o ano-base da LC 224 é o que o MOTOR usou (inp.ano || cfg.ano, publicado em totais.lc224.ano) —
+  // res.ano pode faltar em entrada que só traz o ano na cfg, e defaultar para 2026 trocaria o estado.
+  const _ano224 = +((T.lc224 && T.lc224.ano) || _anoBase) || 2026;
+  const _lp224Memo = {};
+  const _lpResto224 = R => { const f = k => R.meses.reduce((s,x)=>s+(+x.lp[k]||0),0);
+    return (+R.totais.lp||0) - f('pis') - f('cofins') - f('icms') - f('ipi') - f('iss'); };
+  const _lp224De = chave => {   // chave: 1 | 2 (estado de vigência do ano projetado) | 'sem' (lei afastada)
+    if (_lp224Memo[chave] !== undefined) return _lp224Memo[chave];
+    let v = null;
+    try {
+      const inp2 = JSON.parse(JSON.stringify(res._inp));
+      if (chave === 'sem'){ inp2.cfg = Object.assign({}, inp2.cfg, { lc224: false }); }
+      else { inp2.ano = chave === 1 ? 2026 : Math.max(2027, _ano224); if (inp2.cfg) inp2.cfg.ano = inp2.ano; }
+      const args = res._calcArgs || {};
+      v = _lpResto224(calcular(inp2, args.anexos, args.fp));
+    } catch(e){ console.error('calcCenariosReforma/LC 224 projetada', e); v = null; }
+    _lp224Memo[chave] = v; return v;
+  };
+  const _lc224Liga = _cfgBase.lc224 !== false && !!res._inp;
+  _lp224Memo[_vig224(_ano224)] = lpResto;   // o estado do ano-base é o realizado — nunca recalcula
   // ═══ v7.17.0 · Res. CGSN nº 190/2026: partilha do DAS por vigência ═══
   // Faixas 1–5: CBS(v)+IBS(v) = PIS/COFINS antigos + ICMS/ISS×(1−rem) — identidade conferida no CI
   // contra as tabelas do DOU; a 6ª faixa de 2027-28 tem CBS próprio (delta aplicado aos meses na faixa).
@@ -8035,7 +8069,13 @@ function calcCenariosReforma(res, reforma) {
     const hib = hibParcelas.dasHib + hibParcelas.cppRetida + hibParcelas.cppForaDAS + hibParcelas.icmsIssFora + hibParcelas.ibsCbsFora + hibParcelas.is;   // v7.18.0: sem FGTS · v7.23.0: sem ISS retido
     const hibSoma = Object.values(hibParcelas).reduce((x,y)=>x+y,0);
     const hibConfere = Math.abs(hib - hibSoma) <= 0.02;
-    const regLP = lpResto + (lpIcms+lpIss)*rII + (lpPis+lpCof)*rPC + (a<=2026?lpIpi:0) + L.liquido + L.is;
+    // v7.105.0 (B17) · o "resto" do LP (IRPJ + adicional + CSLL + INSS) sai da vigência do ANO PROJETADO
+    let _lpRestoA = lpResto, _lc224Rec = false;
+    if (_lc224Liga && _vig224(a) !== _vig224(_ano224)){
+      const vA = _lp224De(_vig224(a));
+      if (vA !== null){ _lpRestoA = vA; _lc224Rec = true; }
+    }
+    const regLP = _lpRestoA + (lpIcms+lpIss)*rII + (lpPis+lpCof)*rPC + (a<=2026?lpIpi:0) + L.liquido + L.is;
     const regLR = lrResto + (lrIcms+lrIss)*rII + (lrPis+lrCof)*rPC + (a<=2026?lrIpi:0) + L.liquido + L.is;
     // v7.88.0 (P1-01) · Lucro Real sem CMV é simulação incompleta: não elege nem é eleito
     const lrIncompleto = !!T.lrIncompleto;
@@ -8051,6 +8091,7 @@ function calcCenariosReforma(res, reforma) {
           : 'impedida de recolher ICMS, ISS e IBS na guia em ' + S.nImpedidos + ' ' + (S.nImpedidos===1?'mês':'meses') + ' de ' + a + ' (RBA acima do sublimite em mais de 20% — LC 123/2006, art. 20, § 1º; Res. CGSN 190/2026)')
       : null;
     return { ano:a, alq:L.alq, deb:L.deb, cred:L.cred, liquido:L.liquido, is:L.is, anoTeste:L.anoTeste, ded:L.ded, dedIss, dedIcms, dasHib, hib, regular, regLP, regLR, p190:P, regNome: regular===regLP?'Presumido':'Real',
+             lc224Proj: _lc224Liga ? { recalculado: _lc224Rec, delta: _lpRestoA - lpResto } : undefined,   // v7.105.0 (B17)
              dentro, impForaAno, impForaBase: S.impForaDAS, ibsForaImp, baseImpedida: S.baseImpedida,   // v7.88.0
              hibParcelas, hibSoma, hibConfere,   // v7.90.0
              hibBase: { ded: LHib.ded, deb: LHib.deb, cred: LHib.cred, liquido: LHib.liquido, dedRegular: L.ded },   // v7.95.0 (A2)
@@ -8117,7 +8158,15 @@ function calcCenariosReforma(res, reforma) {
     ? { status:'sugerida', origem:'usuario', final: { g: { nid: { pct: 0 } } } } : { status:'confirmada', origem:'nenhuma', final: { g: { nid: { pct: 0 } } } }));
   const confianca = compConfianca(_compRef, sens, hibNaoFechaArr.length ? 'MEM-01' : null);
   for (const l of REF) l.naoConclusivo = !!confianca.naoConclusivo;
-  return { rfx, REF, usouFallback: !reforma, proxyCompras, semCreditos, semPerfil, comp: _comp, sens, confianca,   // v7.91.0
+  // v7.105.0 (B17) · quanto a LC 224 pesa num ano cheio projetado — alimenta a nota de sensibilidade
+  // das ADIs no parecer. anoCheio = resto do LP com a lei (estado ≥2027) − resto com a lei afastada.
+  let lc224Proj = null;
+  if (_lc224Liga){
+    const _vCheio = (_vig224(_ano224) === 2) ? lpResto : _lp224De(2);
+    const _vSem = _lp224De('sem');
+    if (_vCheio !== null && _vSem !== null) lc224Proj = { anoCheio: Math.max(0, _vCheio - _vSem), desligada: false };
+  } else if (_cfgBase.lc224 === false) lc224Proj = { anoCheio: 0, desligada: true };
+  return { rfx, REF, lc224Proj, usouFallback: !reforma, proxyCompras, semCreditos, semPerfil, comp: _comp, sens, confianca,   // v7.91.0 · v7.105.0: lc224Proj
            lrIncompleto: !!T.lrIncompleto, lrIncompletoMotivo: T.lrIncompletoMotivo || null,   // v7.88.0 (P1-01)
            dentroInelegivelAlgum: REF.some(l=>l.dentroInelegivel),                              // v7.88.0 (P2-01)
            hibNaoFecha: REF.filter(l => !l.hibConfere).map(l => ({ ano:l.ano, hib:l.hib, soma:l.hibSoma, dif:l.hib-l.hibSoma })),   // v7.90.0
@@ -8317,7 +8366,7 @@ const LACRE_CASOS = [
   // v7.95.1 · Caso 4 — Empresa nova (início fev/2026): março com RBT12p zero → 1ª faixa nominal (v7.94.4), Anexo V pelo Fator R,
   // despesas creditáveis (aluguel PJ, energia, administrativas) sem composição → NID (v7.95.0). Cobre o que os casos 1-3 não cobriam.
   { nome:'Caso 4 — Empresa nova (RBT12 zero, Anexo V, despesas creditáveis)', inp: {"cnpj": "44444444000199", "ano": 2026, "cfg": {"iss": 0.05, "icmsV": 0, "icmsC": 0, "ipiV": 0, "ipiC": 0, "rbt12Direto": 0, "rbt12Lanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rbt12ExpLanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "folha12Lanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "lpBaseServ": 0.32, "lpBaseCom": 0.08, "lpBaseServCsll": 0, "lpBaseComCsll": 0.12, "transpPresuncao": "cargas", "icmsTranspV": 0, "transpCredPres": 0, "folhaPerc": {}, "adicionalIR": "trimestral", "sublimite": "auto", "lrPeriodo": "trimestral", "lrPrejIrpj": 0, "lrPrejCsll": 0, "inicioAtividade": "2026-02"}, "receitas": {"a5r": [0, 0, 36848.65, 30515.5, 31904.89, 32513.52, 34000, 34000, 34000, 34000, 34000, 34000]}, "folha": {"prolabore": [0, 0, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600], "salarios": [0, 0, 1436.09, 1436.09, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08], "baseFgts": [0, 0, 1436.09, 1436.09, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08], "prov13": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "provFerias": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "folha13": {"prolabore13": 0, "salarios13": 0, "baseFgts13": 0}, "compras": {}, "icms": {"cred": [null, null, null, null, null, null, null, null, null, null, null, null], "deb": [null, null, null, null, null, null, null, null, null, null, null, null]}, "ipi": {"cred": [null, null, null, null, null, null, null, null, null, null, null, null], "deb": [null, null, null, null, null, null, null, null, null, null, null, null]}, "despesas": {"adm": [0, 0, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000], "vendas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "fiscais": [0, 0, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300], "financeiras": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "outras": [0, 0, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200], "credAlugueisPJ": [0, 0, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500], "credEnergia": [0, 0, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]}, "origem": {}} }];
-const LACRE_HASH = '0a257d66';   // v7.99.0 — RE-SELADO: LC 224/2025, art. 4º — acréscimo de 10% na presunção do IRPJ/CSLL do Presumido sobre a receita acima de R$ 1,25 mi/trimestre (acumulado no ano; IRPJ desde jan/2026, CSLL desde abr/2026; IN RFB 2.305/2025 e 2.306/2026). Casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos. Anterior: 8ab9c16a (v7.95.1). // v7.95.1 — RE-SELADO: entra o CASO 4 (empresa nova, RBT12 zero, Anexo V, despesas creditáveis); casos 1-3 idênticos ao centavo. Anterior: ba7dcb90 (v7.95.0). // v7.95.0 — RE-SELADO: base própria do híbrido (dedução do ICMS/ISS da partilha) e despesas creditáveis na composição; casos 1, 2 e 3 mudam no híbrido 2027-2032 e no limite superior. Anterior: 22197ef1 (v7.94.0). // v7.94.0 — RE-SELADO: ICMS/ISS do período impedido pela mesma conta gráfica do Presumido/Real (aba ICMS·IPI prevalece) e partilha sem ICMS/ISS no mês impedido; casos 1 e 2 intactos, caso 3 muda. Anterior: 453f7b32 (v7.91.0). // v7.48.0 — RE-SELADO: o ICMS destacado passou a sair da base do IBS/CBS (LC 214, art. 12, §2º, V) e o transporte passou a gerar débito de ICMS no LP/LR. Anterior: e1a25234 (v7.45.0); antes fa39eefb (v7.35.0)
+const LACRE_HASH = '795f5d26';   // v7.105.0 — RE-SELADO: B17, aprovado pelo escritório em 24/10/2026 — a LC 224/2025 passa a ser PROJETADA nos anos futuros do cenário do regime regular pela vigência de cada ano (2026: IRPJ cheio + CSLL desde abril; 2027+: ano cheio; liminar registrada desliga também as projeções; o realizado do ano-base nunca muda). Caso 3 (2026, R$ 7,97 mi): regular 2027-2032 de 2.075.750,14 para 2.076.440,07 e 2033 de 2.781.812,37 para 2.782.502,30 (+689,93 cada — o complemento da CSLL do 1º trimestre no ano cheio); casos 1, 2 e 4, TODOS os totais anuais e os cenários "dentro" e "híbrido" idênticos ao centavo. Anterior: 0a257d66 (v7.99.0). // v7.99.0 — RE-SELADO: LC 224/2025, art. 4º — acréscimo de 10% na presunção do IRPJ/CSLL do Presumido sobre a receita acima de R$ 1,25 mi/trimestre (acumulado no ano; IRPJ desde jan/2026, CSLL desde abr/2026; IN RFB 2.305/2025 e 2.306/2026). Casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos. Anterior: 8ab9c16a (v7.95.1). // v7.95.1 — RE-SELADO: entra o CASO 4 (empresa nova, RBT12 zero, Anexo V, despesas creditáveis); casos 1-3 idênticos ao centavo. Anterior: ba7dcb90 (v7.95.0). // v7.95.0 — RE-SELADO: base própria do híbrido (dedução do ICMS/ISS da partilha) e despesas creditáveis na composição; casos 1, 2 e 3 mudam no híbrido 2027-2032 e no limite superior. Anterior: 22197ef1 (v7.94.0). // v7.94.0 — RE-SELADO: ICMS/ISS do período impedido pela mesma conta gráfica do Presumido/Real (aba ICMS·IPI prevalece) e partilha sem ICMS/ISS no mês impedido; casos 1 e 2 intactos, caso 3 muda. Anterior: 453f7b32 (v7.91.0). // v7.48.0 — RE-SELADO: o ICMS destacado passou a sair da base do IBS/CBS (LC 214, art. 12, §2º, V) e o transporte passou a gerar débito de ICMS no LP/LR. Anterior: e1a25234 (v7.45.0); antes fa39eefb (v7.35.0)
 // ═══ v7.103.0 · B14 — TABELA DE REGRAS DO MOTOR: VIGÊNCIA, FONTE E APROVAÇÃO ═══
 // Cada regra legal que o motor aplica entra aqui com a data em que a LEI passou a valer
 // (vigencia), a fonte, a versão do app que a implementou, o selo do lacre daquela entrega e o
@@ -8340,7 +8389,8 @@ const REGRAS_VIGENCIA = [
   { id:'iss-retido', regra:'ISS retido na fonte NÃO deduz a base do IBS/CBS (dedução = ISS do LP)', fonte:'LC 214/2025, art. 12, § 2º, V (leitura conservadora)', vigencia:'transição 2027–2032', versao:'7.54.0', selo:'47f3f10b', aprovacao:'decisão 8.9, declarada no app; chave cfg.dedIssRetido para a leitura alternativa (v7.69.0)' },
   { id:'credito-art58', regra:'Crédito de IBS/CBS sobre compra de optante: montante devido no Simples (1ª faixa do Anexo I, conservador)', fonte:'LC 214/2025, art. 47, § 9º; Res. CGSN 190/2026, art. 58, §§ 4º-6º', vigencia:'de 2027 em diante', versao:'7.29.0 e 7.91.0', selo:'5996c4be → 453f7b32 (re-selado: fim do proxy)', aprovacao:'especificação "v7.91 revisado" (P0/P1)' },
   { id:'split-cenario', regra:'Split payment tratado como CENÁRIO conservador (100% retido, 15% a.a.), nunca como retenção vigente', fonte:'LC 214/2025, art. 33; CGIBS (ago/2026): sem data para operar', vigencia:'sem data confirmada', versao:'7.36.3 e 7.99.2', selo:'não toca o motor', aprovacao:'B03 do relatório de 18/10/2026; instrução da IA impede data de início' },
-  { id:'prazos-194', regra:'Prazos legais de opção por exercício numa tabela única (PRAZOS_LEGAIS)', fonte:'Res. CGSN 194/2026 (DOU 28/09/2026), que alterou o calendário da Res. 186/2026', vigencia:'exercício 2027', versao:'7.99.2', selo:'não toca o motor', aprovacao:'B02 do relatório de 18/10/2026; conferida na imprensa oficial em 21/10/2026' } ];
+  { id:'prazos-194', regra:'Prazos legais de opção por exercício numa tabela única (PRAZOS_LEGAIS)', fonte:'Res. CGSN 194/2026 (DOU 28/09/2026), que alterou o calendário da Res. 186/2026', vigencia:'exercício 2027', versao:'7.99.2', selo:'não toca o motor', aprovacao:'B02 do relatório de 18/10/2026; conferida na imprensa oficial em 21/10/2026' },
+  { id:'lc224-projecao', regra:'LC 224/2025 projetada nos anos futuros do cenário do regime regular da Reforma, pela vigência de cada ano (2026: IRPJ cheio + CSLL desde abril; 2027+: ano cheio); liminar registrada na Configuração desliga também as projeções; o realizado do ano-base nunca muda', fonte:'LC 224/2025, art. 4º; IN RFB 2.305/2025 e 2.306/2026', vigencia:'anos projetados ≥ 2026', versao:'7.105.0', selo:'re-selo declarado no changelog da v7.105.0', aprovacao:'B17 — relatório prévio em docs/RELATORIO_previo_B16_B17.md, aprovado pelo escritório em 24/10/2026' } ];
 function regrasRender(){
   const box = $id('regras-box'); if (!box) return;
   box.innerHTML = `<div class="card"><h3>Regras do motor — vigência, fonte e aprovação <span class="hint" style="font-weight:400">(v7.103.0 · B14)</span></h3>
@@ -11219,6 +11269,7 @@ function rlParecer(){
         ? 'Economia teórica acumulada ao permanecer "por dentro", frente ao 2º melhor caminho — mantidas as premissas do estudo'
         : 'Economia teórica acumulada do regime de menor carga frente ao outro — mantidas as premissas do estudo (não é economia frente à carga atual)'}</div><canvas id="pc-acum" height="130"></canvas></div>`:''}
     ${TX.cenarios?`<p class="pp-p" style="font-size:9.5pt"><b>Leitura dos três caminhos:</b> ${TX.cenarios}</p>`:''}
+    ${(D.cen && D.cen.lc224Proj && !D.cen.lc224Proj.desligada && D.cen.lc224Proj.anoCheio > 0.005)?`<p class="pp-p" style="font-size:9.5pt"><b>Sensibilidade — LC 224/2025:</b> os anos projetados do regime regular incluem o acréscimo de 10% na presunção do Lucro Presumido sobre a receita acima de R$ 1,25 milhão por trimestre (LC 224/2025, art. 4º), aplicado pela vigência de cada ano — nesta análise, ${fmtR(D.cen.lc224Proj.anoCheio)} por ano cheio. As ADIs 7920, 7936, 7944 e 7982 contra a lei estão pendentes no STF: se ela for afastada, o Presumido projetado reduz nesse valor, e a Configuração da análise permite desligá-la mediante decisão judicial.</p>`:''}
     ${secao(++NS,'Split payment — impacto no caixa (cenário)')}
     <div class="pp-split">
       ${D.variante==='simples'?`<div class="pp-card"><div class="t">Por dentro · na fonte</div><div class="v" style="color:#0f7a5a">R$ 0</div><div class="s">IBS/CBS segue no DAS — caixa preservado</div></div>`:''}

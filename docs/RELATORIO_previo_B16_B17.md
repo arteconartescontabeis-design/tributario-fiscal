@@ -69,3 +69,11 @@ Para cada ano projetado `a ≥ 2026`, recalcular o acréscimo LC 224 **com a vig
 ---
 
 *Gerado na sessão de implantação do backlog de 18/10/2026 · ATP v7.104.0 · lacre `0a257d66`.*
+
+---
+
+## DESFECHO (24/10/2026)
+
+O escritório **aprovou** a Parte 1 (B17, com a nota de sensibilidade) e a Parte 2 (encerramento do B16), **retirando apenas as duas teses jurídicas do A08** (ISS retido na dedução — decisão 8.9 — e MEI/Simples juntos no crédito de IBS/CBS), que seguem para análise do jurídico — nada foi alterado nesses dois pontos.
+
+**B17 implementado na v7.105.0**, pelo rito: laboratório de deltas antes do código (premissa das parcelas invariantes verificada; candidato de 2026 a partir da base 2025 bateu ao centavo com o realizado verdadeiro de 2026) → bloco 5bp escrito antes, com gabarito transcrito da lei (Δ 22.352,00 no realizado 2026 e 23.936,00 no ano cheio, caso uniforme de 600 mil/mês) → implementação mínima no `calcCenariosReforma` → **lacre re-selado `0a257d66` → `795f5d26`** com os deltas declarados no changelog (caso 3: regular 2027–2033 **+689,93 cada**; casos 1, 2 e 4, totais anuais e cenários dentro/híbrido idênticos ao centavo) → varredura de 24 casos: diffs **apenas** em `regular`/`regLP` de anos projetados (222 + 74 linhas), nenhum mês, total ou cenário dentro/híbrido tocado. Suíte: 1378 OK · Incorporação regerada: 272 OK · Imobiliária: 71/71.
