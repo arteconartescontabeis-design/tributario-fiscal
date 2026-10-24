@@ -80,6 +80,88 @@ console.log('\n■ Motor do Simples');
   chk('repEfetiva ≡ repartição LC 123 com padrões', dif < 1e-9);
   chk('repEfetiva soma 100% em todas as faixas', soma100); }
 
+// ═══ 1b. SUÍTE INDEPENDENTE — B13 · v7.102.0 ═══
+// Gabaritos calculados FORA do motor: cada valor esperado é a transcrição direta da fórmula
+// legal (nenhuma função do app é chamada para produzi-lo). Fronteiras de faixa, trava do ICMS
+// da 6ª faixa nos três estados do art. 24, Fator R dos dois lados, adicional de IRPJ, LC 224 e
+// Lucro Real com prejuízo e trava de 30%. Na implantação (24/10/2026): 16/16 ao centavo —
+// nenhuma "diferença aceita" precisou ser registrada.
+console.log('\n■ Suíte independente — gabaritos calculados fora do motor (B13)');
+{
+  const F12 = v => Array(12).fill(v);
+  // tabelas transcritas da LC 123/2006 (Anexos I, III e V, vigentes desde 2018)
+  const AXL = { I:{lim:[180000,360000,720000,1800000,3600000,4800000], aliq:[.04,.073,.095,.107,.143,.19], ded:[0,5940,13860,22500,87300,378000], icms5:.335},
+    III:{lim:[180000,360000,720000,1800000,3600000,4800000], aliq:[.06,.112,.135,.16,.21,.33], ded:[0,9360,17640,35640,125640,648000]},
+    V:{lim:[180000,360000,720000,1800000,3600000,4800000], aliq:[.155,.18,.195,.205,.23,.305], ded:[0,4500,9900,17100,62100,540000]} };
+  const efLei = (ax,R) => { const f = AXL[ax].lim.findIndex(l => R <= l); return (R*AXL[ax].aliq[f] - AXL[ax].ded[f]) / R; };
+  const travaLei = B => ((B*.143 - 87300)/B) * AXL.I.icms5;   // Res. CGSN 140/2018, art. 21, III, "b"
+  const mkB13 = (rec, rbt, cfgx) => { const i = mk(rec, rbt, Object.assign({ iss:0, icmsV:0, icmsC:0, adicionalIR:'trimestral' }, cfgx||{}));
+    i.cfg.folha12Lanc = (cfgx && cfgx.folha12Lanc) || z(); i.folha = { prolabore:z(), salarios:z(), baseFgts:z(), prov13:z(), provFerias:z() };
+    if (cfgx && cfgx._salarios){ i.folha.salarios = F12(cfgx._salarios); i.folha.baseFgts = F12(cfgx._salarios); }
+    return i; };
+  const B13 = [];
+  // (1-9) fronteiras de faixa do Anexo I — LC 123/2006, art. 18 e Anexo I ("até" é inclusivo)
+  for (const R of [180000, 180000.12, 360000, 360000.12, 720000, 720000.12, 1800000, 1800000.12, 3599999.88])
+    B13.push({ nome:`fronteira de faixa · RBT12 = ${R.toLocaleString('pt-BR',{minimumFractionDigits:2})}`,
+      fonte:'LC 123/2006, art. 18 e Anexo I', inp: mkB13({a1_semst:F12(R/12)}, R),
+      lei: () => R * efLei('I', R), mede: r => r.totais.das });
+  // (10) 6ª faixa: DAS sem ICMS + trava do ICMS nos TRÊS estados do art. 24 — RBA do ano abaixo do
+  // sublimite usa o RBT12 efetivo do mês (premissa declarada desde a v7.42); o mês em que a RBA
+  // cruza R$ 3,6 mi é rateado; dali em diante vale a alíquota efetiva máxima da 5ª faixa (base 3,6 mi)
+  { const R = 4200000, c = R/12, tEf = travaLei(R), tMax = travaLei(3600000);
+    const cruza = Math.floor(3600000/c);                 // mês (0-based) em que a RBA ultrapassa 3,6 mi
+    const abaixo = 3600000 - cruza*c, acima = c - abaixo;
+    const esperado = 12*c*efLei('I',R) + cruza*c*tEf + (abaixo*tEf + acima*tMax) + (11-cruza)*c*tMax;
+    B13.push({ nome:'6ª faixa · trava do ICMS (art. 21, III, b + art. 24 da Res. 140/2018)',
+      fonte:'Res. CGSN 140/2018, arts. 21 e 24; LC 123, art. 13-A', inp: mkB13({a1_semst:F12(c)}, R),
+      lei: () => esperado, mede: r => r.totais.simples }); }
+  // (11-12) Fator R — LC 123/2006, art. 18, § 5º-J (≥ 28% → Anexo III; < 28% → Anexo V)
+  { const R = 600000;
+    B13.push({ nome:'Fator R 40% → Anexo III', fonte:'LC 123/2006, art. 18, § 5º-J',
+      inp: mkB13({a5r:F12(R/12)}, R, { folha12Lanc:F12(20000), _salarios:20000 }),
+      lei: () => R * efLei('III', R), mede: r => r.totais.das });
+    B13.push({ nome:'Fator R 4% → Anexo V', fonte:'LC 123/2006, art. 18, § 5º-J',
+      inp: mkB13({a5r:F12(R/12)}, R, { folha12Lanc:F12(2000), _salarios:2000 }),
+      lei: () => R * efLei('V', R), mede: r => r.totais.das }); }
+  // (13) LP comércio sem adicional — Lei 9.249/95, art. 3º; PIS 0,65% e COFINS 3% cumulativos
+  B13.push({ nome:'LP comércio sem adicional', fonte:'Lei 9.249/95, arts. 3º e 20; Lei 9.715/98 e 9.718/98',
+    inp: mkB13({a1_semst:F12(100000)}, 1200000),
+    lei: () => 1200000*.0065 + 1200000*.03 + .15*(1200000*.08) + .09*(1200000*.12), mede: r => r.totais.lp });
+  // (14) LP serviços com adicional trimestral — Lei 9.249/95, art. 3º, § 1º; ISS 2%
+  B13.push({ nome:'LP serviços com adicional de IRPJ', fonte:'Lei 9.249/95, art. 3º, § 1º; LC 116/2003',
+    inp: mkB13({a3_semret:F12(300000)}, 3600000, { iss:.02 }),
+    lei: () => 3600000*.0065 + 3600000*.03 + 3600000*.02 + .15*(3600000*.32) + 4*((900000*.32 - 60000)*.10) + .09*(3600000*.32),
+    mede: r => r.totais.lp });
+  // (15) LC 224/2025: +10% na presunção sobre o excedente de R$ 1,25 mi/tri acumulado;
+  //      IRPJ desde jan/2026 e CSLL desde abr/2026 (noventena — IN RFB 2.305/2025)
+  B13.push({ nome:'LP 2026 com o acréscimo da LC 224', fonte:'LC 224/2025, art. 4º; IN RFB 2.305/2025 e 2.306/2026',
+    inp: mkB13({a1_semst:F12(600000)}, 7200000, { ano:2026 }),
+    lei: () => { const base = 7200000*.0065 + 7200000*.03 + .15*(7200000*.08) + 4*((1800000*.08 - 60000)*.10) + .09*(7200000*.12);
+      const addIR = 4*(550000*.10*.08);               // excedente de 550 mil por trimestre × 10% × presunção de 8%
+      const addCS = 3*(550000*.10*.12);               // CSLL só nos trimestres 2-4 (vigência abr/2026)
+      return base + addIR*.15 + addIR*.10 + addCS*.09; },
+    mede: r => r.totais.lp });
+  // (16) Lucro Real trimestral: prejuízo no 1º tri compensado no 2º com a trava de 30% —
+  //      Lei 9.065/95, art. 15; adicional sobre a base DEPOIS da compensação
+  { const inp = mkB13({a3_semret:[10000,10000,10000,200000,200000,200000,0,0,0,0,0,0]}, 600000);
+    inp.despesas.adm = [60000,60000,60000,20000,20000,20000,0,0,0,0,0,0];
+    B13.push({ nome:'LR trimestral · prejuízo + trava de 30%', fonte:'Lei 9.065/95, art. 15; Lei 9.430/96',
+      inp, lei: () => { const pc = .0925;             // PIS/COFINS não cumulativos, sem créditos no caso
+        const l1 = 3*(10000 - 60000 - 10000*pc), l2 = 3*(200000 - 20000 - 200000*pc);
+        const comp = Math.min(.30*l2, -l1), base = l2 - comp;
+        return (30000+600000)*pc + .15*base + .10*Math.max(0, base-60000) + .09*base; },
+      mede: r => r.totais.lr }); }
+  let piorB13 = 0;
+  for (const c of B13){
+    const r = g.calcular(clone(c.inp), clone(AD), {...FD});
+    const esperado = c.lei(), medido = c.mede(r), d = Math.abs(medido - esperado);
+    piorB13 = Math.max(piorB13, d);
+    chk('B13 · ' + c.nome + ' (' + c.fonte + ')', d <= 0.02,
+      'lei=' + esperado.toFixed(2) + ' · motor=' + medido.toFixed(2) + (d > 0.02 ? ' · Δ=' + d.toFixed(2) : ''));
+  }
+  globalThis.__B13 = { n: B13.length, pior: piorB13 };
+}
+
 // ═══ 2. CORREÇÕES v7.1 ═══
 console.log('\n■ Correções da revisão (v7.1)');
 { const r = g.calcular(mk({a4:Array(12).fill(50000)},600000), clone(AD), {...FD}); const M = r.meses[0];
@@ -5256,6 +5338,15 @@ console.log('\n■ Integridade da interface');
     chk('5av · sem composição o comportamento não muda: NID = (compras + despesas creditáveis) já projetados (540.000,00)', Math.abs(o.nidSem - 540000) < 0.01);
     chk('5av · ano completo (k = 1) devolve a reforma original, sem cópia — nenhum documento se move', o.mesmo === true && Math.abs(o.origReal - 270000) < 0.01);
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
+  }
+
+  // ═══ 5bm · v7.102.0 — B13 suíte independente (gabaritos transcritos da lei, fora do motor) ═══
+  {
+    chk('5bm · a suíte independente rodou com 16+ casos e divergência máxima dentro de 2 centavos',
+      !!globalThis.__B13 && globalThis.__B13.n >= 16 && globalThis.__B13.pior <= 0.02,
+      globalThis.__B13 ? ('casos=' + globalThis.__B13.n + ' · Δmax=' + globalThis.__B13.pior.toFixed(4)) : 'não rodou');
+    chk('5bm · lacre 0a257d66 intocado (B13 é gabarito, não muda número nenhum)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bm · v7.102.0 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.102\.0<\/b><\/td><td>24\/10\/2026/.test(html));
   }
 
   // ═══ 5bl · v7.101.5 — congelador de análises fechadas em lote (B08 aplicado à carteira) ═══
