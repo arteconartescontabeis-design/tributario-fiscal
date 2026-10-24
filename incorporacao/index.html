@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.106.0 (lacre 795f5d26) em 2026-10-24T21:30:46.179Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.107.0 (lacre 795f5d26) em 2026-10-24T23:10:08.677Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7797,7 +7797,27 @@ async function rlRegistrarEntrega(){
       resumo: { evento:'entrega-periodo', periodo: p, rotulo: I.curto(ano), doc: tipo,
         totais: { receita: el.T.receita, simples: el.T.simples, lp: el.T.lp, lr: el.T.lr, das: el.T.das },
         vencedor: el.nome, por: APP?.user?.email||'', app: APP_VERSAO, lacre: LACRE_HASH } });
-    toast('📬 Entrega registrada no Histórico — ' + I.curto(ano) + ' (' + tipo + ').');
+    // ══ v7.107.0 · a entrega TRAVA os meses do corte ══════════════════════════════════════════
+    // Grava em dados._entregas (banco e análise aberta) o período, os meses e o RETRATO dos
+    // valores entregues — é esse retrato que repõe importação que invadir o corte. Destravar: 🔓.
+    const trava = { id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      periodo: p, rotulo: I.curto(ano), em: new Date().toISOString(), por: APP?.user?.email||'',
+      doc: tipo, ini: I.ini, fim: I.fim, app: APP_VERSAO, lacre: LACRE_HASH,
+      valores: anTravaValores(RL.dados, I.ini, I.fim) };
+    try {
+      const rows = await supa('GET','atp_analises',{ params:{ select:'dados', cnpj:'eq.'+RL.dados.cnpj, ano:'eq.'+ano, limit:'1' } });
+      const dadosBanco = rows && rows[0] && rows[0].dados;
+      if (dadosBanco){
+        dadosBanco._entregas = [ ...(Array.isArray(dadosBanco._entregas) ? dadosBanco._entregas : []), trava ];
+        await supa('PATCH', `atp_analises?cnpj=eq.${RL.dados.cnpj}&ano=eq.${ano}`, { body:{ dados: dadosBanco } });
+      }
+    } catch(e){ console.error('rlRegistrarEntrega/trava:', e); toast('Entrega registrada no Histórico, mas a TRAVA dos meses não pôde ser gravada: ' + e.message); }
+    if (RL.dados) RL.dados._entregas = [ ...(Array.isArray(RL.dados._entregas) ? RL.dados._entregas : []), trava ];
+    if (AN && AN.cnpj === RL.dados.cnpj && +AN.ano === +ano){
+      AN._entregas = [ ...(Array.isArray(AN._entregas) ? AN._entregas : []), trava ];
+      try { anTravaRender(); } catch(_){/* silêncio proposital (A10): sem a caixa da trava na tela, a trava em si continua valendo */}
+    }
+    toast('📬 Entrega registrada — ' + I.curto(ano) + ' (' + tipo + '). Meses ' + MESES[I.ini] + '–' + MESES[I.fim] + ' travados 🔒 (destravável com motivo).');
   } catch(e){ toast('Não foi possível registrar a entrega: ' + e.message); }
 }
 
