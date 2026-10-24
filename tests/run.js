@@ -5340,6 +5340,46 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bo · v7.104.0 — B15 regime tributário por ano (relatório de 2025 sai com o regime de 2025) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    chk('5bo · regimeDoAno: cfg.regimeAno da análise > regime da ficha > vazio',
+      run(`regimeDoAno({ cfg:{ regimeAno:'Lucro Presumido' } }, { regime:'Simples Nacional' })`) === 'Lucro Presumido'
+      && run(`regimeDoAno({ cfg:{} }, { regime:'Simples Nacional' })`) === 'Simples Nacional'
+      && run(`regimeDoAno(null, null)`) === '');
+    { const o = run(`(function(){
+        const _rl = { dados:RL.dados, res:RL.res, reforma:RL.reforma, empresa:RL.empresa, exec:RL.exec, fechada:RL.fechada, forn:RL.forn, _ia:RL._ia, cmp:RL.cmp, defasado:RL.defasado };
+        try {
+          const inp = anNovo('11111111000111', 2025);
+          inp.receitas.a3_semret = Array(12).fill(50000);
+          inp.cfg.rbt12Lanc = Array(12).fill(50000); inp.cfg.folha12Lanc = Array(12).fill(17000);
+          inp.folha.salarios = Array(12).fill(17000); inp.folha.baseFgts = Array(12).fill(17000); inp.cfg.iss = 0.03;
+          RL.dados = inp; RL.res = calcular(JSON.parse(JSON.stringify(inp)), PARAMS.anexos, folhaPercDaEmpresa(inp.cfg));
+          RL.reforma = null; RL.empresa = { cnpj: inp.cnpj, regime: 'Simples Nacional' }; RL.exec = null; RL.fechada = null; RL.forn = null; RL._ia = null; RL.cmp = null; RL.defasado = null;
+          const comFicha = parecerDados();
+          RL.dados = JSON.parse(JSON.stringify(inp)); RL.dados.cfg.regimeAno = 'Lucro Presumido';
+          const comAno = parecerDados();
+          return { fichaVar: comFicha.variante, fichaNome: comFicha.regimeHojeNome, anoVar: comAno.variante, anoNome: comAno.regimeHojeNome };
+        } finally { Object.assign(RL, _rl); }
+      })()`);
+      chk('5bo · sem regime do ano, o parecer segue a ficha (optante do Simples)', o.fichaVar === 'simples' && o.fichaNome === 'Simples Nacional');
+      chk('5bo · com cfg.regimeAno = Lucro Presumido, o MESMO ano sai como Presumido (variante elegível, não optante)',
+        o.anoVar === 'eleg' && o.anoNome === 'Lucro Presumido'); }
+    chk('5bo · capa do parecer e payload da IA também usam o regime do ano',
+      (html.match(/regimeDoAno\(RL\.dados, RL\.empresa\)/g)||[]).length >= 3);
+    { const o = run(`(function(){ const _an = AN; AN = anNovo('11111111000111', 2025);
+        document.getElementById('cf-regime-ano').value = 'Lucro Real'; anAplicarConfig(true);
+        const gravou = AN.cfg.regimeAno;
+        document.getElementById('cf-regime-ano').value = ''; anAplicarConfig(true);
+        const limpou = AN.cfg.regimeAno === undefined;
+        document.getElementById('cf-regime-ano').value = ''; AN = _an; return { gravou, limpou }; })()`);
+      chk('5bo · a Configuração grava o regime do ano e, em branco, volta a herdar a ficha', o.gravou === 'Lucro Real' && o.limpou === true); }
+    chk('5bo · o regime do ano herda entre anos (CFG_HERDA) e tem rótulo na trilha',
+      /'lc224','lc224Proc','lc224Data',\s*'regimeAno'\]/.test(html) && /regimeAno:'Regime tributário do ano-base'/.test(html));
+    chk('5bo · lacre 0a257d66 intocado (B15 muda rótulo e variante, nunca número)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bo · v7.104.0 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.104\.0<\/b><\/td><td>24\/10\/2026/.test(html));
+  }
+
   // ═══ 5bn · v7.103.0 — B14 tabela de regras do motor com vigência, fonte e registro de aprovação ═══
   {
     const run = c => vm.runInContext(c, ctx);
@@ -5671,7 +5711,7 @@ console.log('\n■ Integridade da interface');
       chk('5be · desligar SEM processo/data é recusado (volta a aplicar) — com os dois, grava lc224=false + processo + data',
         o.revertido === true && o.lig === false && o.proc === '0001234-56.2026.4.03.0000' && o.data === '2026-09-15'); }
     chk('5be · processo e data herdam entre anos (CFG_HERDA) e têm rótulo na trilha',
-      /'lc224','lc224Proc','lc224Data'\]/.test(html) && /lc224Proc:'LC 224\/2025 — processo/.test(html) && /lc224Data:'LC 224\/2025 — data/.test(html));
+      /'lc224','lc224Proc','lc224Data'[,\]]/.test(html) && /lc224Proc:'LC 224\/2025 — processo/.test(html) && /lc224Data:'LC 224\/2025 — data/.test(html));
     chk('5be · lacre 0a257d66 intocado (nada de motor nesta versão)', /LACRE_HASH = '0a257d66'/.test(html));
     chk('5be · v7.99.5 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.99\.5<\/b><\/td><td>18\/10\/2026/.test(html));
   }

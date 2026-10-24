@@ -807,6 +807,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.104.0</b></td><td>24/10/2026</td><td><b>🏷️ REGIME TRIBUTÁRIO POR ANO-BASE (B15): o regime deixa de vir só da ficha da empresa — cada análise pode registrar o regime vigente NAQUELE ano em Configurações da análise (campo "Regime tributário do ano-base"), e o app passa a usar essa informação onde o regime aparece. Motor e lacre <code>0a257d66</code> INTOCADOS: nenhum número muda.</b> Como funciona: a nova função <code>regimeDoAno(dados, empresa)</code> responde <code>cfg.regimeAno</code> quando preenchido e, na falta dele, o regime da ficha (comportamento de hoje) — e passou a ser usada nos três pontos que exibiam <code>empresa.regime</code>: a comparação ficha × elegibilidade do parecer (que avisa quando a ficha diverge), a capa do parecer impresso e o contexto enviado à consulta de IA. O campo herda para o ano seguinte via <code>CFG_HERDA</code> (como o Fator R e a LC 224) e entra na trilha de auditoria de configurações com rótulo próprio. Por que importa: empresa que ERA Lucro Presumido em 2024 e virou Simples em 2025 tinha o parecer de 2024 reimpresso com o regime atual da ficha; agora cada ano guarda o seu. Suíte: bloco 5bo (precedência da função, parecer funcional com regime do ano ≠ ficha, gravação/limpeza em Config, herança e auditoria). Varredura: 24 casos idênticos ao backup v7.99.1.</td></tr>
                     <tr><td><b>v7.103.0</b></td><td>24/10/2026</td><td><b>📖 TABELA DE REGRAS DO MOTOR (B14): toda regra legal que o motor aplica agora está catalogada com VIGÊNCIA, FONTE, versão que a implementou, selo da entrega e registro de aprovação — na aba Versões, entre o lacre e o changelog. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> São 16 regras em <code>REGRAS_VIGENCIA</code>: das faixas da LC 123 (com os limites "até" inclusivos) à LC 224/2025 (IRPJ desde jan/2026, CSLL desde abr/2026), passando pela trava do sublimite, pelo RBT12 proporcionalizado, pelo Tema 69, pelo crédito de ICMS de MEI/Simples, pelo Lucro Real trimestral com trava de 30%, pela partilha da Res. 190/2026, pela decisão 8.9 do ISS retido, pelo art. 58 e pelos prazos da Res. 194/2026. <b>O princípio que a tabela torna visível e a suíte prova:</b> regra nova entra com data de início e <b>cálculo antigo não muda</b> — o lacre mantém os casos históricos ao centavo, e o teste de vigência mostra o mesmo caso da LC 224 em ano-base 2025 saindo SEM o acréscimo, batendo com a fórmula legal ao centavo. Alterar uma regra é re-selar: fica registrado na tabela, no changelog e no selo. Suíte: bloco 5bn.</td></tr>
                     <tr><td><b>v7.102.0</b></td><td>24/10/2026</td><td><b>⚖️ SUÍTE INDEPENDENTE (B13): 16 casos com o valor esperado TRANSCRITO DA LEI, calculados fora do motor — e o motor fechou TODOS ao centavo, sem nenhuma "diferença aceita" a registrar. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Até aqui, a suíte provava que o motor não MUDOU (lacre, gabaritos históricos); faltava provar que ele está CERTO contra uma referência externa. O bloco novo da suíte (seção 1b) traz 16 gabaritos cuja expectativa é a fórmula legal escrita à mão, sem chamar nenhuma função do app: <b>(1-9)</b> as nove fronteiras de faixa do Anexo I — 180.000,00 em cima e 180.000,12 logo acima, e assim por diante até 3.599.999,88 (LC 123, art. 18: "até" é inclusivo); <b>(10)</b> a 6ª faixa com a trava do ICMS nos TRÊS estados do art. 24 da Res. 140/2018 — RBA abaixo do sublimite (RBT12 efetivo do mês, premissa declarada desde a v7.42), o mês do cruzamento dos R$ 3,6 mi rateado, e dali em diante a alíquota efetiva máxima da 5ª faixa; <b>(11-12)</b> Fator R dos dois lados dos 28% (art. 18, § 5º-J); <b>(13-14)</b> Lucro Presumido sem e com adicional trimestral de IRPJ (Lei 9.249, art. 3º, § 1º); <b>(15)</b> LC 224/2025 com o excedente acumulado de R$ 1,25 mi/tri e a noventena da CSLL (IN RFB 2.305); <b>(16)</b> Lucro Real trimestral com prejuízo no 1º trimestre e a trava de 30% da compensação (Lei 9.065, art. 15), com o adicional sobre a base DEPOIS de compensar. Divergência máxima medida na implantação: <b>R$ 0,0000</b>. O CI passa a falhar se qualquer versão futura afastar o motor da lei nesses pontos. Suíte: seção 1b + bloco 5bm.</td></tr>
                     <tr><td><b>v7.101.5</b></td><td>21/10/2026</td><td><b>🧊 CONGELADOR DE ANÁLISES FECHADAS EM LOTE — o B08 aplicado à carteira inteira, com a regra de ouro: congelar nunca muda um número emitido. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> As 73 análises fechadas antes da v7.100.0 não têm execução congelada (seus relatórios ainda saem do recálculo). O botão <b>🧊 Congelar análises fechadas</b>, no Dashboard, varre as fechadas e, para cada uma sem execução: recalcula com o motor atual e compara com o snapshot do fechamento — totais, DAS mês a mês e cenários 2033, com tolerância de um centavo. <b>Bateu</b> → refecha na hora com a execução congelada: o emitido não muda em NADA, só ganha a proteção; quem fechou e quando são preservados, o snapshot anterior vai ao histórico (evento <i>congelada</i>) e a execução entra no registro imutável (origem <i>refechar</i>). <b>Divergiu</b> → não toca: a análise sai numa lista nominal com as diferenças (é o caso da auditoria: 10 de 73), para decisão caso a caso pelo 🔁 Refechar — adotar número novo é decisão profissional, nunca automática. <b>Também nesta versão:</b> a fonte da tabela de prazos passa a citar a <b>Res. 186/2026</b> como a norma cujo calendário a Res. 194/2026 alterou (conferido na imprensa oficial em 21/10/2026 — as datas em uso não mudam). Suíte: bloco 5bl.</td></tr>
@@ -4973,7 +4974,8 @@ function audRotulo(campo){
     credLRpct:'% creditável no LR', folhaPerc:'Percentuais de folha', ratBasico:'RAT básico', fap:'FAP', travaNoDas:'Trava na guia', arredondaPorTributo:'Arredondar por tributo', frComposicao:'Composição do Fator R', dedIssRetido:'Deduz ISS retido', issRetidoNaCarga:'ISS retido na carga',
     transpPresuncao:'Presunção transporte', icmsTranspV:'ICMS transporte %', transpCredPres:'Crédito presumido transporte', sem13Pago:'Sem pagamento de 13º',
     icmsSaldoIni:'Saldo credor de ICMS em 1º/jan', lc224:'LC 224/2025 — presunção +10% (aplicar?)',
-    lc224Proc:'LC 224/2025 — processo da decisão que desliga', lc224Data:'LC 224/2025 — data da decisão' };   // v7.99.5 · B07
+    lc224Proc:'LC 224/2025 — processo da decisão que desliga', lc224Data:'LC 224/2025 — data da decisão',
+    regimeAno:'Regime tributário do ano-base' };   // v7.99.5 · B07 · v7.104.0 · B15
   if (sec === 'cfg') return CFG[k] || ('Configuração · ' + k);
   if (sec === 'folha13') return ({ prolabore13:'Pró-labore 13º', salarios13:'Proventos 13º', baseFgts13:'Base FGTS 13º' })[k] || k;
   if (sec === 'reforma') return ({ receita:'Reforma · receita anual tributável', baseIS:'Reforma · base do Imposto Seletivo', credSimplesPct:'Reforma · % crédito s/ compras do Simples' })[k] || ('Reforma · ' + k);
@@ -5947,6 +5949,11 @@ function anRenderConfig() {
     <div><label>Presunção do transporte (LP) <span class="hint">(v7.48.0)</span></label><select id="cf-transp" onchange="anAplicarConfig(true)" title="Transporte de CARGAS presume 8% no IRPJ, como o comércio; transporte de PASSAGEIROS presume 16% (Lei 9.249/95, art. 15, §1º, II, 'a'). A CSLL é 12% nos dois casos. Vale para as receitas dos blocos de Comunicação/Transporte."><option value="cargas" ${String(c.transpPresuncao||'cargas')!=='passageiros'?'selected':''}>Cargas — IRPJ 8%</option><option value="passageiros" ${String(c.transpPresuncao)==='passageiros'?'selected':''}>Passageiros — IRPJ 16%</option></select></div>
     <div><label>Base IRPJ comércio (LP)</label><select id="cf-bcom" onchange="anAplicarConfig(true)"><option value="0.08" ${c.lpBaseCom==.08?'selected':''}>8%</option><option value="0.16" ${c.lpBaseCom==.16?'selected':''}>16%</option></select></div>
     <div><label>Adicional de IRPJ</label><select id="cf-adic" onchange="anAplicarConfig(true)"><option value="trimestral" ${c.adicionalIR=='trimestral'?'selected':''}>Trimestral</option><option value="mensal" ${c.adicionalIR=='mensal'?'selected':''}>Mensal (estimativa)</option><option value="off" ${c.adicionalIR=='off'?'selected':''}>Não calcular</option></select></div>
+    <div><label>Regime tributário neste ano-base <span class="hint">(v7.104.0 · B15)</span></label>
+      <select id="cf-regime-ano" onchange="anAplicarConfig(true)" title="O regime que a empresa efetivamente adotou NESTE ano-base. Em branco, vale o regime da ficha da empresa. O parecer, a capa e o payload da IA usam o regime do ano do relatório — o de 2025 sai com o regime de 2025, mesmo que a empresa tenha mudado depois. Herda entre anos como parâmetro da empresa.">
+        <option value="" ${!c.regimeAno?'selected':''}>— herdar da ficha da empresa —</option>
+        ${['Simples Nacional','MEI','Lucro Presumido','Lucro Real'].map(x=>`<option value="${x}" ${c.regimeAno===x?'selected':''}>${x}</option>`).join('')}
+      </select></div>
     <div><label>LC 224/2025 — presunção +10% <span class="hint">(v7.99.0)</span></label><select id="cf-lc224" onchange="anAplicarConfig(true)" title="LC 224/2025, art. 4º: a parcela da receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre, acumulado) tem os percentuais de presunção do IRPJ e da CSLL acrescidos em 10% (32% → 35,2%; 8% → 8,8%; CSLL 12% → 13,2%). IRPJ desde jan/2026, CSLL desde abr/2026 (IN RFB 2.305/2025 e 2.306/2026). Desligue só se a empresa tiver liminar ou decisão judicial — as ADIs 7920, 7936, 7944 e 7982 ainda não foram julgadas pelo STF.">
       <option value="sim" ${c.lc224===false?'':'selected'}>Aplicar (regra em vigor desde 2026)</option>
       <option value="nao" ${c.lc224===false?'selected':''}>Não aplicar (liminar / decisão judicial)</option></select>
@@ -6166,6 +6173,9 @@ function anAplicarConfig(silencioso) {
         toast('⚖️ Para DESLIGAR a LC 224/2025 informe o número do processo e a data da decisão judicial — sem o registro, a regra continua aplicada.');
       } else { AN.cfg.lc224Proc = _lcProc; AN.cfg.lc224Data = _lcData; }
     } else { delete AN.cfg.lc224Proc; delete AN.cfg.lc224Data; } }
+  // v7.104.0 · B15 — regime tributário DESTE ano-base (em branco = herda a ficha da empresa)
+  { const _rg = String(vRaw('cf-regime-ano', _cfg.regimeAno||'')||'').trim();
+    if (_rg) AN.cfg.regimeAno = _rg; else delete AN.cfg.regimeAno; }
   // v7.35.0 · período de apuração do Lucro Real e saldos de prejuízo (podem não existir em telas antigas)
   if (AN.cfg.arredondaPorTributo !== true) delete AN.cfg.arredondaPorTributo;   // v7.62.0: ausente ≠ false
   if (!(+AN.cfg.rbaa > 0)) delete AN.cfg.rbaa;                       // v7.70.0: em branco = não informada
@@ -6506,7 +6516,8 @@ async function anTrocarEmpresa() {
 const CFG_HERDA = ['iss','icmsV','icmsC','ipiV','ipiC','icmsTranspV','transpCredPres','lpBaseServ',
   'lpBaseCom','lpBaseServCsll','lpBaseComCsll','transpPresuncao','folhaPerc','adicionalIR','sublimite',
   'travaNoDas','lrPeriodo','projJanela','anoRefParecer','credLRpct',
-  'lc224','lc224Proc','lc224Data'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa · v7.99.5 · B07: o registro da decisão herda junto
+  'lc224','lc224Proc','lc224Data',
+  'regimeAno'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa · v7.99.5 · B07: o registro da decisão herda junto · v7.104.0 · B15: o regime do ano herda como ponto de partida
 // NÃO se herda o que é do ano: rbt12Lanc, rbt12ExpLanc, folha12Lanc, rbt12Direto, rbt12ExpDireto, lrPrejIrpj,
 // lrPrejCsll e snAntAcima — são apuração, não parâmetro.
 async function cfgHerdar(an, cnpj, ano){
@@ -6629,7 +6640,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.103.0';
+const APP_VERSAO = '7.104.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -10757,6 +10768,12 @@ function rlBaseReforma(){
   return baseReformaDe(RL.dados, RL.res, RL.reforma);
 }
 
+// v7.104.0 · B15 — o regime tributário é DO ANO, não da ficha: a análise pode registrar o regime
+// que a empresa efetivamente adotou naquele ano-base (cfg.regimeAno); em branco, vale a ficha.
+// O relatório de 2025 sai com o regime de 2025, mesmo que a empresa tenha mudado em 2026.
+function regimeDoAno(dados, empresa){
+  return String((dados && dados.cfg && dados.cfg.regimeAno) || (empresa && empresa.regime) || '');
+}
 function parecerDados(){
   // v7.39.0 · ano incompleto → o parecer fala do ANO, não do pedaço lançado.
   // v7.46.0 · a projeção saiu daqui para a rlBaseReforma() — os MESMOS números de antes,
@@ -10770,7 +10787,7 @@ function parecerDados(){
   let cen = null; try { cen = calcCenariosReforma(_res, _reforma); } catch(e){ console.error('parecer/cenários', e); }
   const REF = (cen && cen.REF) || [];
   const anos = REF.filter(l=>l.ano>=2027);
-  const regime = String(RL.empresa?.regime||'').toLowerCase();
+  const regime = regimeDoAno(RL.dados, RL.empresa).toLowerCase();   // v7.104.0 · B15: regime do ano, não da ficha
   // O RBT12 que define a variante do documento é o REALIZADO: uma estimativa não pode, sozinha,
   // transformar um parecer de optante em parecer de regime regular. Quando a projeção cruza o teto,
   // isso vira ALERTA (abaixo), não mudança de variante.
@@ -11051,7 +11068,7 @@ function rlParecer(){
   h += `<div class="pp-page pp-capa"><img class="pp-bg" src="capa.jpg" onerror="this.style.display='none';this.parentNode.classList.add('pp-semarte')">
     <div class="pp-capa-cliente"><div class="pp-capa-lbl">Estudo elaborado para</div>
       <div class="pp-capa-nome">${esc(emp.razao_social)||RL.dados.cnpj||''}</div>
-      <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${RL.empresa?.regime?' · '+RL.empresa.regime:''}</div>
+      <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${regimeDoAno(RL.dados, RL.empresa)?' · '+esc(regimeDoAno(RL.dados, RL.empresa)):''}</div>
       <div class="pp-capa-data">Ano-base ${anoTx} · ${hoje}</div></div></div>`;
 
   // ── PÁG: introdução + enquadramento (v7.38.3: separada do "caminho" — a combinada estourava e cortava o parágrafo final) ──
@@ -11708,7 +11725,7 @@ async function parecerIA(){
     const _margemInt = (D.subMon && typeof D.subMon.margemLimite === 'number')
       ? D.subMon.margemLimite : (PARECER_TETO - _interno);
     const payload = {
-      empresa: { nome: RL.empresa?.razao_social||'', cnpj: RL.dados.cnpj||'', regime: RL.empresa?.regime||'', ano: RL.dados.ano },
+      empresa: { nome: RL.empresa?.razao_social||'', cnpj: RL.dados.cnpj||'', regime: regimeDoAno(RL.dados, RL.empresa), ano: RL.dados.ano },   // v7.104.0 · B15
       variante: D.variante, regimeHoje: D.regimeHojeNome, alertas: D.alertas,
       numeros: {
         receitaAnual: D.T.receita, receitaComercio: D.T.recCom, receitaServicos: D.T.recServ,
