@@ -386,7 +386,7 @@ ul.ap-lista li{margin-bottom:7px}
         <div class="card"><h3>Melhor regime na carteira analisada</h3><canvas id="ch-da-melhor" style="max-height:300px"></canvas></div>
       </div>
       <div class="card" style="margin-top:18px">
-        <div class="toolbar" style="margin:0 0 6px"><button class="btn" onclick="dashCongelarFechadas()" title="Varre as análises FECHADAS sem execução congelada: as que recalculam idênticas ao centavo são refechadas com a execução congelada (nada muda no emitido); as divergentes saem numa lista para decisão caso a caso. v7.101.5">🧊 Congelar análises fechadas</button></div>
+        <div class="toolbar" style="margin:0 0 6px"><button class="btn" onclick="dashCongelarFechadas()" title="Varre as análises FECHADAS sem execução congelada: as que recalculam idênticas ao centavo são refechadas com a execução congelada (nada muda no emitido); as divergentes saem numa lista para decisão caso a caso. v7.101.5">🧊 Congelar análises fechadas</button> <button class="btn" onclick="dashRefecharDivergentes()" title="Refecha EM LOTE as análises fechadas cujo recálculo DIVERGE do snapshot: cada uma é recalculada com o motor atual e refechada com a execução congelada; o fechamento anterior fica no Histórico. Use depois de decidir caso a caso — parecer entregue com números antigos deve ser reimpresso. v7.105.1">🔁 Refechar divergentes em lote</button></div>
         <div id="da-congelar-rel"></div>
         <h3>Empresas cadastradas para análise</h3>
         <div style="overflow-x:auto"><table>
@@ -807,6 +807,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.105.1</b></td><td>24/10/2026</td><td><b>🔁 REFECHAMENTO EM LOTE DAS DIVERGENTES — decisão tomada caso a caso, execução em um clique. Motor e lacre <code>795f5d26</code> INTOCADOS.</b> O 🧊 (v7.101.5) congela as fechadas que batem ao centavo e LISTA as divergentes para decisão profissional; faltava o passo seguinte: decidida a adoção dos números novos (como em 24/10/2026, com o quadro das 11 divergentes analisado caso a caso), cada análise ainda precisava ser aberta e refechada uma a uma. O botão <b>"🔁 Refechar divergentes em lote"</b> (Dashboard, ao lado do 🧊) executa a decisão: varre as fechadas sem execução congelada, recalcula com o motor atual e refecha SÓ as divergentes, pelo MESMO caminho do 🔁 individual — <b>quem executa o lote assume o fechamento</b> (fechado_por), o Histórico ganha o evento <code>refechada</code> com <code>de/para</code> das versões e o <b>snapshot anterior preservado</b> (os números antigos ficam guardados), e cada refechamento entra no registro imutável de execuções (B09). A idêntica ao centavo NÃO é tocada (congelar é com o 🧊) e a já congelada é pulada. O relatório na tela lista cada refechada com os valores antigo → novo e lembra: <b>parecer entregue com números antigos deve ser reimpresso</b>. Suíte: bloco 5bq (refecha só a divergente; histórico com snapshot anterior; execução registrada; idêntica intocada).</td></tr>
                     <tr><td><b>v7.105.0</b></td><td>24/10/2026</td><td><b>⚖️ LC 224/2025 PROJETADA NOS ANOS FUTUROS DA REFORMA (B17), com LACRE RE-SELADO <code>0a257d66</code> → <code>795f5d26</code> — mudança de motor aprovada pelo escritório em 24/10/2026, com relatório prévio (docs/RELATORIO_previo_B16_B17.md) e laboratório de deltas ANTES do código.</b> <b>(1) O problema:</b> o cenário "regime regular" (2026–2033) carregava o IRPJ/CSLL do ano-base congelado para todos os anos projetados — análise de ano-base 2025 projetava o Presumido SEM o acréscimo da LC 224 (que vigora desde 2026), e a de 2026 carregava a CSLL de 3 trimestres (noventena da IN RFB 2.305) para anos cheios que teriam 4; Presumido subestimado podia vencer indevidamente a comparação de regimes dos anos projetados. <b>(2) A regra nova:</b> para cada ano projetado, o acréscimo é recalculado pela VIGÊNCIA DAQUELE ANO — três estados: antes de 2026, sem a lei; 2026, IRPJ no ano cheio e CSLL desde abril; 2027 em diante, ano cheio nos dois — rodando o motor de novo com o ano do cenário, a mesma técnica do exercício seguinte (v7.88.0). Só o "resto" do LP muda (IRPJ + adicional + CSLL); PIS/COFINS/ICMS/IPI/ISS não dependem do ano (premissa conferida em laboratório e vigiada pela suíte). <code>cfg.lc224 === false</code> (liminar) desliga também as projeções; o realizado do ano-base NUNCA muda; análise fechada congelada (v7.100.0) não recalcula; linha antiga sem a entrada mantém o comportamento anterior, declarado em <code>lc224Proj</code>. <b>(3) Deltas selados</b> (medidos no laboratório e cravados na suíte): caso 3 do lacre (2026, R$ 7,97 mi) — regular 2027-2032 de 2.075.750,14 para 2.076.440,07 e 2033 de 2.781.812,37 para 2.782.502,30 (<b>+689,93 cada</b>, o complemento da CSLL do 1º trimestre); ano-base 2025 acima do limite ganha 12.762,05 em 2026 e 13.451,98/ano de 2027 em diante; casos 1, 2 e 4, totais anuais e cenários "dentro"/"híbrido" idênticos ao centavo. <b>(4) Nota de sensibilidade no parecer:</b> quando a projeção inclui a lei, o parecer declara o valor por ano cheio e lembra que as ADIs 7920/7936/7944/7982 estão pendentes no STF — se a lei cair, o Presumido projetado reduz nesse valor. Tabela de Regras (B14) ganha a linha <code>lc224-projecao</code> com o registro da aprovação. Suíte: bloco 5bp (gabarito transcrito da lei: Δ 22.352,00 no realizado de 2026 e 23.936,00 no ano cheio, caso uniforme de 600 mil/mês). Varredura: diffs APENAS em <code>regular/regLP</code> de anos projetados dos casos acima de R$ 1,25 mi/trimestre.</td></tr>
                     <tr><td><b>v7.104.0</b></td><td>24/10/2026</td><td><b>🏷️ REGIME TRIBUTÁRIO POR ANO-BASE (B15): o regime deixa de vir só da ficha da empresa — cada análise pode registrar o regime vigente NAQUELE ano em Configurações da análise (campo "Regime tributário do ano-base"), e o app passa a usar essa informação onde o regime aparece. Motor e lacre <code>0a257d66</code> INTOCADOS: nenhum número muda.</b> Como funciona: a nova função <code>regimeDoAno(dados, empresa)</code> responde <code>cfg.regimeAno</code> quando preenchido e, na falta dele, o regime da ficha (comportamento de hoje) — e passou a ser usada nos três pontos que exibiam <code>empresa.regime</code>: a comparação ficha × elegibilidade do parecer (que avisa quando a ficha diverge), a capa do parecer impresso e o contexto enviado à consulta de IA. O campo herda para o ano seguinte via <code>CFG_HERDA</code> (como o Fator R e a LC 224) e entra na trilha de auditoria de configurações com rótulo próprio. Por que importa: empresa que ERA Lucro Presumido em 2024 e virou Simples em 2025 tinha o parecer de 2024 reimpresso com o regime atual da ficha; agora cada ano guarda o seu. Suíte: bloco 5bo (precedência da função, parecer funcional com regime do ano ≠ ficha, gravação/limpeza em Config, herança e auditoria). Varredura: 24 casos idênticos ao backup v7.99.1.</td></tr>
                     <tr><td><b>v7.103.0</b></td><td>24/10/2026</td><td><b>📖 TABELA DE REGRAS DO MOTOR (B14): toda regra legal que o motor aplica agora está catalogada com VIGÊNCIA, FONTE, versão que a implementou, selo da entrega e registro de aprovação — na aba Versões, entre o lacre e o changelog. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> São 16 regras em <code>REGRAS_VIGENCIA</code>: das faixas da LC 123 (com os limites "até" inclusivos) à LC 224/2025 (IRPJ desde jan/2026, CSLL desde abr/2026), passando pela trava do sublimite, pelo RBT12 proporcionalizado, pelo Tema 69, pelo crédito de ICMS de MEI/Simples, pelo Lucro Real trimestral com trava de 30%, pela partilha da Res. 190/2026, pela decisão 8.9 do ISS retido, pelo art. 58 e pelos prazos da Res. 194/2026. <b>O princípio que a tabela torna visível e a suíte prova:</b> regra nova entra com data de início e <b>cálculo antigo não muda</b> — o lacre mantém os casos históricos ao centavo, e o teste de vigência mostra o mesmo caso da LC 224 em ano-base 2025 saindo SEM o acréscimo, batendo com a fórmula legal ao centavo. Alterar uma regra é re-selar: fica registrado na tabela, no changelog e no selo. Suíte: bloco 5bn.</td></tr>
@@ -6641,7 +6642,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.105.0';
+const APP_VERSAO = '7.105.1';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -14527,6 +14528,63 @@ async function dashCongelarFechadas(){
     ${rel.erros.length ? `<div class="hint" style="margin-top:4px;color:var(--danger,#c0392b)">Erros: ${rel.erros.map(d=>esc(fmtCNPJ(d.cnpj))+' · '+d.ano+' ('+esc(d.erro)+')').join(' — ')}</div>` : ''}
   </div>`;
   toast(`🧊 ${rel.congeladas.length} congelada(s) · ${rel.divergentes.length} divergente(s) para decisão · ${rel.jaCongeladas} já congeladas.`);
+  dashAnalises();
+}
+// v7.105.1 · refechamento EM LOTE das divergentes. O 🧊 congela o que bate ao centavo e LISTA as
+// divergentes para decisão caso a caso; tomada a decisão (como em 24/10/2026, com o quadro das 11),
+// este botão executa: recalcula cada divergente com o motor atual e a refecha com a execução
+// congelada, pelo MESMO caminho do 🔁 Refechar individual — quem refechou assume o fechamento, o
+// snapshot anterior fica preservado no evento do Histórico e a execução entra no registro imutável.
+// A idêntica ao centavo NÃO é deste botão (é do 🧊) e a já congelada é pulada. Motor intocado.
+async function dashRefecharDivergentes(){
+  const el = $id('da-congelar-rel');
+  if (!confirm('Refechar EM LOTE as análises fechadas cujo recálculo DIVERGE do snapshot?\n\nCada uma é recalculada com o motor atual (app v'+APP_VERSAO+') e refechada com a execução congelada — os números do fechamento MUDAM para os do motor atual e quem executa o lote assume o fechamento. O fechamento anterior fica preservado no Histórico (evento "refechada", com o snapshot antigo) e cada refechamento entra no registro de execuções. Parecer já entregue com os números antigos deve ser reimpresso.\n\nAdotar número novo é decisão profissional: use este botão DEPOIS de analisar a lista de divergentes do 🧊. As que recalculam idênticas não são tocadas.')) return;
+  let rows = [];
+  try { rows = await supa('GET','atp_analises',{ params:{ select:'cnpj,ano,status,snapshot,dados,fechado_por,fechado_em', status:'eq.fechada', order:'ano.desc', limit:'500' } }) || []; }
+  catch(e){ toast('Não consegui ler as análises fechadas: ' + e.message); return; }
+  const rel = { refechadas:[], iguais:0, jaCongeladas:0, erros:[] };
+  let i = 0;
+  for (const r of rows){
+    i++; if (el) el.innerHTML = `<div class="hint">🔁 Refechando… ${i}/${rows.length}</div>`;
+    try {
+      if (r.snapshot && r.snapshot.exec && r.snapshot.exec.res){ rel.jaCongeladas++; continue; }
+      const an = anNormalizar(JSON.parse(JSON.stringify(r.dados||{})), r.cnpj, r.ano); an.cnpj = r.cnpj; an.ano = r.ano;
+      const res = calcular(an, PARAMS.anexos, folhaPercDaEmpresa(an.cfg));
+      const S = (r.snapshot && r.snapshot.totais) || {};
+      const difs = [];
+      for (const [k,rot] of [['simples','Simples'],['lp','Presumido'],['lr','Real'],['das','DAS']]){
+        const a = +S[k]||0, b = +res.totais[k]||0;
+        if (Math.abs(a-b) > 0.015) difs.push(`${rot}: ${fmtR(a)} → ${fmtR(b)}`);
+      }
+      const dm = (r.snapshot && r.snapshot.dasMeses) || null;
+      if (dm) for (let m=0; m<12; m++) if (Math.abs((+dm[m]||0) - (+(res.meses[m]||{}).das||0)) > 0.015){ difs.push(`DAS de ${MESES[m]}: ${fmtR(+dm[m]||0)} → ${fmtR(+(res.meses[m]||{}).das||0)}`); break; }
+      let cenNovo = null;
+      try { const C = calcCenariosReforma(res, an.reforma||null); const L33 = C.REF[C.REF.length-1];
+        cenNovo = { dentro: cenDentro(res.totais, L33), hib: L33.hib, regular: L33.regular }; } catch(e){/* silêncio proposital (A10): sem cenários, o lote compara só totais e DAS */}
+      const cenAnt = r.snapshot && r.snapshot.cen2033;
+      if (cenAnt && cenNovo) for (const k of ['dentro','hib','regular'])
+        if (Math.abs((+cenAnt[k]||0) - (+cenNovo[k]||0)) > 0.015){ difs.push(`Reforma 2033 (${k}): ${fmtR(+cenAnt[k]||0)} → ${fmtR(+cenNovo[k]||0)}`); break; }
+      if (!difs.length){ rel.iguais++; continue; }   // idêntica ao centavo: congelar é com o 🧊, não com o lote
+      // diverge: refecha pelo MESMO caminho do 🔁 individual — quem executa assume o fechamento
+      const antes = (r.snapshot||{}).versao || '?';
+      const _an = AN;
+      let snap; try { AN = an; AN._status = 'fechada'; AN._res = res; snap = anSnapshotCalc(); } finally { AN = _an; }
+      await supa('PATCH', `atp_analises?cnpj=eq.${r.cnpj}&ano=eq.${r.ano}`,
+        { body:{ status:'fechada', fechado_por: APP?.user?.email||'', fechado_em: snap.em, snapshot: snap } });
+      await anHistGravar({ cnpj:r.cnpj, ano:r.ano, dados:{...an,_res:undefined},
+        resumo:{ evento:'refechada', de:'app v'+antes, para:'app v'+APP_VERSAO,
+                 snapshotAnterior: r.snapshot || null, por: APP?.user?.email||'' } });
+      await execRegistrar('refechar', r.cnpj, r.ano, res, an.reforma||null, an.cfg);   // v7.101.0 · B09
+      rel.refechadas.push({ cnpj:r.cnpj, ano:r.ano, difs });
+    } catch(e){ rel.erros.push({ cnpj:r.cnpj, ano:r.ano, erro: (e && e.message) || String(e) }); }
+  }
+  if (el) el.innerHTML = `<div class="card" style="border-left:4px solid #1a5276;margin-top:10px">
+    <b>🔁 Refechamento em lote das divergentes — resultado</b>
+    <div class="hint" style="margin-top:6px">${rel.refechadas.length} refechada(s) com o motor atual (app v${APP_VERSAO}) · ${rel.iguais} idêntica(s) ao centavo, não tocadas (congele com o 🧊) · ${rel.jaCongeladas} já congeladas · ${rel.erros.length} erro(s).</div>
+    ${rel.refechadas.length ? `<div style="margin-top:8px;padding:8px 10px;border-left:4px solid #0f7a5a;background:#eef7f3;font-size:12px"><b>Refechadas (o fechamento anterior está no Histórico; parecer entregue com números antigos deve ser reimpresso):</b><br>${rel.refechadas.map(d=>`<b>${esc(empNomeDe(d.cnpj)||fmtCNPJ(d.cnpj))} · ${d.ano}</b>: ${d.difs.map(esc).join(' · ')}`).join('<br>')}</div>` : ''}
+    ${rel.erros.length ? `<div class="hint" style="margin-top:4px;color:var(--danger,#c0392b)">Erros: ${rel.erros.map(d=>esc(fmtCNPJ(d.cnpj))+' · '+d.ano+' ('+esc(d.erro)+')').join(' — ')}</div>` : ''}
+  </div>`;
+  toast(`🔁 ${rel.refechadas.length} refechada(s) · ${rel.iguais} idêntica(s) não tocadas · ${rel.jaCongeladas} já congeladas.`);
   dashAnalises();
 }
 async function dashAnalises() {

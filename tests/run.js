@@ -5340,6 +5340,63 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '795f5d26'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bq · v7.105.1 — refechamento EM LOTE das divergentes (decisão tomada caso a caso em 24/10) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    { const o = await vm.runInContext(`(async()=>{ const _supa = supa; const _user = APP.user;
+        APP.user = { email: 'lote@teste' };
+        const patches = [], hist = [], execs = [];
+        // caso A: fechada SEM execução cujo recálculo bate ao centavo → NÃO é deste botão (é do 🧊)
+        const inpA = JSON.parse(JSON.stringify(LACRE_CASOS[1].inp)); inpA.cnpj='55555555000155'; inpA.ano=2026;
+        const anA = anNormalizar(JSON.parse(JSON.stringify(inpA)), '55555555000155', 2026);
+        const resA = calcular(anA, PARAMS.anexos, folhaPercDaEmpresa(anA.cfg));
+        const cenA = calcCenariosReforma(resA, anA.reforma||null); const L33 = cenA.REF[cenA.REF.length-1];
+        const snapA = { versao:'7.95.2', em:'2026-09-01T00:00:00Z',
+          totais:{ receita:resA.totais.receita, simples:resA.totais.simples, lp:resA.totais.lp, lr:resA.totais.lr, das:resA.totais.das },
+          cen2033:{ dentro: cenDentro(resA.totais, L33), hib:L33.hib, regular:L33.regular },
+          dasMeses: resA.meses.map(M=>+(M.das||0).toFixed(2)) };
+        // caso B: fechada SEM execução cujo snapshot DIVERGE → refecha com o motor atual
+        const snapB = JSON.parse(JSON.stringify(snapA)); snapB.totais = { ...snapA.totais, lp: -220249.89 };
+        // caso C: fechada JÁ congelada → pula
+        const rows = [
+          { cnpj:'55555555000155', ano:2026, status:'fechada', snapshot:snapA, dados:inpA, fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' },
+          { cnpj:'66666666000166', ano:2026, status:'fechada', snapshot:snapB, dados:JSON.parse(JSON.stringify(inpA)), fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' },
+          { cnpj:'77777777000177', ano:2026, status:'fechada', snapshot:{ ...JSON.parse(JSON.stringify(snapA)), exec:{ res:{ totais:{} } } }, dados:JSON.parse(JSON.stringify(inpA)), fechado_por:'t', fechado_em:'2026-09-01T00:00:00Z' } ];
+        supa = async (m,t,op)=>{
+          if (m==='GET' && t==='atp_analises') return JSON.parse(JSON.stringify(rows));
+          if (m==='PATCH') { patches.push({ t, body: op.body }); return []; }
+          if (m==='POST' && t==='atp_analises_hist') { hist.push(op.body[0]); return []; }
+          if (m==='POST' && t==='atp_execucoes') { execs.push(op.body[0]); return []; }
+          return []; };
+        document.getElementById('da-congelar-rel').innerHTML = '';
+        try { await dashRefecharDivergentes(); } finally { supa = _supa; APP.user = _user; }
+        const rel = document.getElementById('da-congelar-rel').innerHTML;
+        const hrefe = hist.find(h => h && h.resumo && h.resumo.evento === 'refechada') || null;
+        const erefe = execs.find(x => x && x.origem === 'refechar') || null;
+        return { nPatch: patches.length, alvo: patches[0] && patches[0].t,
+          refechouComExec: !!(patches[0] && patches[0].body.snapshot && patches[0].body.snapshot.exec && patches[0].body.snapshot.exec.res),
+          fechadoPorLote: patches[0] && patches[0].body.fechado_por === 'lote@teste',
+          histEvento: hrefe && hrefe.resumo.evento,
+          histGuardaAnterior: !!(hrefe && hrefe.resumo.snapshotAnterior && Math.abs((+hrefe.resumo.snapshotAnterior.totais.lp) - (-220249.89)) < 0.01),
+          histDe: hrefe && hrefe.resumo.de, histPara: hrefe && hrefe.resumo.para,
+          execOrigem: erefe && erefe.origem,
+          relTemRefechada: /66\\.666\\.666|66666666000166/.test(rel),
+          naoTocouIdentica: patches.every(p => String(p.t).indexOf('55555555000155') < 0),
+          relContaIgual: /id[êe]ntica/i.test(rel) && /🧊/.test(rel) }; })()`, ctx);
+      chk('5bq · refecha SÓ a divergente: PATCH com snapshot novo (execução congelada) e quem refechou assume o fechamento',
+        o.nPatch === 1 && String(o.alvo).indexOf('66666666000166') >= 0 && o.refechouComExec === true && o.fechadoPorLote === true);
+      chk('5bq · histórico ganha "refechada" com o SNAPSHOT ANTERIOR preservado (o Presumido −220.249,89 fica guardado) e de/para das versões',
+        o.histEvento === 'refechada' && o.histGuardaAnterior === true
+        && /^app v7\.95\.2$/.test(String(o.histDe)) && /^app v7\./.test(String(o.histPara)) && o.execOrigem === 'refechar',
+        'evento=' + o.histEvento + ' anterior=' + o.histGuardaAnterior + ' de=' + o.histDe);
+      chk('5bq · a idêntica NÃO é tocada (é caso do 🧊) e o relatório diz isso; a refechada aparece listada',
+        o.naoTocouIdentica === true && o.relContaIgual === true && o.relTemRefechada === true); }
+    chk('5bq · Dashboard tem o botão 🔁 Refechar divergentes em lote, com aviso de decisão profissional e reimpressão de parecer',
+      /onclick="dashRefecharDivergentes\(\)"/.test(html) && /Refechar EM LOTE/.test(html) && /reimpress/i.test(html));
+    chk('5bq · lacre 795f5d26 intocado (lote é gravação, não motor)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bq · v7.105.1 · badge e changelog', /APP_VERSAO = '7\.(?:10[5-9]|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.105\.1<\/b><\/td><td>24\/10\/2026/.test(html));
+  }
+
   // ═══ 5bp · v7.105.0 — B17: LC 224/2025 projetada nos anos futuros do cenário regular ═══
   // Aprovado pelo escritório em 24/10/2026 (relatório prévio em docs/RELATORIO_previo_B16_B17.md).
   // GABARITO À MÃO (caso uniforme, serviços Anexo III, presunção 32%, 600.000/mês, adicional trimestral):
