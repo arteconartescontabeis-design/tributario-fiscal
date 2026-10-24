@@ -1,6 +1,6 @@
 {
- "versao": "1.4.0",
- "quando": "2026-09-14T20:03:33.427Z",
+ "versao": "1.6.3",
+ "quando": "2026-10-24T02:04:04.787Z",
  "total": 41,
  "falhas": 0,
  "testes": [
@@ -16,9 +16,9 @@
   },
   {
    "n": "E3",
-   "teste": "lacre do motor íntegro e versão do módulo 1.4.0 visível",
+   "teste": "lacre do motor íntegro e versão do módulo 1.6.3 visível",
    "dados": "lacreVerificar + ModulosInfo",
-   "esperado": "c287341e / 1.4.0",
+   "esperado": "338c914d / 1.6.3",
    "obtido": true,
    "divergencia": null,
    "correcao": null,
