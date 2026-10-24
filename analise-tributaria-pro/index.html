@@ -823,6 +823,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.107.0</b></td><td>24/10/2026</td><td><b>🔒 TRAVA DOS MESES ENTREGUES — "fechamento por período" do jeito que o app trabalha. Motor e lacre <code>795f5d26</code> INTOCADOS: é trava de tela e trilha, nunca cálculo.</b> <b>(1) A lacuna:</b> durante o ano a análise fica aberta (o 2º semestre ainda vai ser digitado), e nada impedia uma edição retroativa de janeiro–junho DEPOIS da entrega do 1º semestre ao cliente. <b>(2) A trava:</b> o 📬 Registrar entrega do período (v7.106.0) agora também TRAVA os meses do corte — grava em <code>dados._entregas</code> (no banco e na análise aberta) o período, os meses e o <b>retrato dos valores entregues</b>. A grade recusa a edição de mês travado (aviso com o período da entrega); a <b>importação</b> (PGDAS, planilha, XML, balancete, Demonstrativo, Faturamento) que invadir o corte tem as células repostas pelo retrato, com alerta listando o que foi preservado — os demais meses entram normalmente, então o fluxo "entrega S1 → importa jul–dez" segue livre. <b>(3) 🔓 Destravar existe</b> — por entrega, com <b>motivo obrigatório (≥5 caracteres) assinado na trilha de auditoria</b> (padrão do motivo da v7.98): nada é proibido, tudo fica registrado (quem, quando, por quê). O aviso dos meses travados aparece na Análise Atual, ao lado do fechamento. <b>(4) Fecho do ciclo:</b> no fim do exercício, o 🔒 Fechar análise congela tudo como sempre; a trava protege o meio do caminho. Fora do <code>anCanon</code> de propósito: travar/destravar não é "edição" da análise. Suíte: bloco 5bs (entrega trava e grava o retrato; grade recusa; importação reposta; destravar com motivo assina a trilha e libera).</td></tr>
                     <tr><td><b>v7.106.0</b></td><td>24/10/2026</td><td><b>📅 APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral · semestral · anual) passa a orientar os documentos. Motor e lacre <code>795f5d26</code> INTOCADOS: o período é a SOMA dos meses do corte, nunca um segundo cálculo.</b> <b>(1) Por quê:</b> clientes com plano trimestral/semestral recebiam documentos sempre anuais — e 71 das 72 análises fechadas de 2026 têm exatamente jan–jun lançado, prontas para uma entrega de 1º semestre. <b>(2) Plano na ficha:</b> a empresa ganha o campo "Plano de apuração — Artecon" (coluna <code>plano_apuracao</code>, <code>banco/atp/setup_v7106.sql</code>). <b>(3) Período do documento:</b> Comparativo de regimes, Conferência e Parecer ganham o seletor (Ano · 1º/2º semestre · T1–T4), que abre no último período do plano com receita lançada. Só cortes alinhados a trimestre: IRPJ/CSLL do Presumido, o adicional e a LC 224 são trimestrais, então a soma dos meses do corte é EXATA — a suíte crava a partição t1+t2+t3+t4 = ano ao centavo. <b>(4) O que cada documento mostra no corte:</b> o Comparativo elege o vencedor DO PERÍODO e recalcula todas as tabelas sobre os meses do corte; a Conferência ganha o cartão "Apuração do período"; o Parecer declara o corte na capa e ganha a página "Apuração do período". Honestidades declaradas: Lucro Real em apuração ANUAL aparece como estimativa no corte (o ajuste é anual); 13º e provisões ficam nos meses deles; os cenários da Reforma são do EXERCÍCIO e permanecem no documento anual — comparar trimestre com ano pleno seria desonesto. <b>(5) 📬 Registrar entrega do período:</b> cada emissão do ciclo pode ser registrada no Histórico (evento <code>entrega-periodo</code>, com corte, totais, vencedor, autor, app e lacre) — a prova, meses depois, do que foi entregue em cada ciclo do plano. Suíte: bloco 5br (partição ao centavo, eleição do corte, padrão pelo plano, comparativo funcional com e sem corte, entrega no Histórico).</td></tr>
                     <tr><td><b>v7.105.1</b></td><td>24/10/2026</td><td><b>🔁 REFECHAMENTO EM LOTE DAS DIVERGENTES — decisão tomada caso a caso, execução em um clique. Motor e lacre <code>795f5d26</code> INTOCADOS.</b> O 🧊 (v7.101.5) congela as fechadas que batem ao centavo e LISTA as divergentes para decisão profissional; faltava o passo seguinte: decidida a adoção dos números novos (como em 24/10/2026, com o quadro das 11 divergentes analisado caso a caso), cada análise ainda precisava ser aberta e refechada uma a uma. O botão <b>"🔁 Refechar divergentes em lote"</b> (Dashboard, ao lado do 🧊) executa a decisão: varre as fechadas sem execução congelada, recalcula com o motor atual e refecha SÓ as divergentes, pelo MESMO caminho do 🔁 individual — <b>quem executa o lote assume o fechamento</b> (fechado_por), o Histórico ganha o evento <code>refechada</code> com <code>de/para</code> das versões e o <b>snapshot anterior preservado</b> (os números antigos ficam guardados), e cada refechamento entra no registro imutável de execuções (B09). A idêntica ao centavo NÃO é tocada (congelar é com o 🧊) e a já congelada é pulada. O relatório na tela lista cada refechada com os valores antigo → novo e lembra: <b>parecer entregue com números antigos deve ser reimpresso</b>. Suíte: bloco 5bq (refecha só a divergente; histórico com snapshot anterior; execução registrada; idêntica intocada).</td></tr>
                     <tr><td><b>v7.105.0</b></td><td>24/10/2026</td><td><b>⚖️ LC 224/2025 PROJETADA NOS ANOS FUTUROS DA REFORMA (B17), com LACRE RE-SELADO <code>0a257d66</code> → <code>795f5d26</code> — mudança de motor aprovada pelo escritório em 24/10/2026, com relatório prévio (docs/RELATORIO_previo_B16_B17.md) e laboratório de deltas ANTES do código.</b> <b>(1) O problema:</b> o cenário "regime regular" (2026–2033) carregava o IRPJ/CSLL do ano-base congelado para todos os anos projetados — análise de ano-base 2025 projetava o Presumido SEM o acréscimo da LC 224 (que vigora desde 2026), e a de 2026 carregava a CSLL de 3 trimestres (noventena da IN RFB 2.305) para anos cheios que teriam 4; Presumido subestimado podia vencer indevidamente a comparação de regimes dos anos projetados. <b>(2) A regra nova:</b> para cada ano projetado, o acréscimo é recalculado pela VIGÊNCIA DAQUELE ANO — três estados: antes de 2026, sem a lei; 2026, IRPJ no ano cheio e CSLL desde abril; 2027 em diante, ano cheio nos dois — rodando o motor de novo com o ano do cenário, a mesma técnica do exercício seguinte (v7.88.0). Só o "resto" do LP muda (IRPJ + adicional + CSLL); PIS/COFINS/ICMS/IPI/ISS não dependem do ano (premissa conferida em laboratório e vigiada pela suíte). <code>cfg.lc224 === false</code> (liminar) desliga também as projeções; o realizado do ano-base NUNCA muda; análise fechada congelada (v7.100.0) não recalcula; linha antiga sem a entrada mantém o comportamento anterior, declarado em <code>lc224Proj</code>. <b>(3) Deltas selados</b> (medidos no laboratório e cravados na suíte): caso 3 do lacre (2026, R$ 7,97 mi) — regular 2027-2032 de 2.075.750,14 para 2.076.440,07 e 2033 de 2.781.812,37 para 2.782.502,30 (<b>+689,93 cada</b>, o complemento da CSLL do 1º trimestre); ano-base 2025 acima do limite ganha 12.762,05 em 2026 e 13.451,98/ano de 2027 em diante; casos 1, 2 e 4, totais anuais e cenários "dentro"/"híbrido" idênticos ao centavo. <b>(4) Nota de sensibilidade no parecer:</b> quando a projeção inclui a lei, o parecer declara o valor por ano cheio e lembra que as ADIs 7920/7936/7944/7982 estão pendentes no STF — se a lei cair, o Presumido projetado reduz nesse valor. Tabela de Regras (B14) ganha a linha <code>lc224-projecao</code> com o registro da aprovação. Suíte: bloco 5bp (gabarito transcrito da lei: Δ 22.352,00 no realizado de 2026 e 23.936,00 no ano cheio, caso uniforme de 600 mil/mês). Varredura: diffs APENAS em <code>regular/regLP</code> de anos projetados dos casos acima de R$ 1,25 mi/trimestre.</td></tr>
@@ -4691,6 +4692,11 @@ function anAplicado(){
       + aj.slice(0,10).join('\n') + (aj.length>10 ? `\n… e mais ${aj.length-10}` : '')
       + '\n\nConfira na origem: valor negativo em receita, folha, compras ou despesas costuma ser '
       + 'lançamento de estorno ou balancete de encerramento importado como movimento.'); }
+  // v7.107.0 · meses ENTREGUES são repostos se a importação os tiver sobrescrito — o resto do ano entra normalmente
+  { const _rep = anTravaRepor();
+    if (_rep.length) alert('🔒 ' + _rep.length + ' célula(s) de meses ENTREGUES foram preservadas (a importação tentou sobrescrevê-las):\n\n'
+      + _rep.slice(0,10).join('\n') + (_rep.length>10 ? '\n… e mais ' + (_rep.length-10) : '')
+      + '\n\nPara substituí-las: 🔓 Destravar meses entregues (com motivo) e importe de novo.'); }
   // v7.82.0 · o alerta de escala vem DEPOIS do saneamento, de propósito: sanear é obrigatório e
   // roda sempre; alertar é informativo. Inverter a ordem afastaria o anSanear do início do funil
   // — e existe teste guardando exatamente essa proximidade, desde a auditoria A02-04.
@@ -5579,6 +5585,10 @@ function faixaDoPath(path){
 }
 function anSet(path, m, val, tipo) {
   if (anBloqueada()){ anBloqueioAviso(); anRenderGrid(); return; }   // v7.99.3 · B04
+  // v7.107.0 · mês ENTREGUE é travado: destravar (🔓, com motivo assinado na trilha) libera a edição
+  { const _tv = anMesTravado(m); if (_tv){
+      toast('🔒 '+MESES[m]+' está TRAVADO — período entregue ('+(_tv.rotulo||_tv.periodo)+'). Use 🔓 Destravar meses entregues, com motivo, para editar.');
+      anRenderGrid(); return; } }
   AN_SUJO = true;
   const { o,k } = anPath(AN, path);
   const _audDe = o[k][m] == null ? null : +o[k][m], _audOg = ((AN.origem||{})[path]||[])[m] || null;   // v7.94.3
@@ -6659,8 +6669,64 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.106.0';
+const APP_VERSAO = '7.107.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
+// ═══ v7.107.0 · TRAVA DOS MESES ENTREGUES ════════════════════════════════════════════════════
+// Registrar a entrega de um período (📬, Relatórios) TRAVA os meses do corte: a grade recusa a
+// edição e a importação que os sobrescrever é REPOSTA pelo retrato gravado na entrega. Destravar
+// existe — com motivo obrigatório (≥5), assinado na trilha de auditoria, no padrão da v7.98.
+// O registro vive em dados._entregas (fora do anCanon: trava não é "edição" da análise) e
+// persiste no banco junto com a análise. Motor intocado: é tela e trilha, nunca cálculo.
+function anEntregasAtivas(d){ return (((d||AN)||{})._entregas||[]).filter(e => e && !e.destravada); }
+function anMesTravado(m, d){ return anEntregasAtivas(d).find(e => +m >= +e.ini && +m <= +e.fim) || null; }
+// retrato dos valores entregues (as quatro seções de lançamento), para repor importação que invadir o corte
+function anTravaValores(d, ini, fim){
+  const out = {};
+  for (const sec of ['receitas','folha','compras','despesas'])
+    for (const k of Object.keys((d||{})[sec]||{}))
+      if (Array.isArray(d[sec][k])) out[sec+'.'+k] = d[sec][k].slice(ini, fim+1).map(v => v == null ? null : +v);
+  return out;
+}
+function anTravaRepor(){
+  if (!AN) return [];
+  const rep = [];
+  for (const e of anEntregasAtivas(AN)){
+    for (const [path, arr] of Object.entries(e.valores||{})){
+      const { o, k } = anPath(AN, path); if (!o || !Array.isArray(o[k])) continue;
+      for (let i = 0; i < arr.length; i++){
+        const m = +e.ini + i;
+        const atual = o[k][m] == null ? null : +o[k][m], dever = arr[i] == null ? null : +arr[i];
+        if (!audIgual(atual, dever)){ o[k][m] = dever; rep.push(path + ' · ' + MESES[m]); }
+      }
+    }
+  }
+  if (rep.length) audRegistrar({ acao:'trava-reposta', campo:'_entregas', itens: rep.length,
+    detalhe: 'importação tentou sobrescrever mês entregue; valores da entrega repostos' });
+  return rep;
+}
+function anTravaMesesHtml(){
+  const ativas = AN ? anEntregasAtivas(AN) : [];
+  if (!ativas.length) return '';
+  return `<div class="hint" style="border-left:3px solid #1a5276;padding:6px 10px;margin-top:6px">🔒 <b>Meses entregues travados:</b> ${ativas.map(e=>esc(e.rotulo||e.periodo)+' ('+MESES[+e.ini]+'–'+MESES[+e.fim]+')').join(' · ')} — a grade recusa edição e a importação não os altera. <button class="btn" style="margin-left:8px" onclick="anDestravar()">🔓 Destravar meses entregues</button></div>`;
+}
+async function anDestravar(){
+  if (!AN) return;
+  const ativas = anEntregasAtivas(AN);
+  if (!ativas.length){ toast('Nenhum mês travado nesta análise.'); return; }
+  const lista = ativas.map((e,i)=>(i+1)+') '+(e.rotulo||e.periodo)+' — entregue em '+String(e.em||'').slice(0,10)+(e.por?' por '+e.por:'')).join('\n');
+  const escolha = prompt('Qual entrega destravar? Digite o número:\n\n'+lista);
+  if (!escolha) return;
+  const e = ativas[(+escolha)-1];
+  if (!e){ toast('Opção inválida.'); return; }
+  const motivo = prompt('Motivo do destravamento de '+(e.rotulo||e.periodo)+' (mínimo 5 caracteres) — fica assinado na trilha de auditoria:');
+  if (!motivo || motivo.trim().length < 5){ toast('Destravamento NÃO aplicado: o motivo é obrigatório (mínimo 5 caracteres).'); return; }
+  e.destravada = { em: new Date().toISOString(), por: audUsuario(), motivo: motivo.trim() };
+  audRegistrar({ acao:'destravado', campo:'_entregas', periodo: e.periodo, rotulo: e.rotulo, motivo: motivo.trim() });
+  AN_SUJO = true;
+  try { anTravaRender(); } catch(_){/* silêncio proposital (A10): sem a caixa da trava na tela, a trava em si continua valendo */}
+  try { anRenderGrid(); } catch(_){/* silêncio proposital (A10): grade re-renderiza no próximo uso */}
+  toast('🔓 '+(e.rotulo||e.periodo)+' destravado — edite o necessário e SALVE a análise para gravar.');
+}
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
   let cen = null, cenErro = null;
@@ -6746,7 +6812,7 @@ async function anFecharAbrir(){
 function anTravaRender(){
   const btn = $id('an-trava-btn'), box = $id('an-trava-aviso');
   if (!btn || !box) return;
-  if (!anTravada()){ btn.textContent = '🔒 Fechar análise'; box.innerHTML=''; return; }
+  if (!anTravada()){ btn.textContent = '🔒 Fechar análise'; box.innerHTML = anTravaMesesHtml(); return; }   // v7.107.0 · aviso dos meses entregues
   btn.textContent = '🔓 Reabrir análise';
   const snap = AN._snapshot||{}, T = AN?._res?.totais||{};
   let divg = '';
@@ -14054,7 +14120,27 @@ async function rlRegistrarEntrega(){
       resumo: { evento:'entrega-periodo', periodo: p, rotulo: I.curto(ano), doc: tipo,
         totais: { receita: el.T.receita, simples: el.T.simples, lp: el.T.lp, lr: el.T.lr, das: el.T.das },
         vencedor: el.nome, por: APP?.user?.email||'', app: APP_VERSAO, lacre: LACRE_HASH } });
-    toast('📬 Entrega registrada no Histórico — ' + I.curto(ano) + ' (' + tipo + ').');
+    // ══ v7.107.0 · a entrega TRAVA os meses do corte ══════════════════════════════════════════
+    // Grava em dados._entregas (banco e análise aberta) o período, os meses e o RETRATO dos
+    // valores entregues — é esse retrato que repõe importação que invadir o corte. Destravar: 🔓.
+    const trava = { id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      periodo: p, rotulo: I.curto(ano), em: new Date().toISOString(), por: APP?.user?.email||'',
+      doc: tipo, ini: I.ini, fim: I.fim, app: APP_VERSAO, lacre: LACRE_HASH,
+      valores: anTravaValores(RL.dados, I.ini, I.fim) };
+    try {
+      const rows = await supa('GET','atp_analises',{ params:{ select:'dados', cnpj:'eq.'+RL.dados.cnpj, ano:'eq.'+ano, limit:'1' } });
+      const dadosBanco = rows && rows[0] && rows[0].dados;
+      if (dadosBanco){
+        dadosBanco._entregas = [ ...(Array.isArray(dadosBanco._entregas) ? dadosBanco._entregas : []), trava ];
+        await supa('PATCH', `atp_analises?cnpj=eq.${RL.dados.cnpj}&ano=eq.${ano}`, { body:{ dados: dadosBanco } });
+      }
+    } catch(e){ console.error('rlRegistrarEntrega/trava:', e); toast('Entrega registrada no Histórico, mas a TRAVA dos meses não pôde ser gravada: ' + e.message); }
+    if (RL.dados) RL.dados._entregas = [ ...(Array.isArray(RL.dados._entregas) ? RL.dados._entregas : []), trava ];
+    if (AN && AN.cnpj === RL.dados.cnpj && +AN.ano === +ano){
+      AN._entregas = [ ...(Array.isArray(AN._entregas) ? AN._entregas : []), trava ];
+      try { anTravaRender(); } catch(_){/* silêncio proposital (A10): sem a caixa da trava na tela, a trava em si continua valendo */}
+    }
+    toast('📬 Entrega registrada — ' + I.curto(ano) + ' (' + tipo + '). Meses ' + MESES[I.ini] + '–' + MESES[I.fim] + ' travados 🔒 (destravável com motivo).');
   } catch(e){ toast('Não foi possível registrar a entrega: ' + e.message); }
 }
 function rlRender() {

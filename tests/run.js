@@ -5340,6 +5340,72 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '795f5d26'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bs · v7.107.0 — trava dos meses entregues (destravar exige motivo, assinado na trilha) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    { const o = await vm.runInContext(`(async()=>{ const _supa = supa; const _user = APP.user; const _an = AN;
+        APP.user = { email:'trava@teste' };
+        const patches = [], hist = [];
+        // análise "salva" no banco com jan–jun lançado
+        const d = anNovo('13131313000113', 2026);
+        for (let m=0;m<6;m++){ d.receitas.a3_semret[m] = 80000; d.folha.salarios[m] = 15000; d.folha.baseFgts[m] = 15000; }
+        d.cfg.iss = .03; d.cfg.rbt12Lanc = Array(12).fill(70000); d.cfg.folha12Lanc = Array(12).fill(15000);
+        supa = async (m,t,op)=>{
+          if (m==='GET' && t==='atp_analises') return [{ dados: JSON.parse(JSON.stringify(d)) }];
+          if (m==='PATCH') { patches.push({ t, body: op.body }); return []; }
+          if (m==='POST' && t==='atp_analises_hist') { hist.push(op.body[0]); return []; }
+          return []; };
+        // contexto dos Relatórios apontando para a mesma análise
+        RL.dados = JSON.parse(JSON.stringify(d)); RL.dados.cnpj='13131313000113'; RL.dados.ano=2026;
+        RL.res = calcular(JSON.parse(JSON.stringify(d)), ANEXOS_DEFAULT, FOLHA_PERC_DEFAULT);
+        RL.empresa = { razao_social:'T', plano_apuracao:'semestral' }; RL.reforma=null; RL.exec=null; RL.fechada=false;
+        AN = JSON.parse(JSON.stringify(d)); AN.cnpj='13131313000113'; AN.ano=2026;
+        document.getElementById('rl-periodo').value = 's1'; document.getElementById('rl-periodo').dataset.manual = '1';
+        document.getElementById('rl-tipo').value = 'regimes';
+        try { await rlRegistrarEntrega(); } finally { supa = _supa; }
+        const patch = patches.find(p => p.body && p.body.dados) || null;
+        const trava = patch && patch.body.dados._entregas && patch.body.dados._entregas[0] || null;
+        const anTrava = AN._entregas && AN._entregas[0] || null;
+        // 1) edição manual de mês travado é recusada; mês fora do corte segue editável
+        const antes = AN.receitas.a3_semret[2];
+        anSet('receitas.a3_semret', 2, '99999', 'val');
+        const bloqueou = AN.receitas.a3_semret[2] === antes;
+        anSet('receitas.a3_semret', 8, '77777', 'val');
+        const livre = +AN.receitas.a3_semret[8] === 77777;
+        // 2) importação que sobrescreve mês travado é REPOSTA pelo snapshot da entrega
+        AN.receitas.a3_semret[1] = 123456;   // simula o merge de um importador
+        const rep = anTravaRepor();
+        const repoz = +AN.receitas.a3_semret[1] === 80000 && rep.length === 1;
+        // 3) destravar exige motivo ≥ 5; com motivo, assina a trilha e libera a edição
+        const _prompt = prompt;
+        let chamadas = 0; prompt = q => { chamadas++; if (chamadas===1) return '1'; if (chamadas===2) return 'abc'; if (chamadas===3) return '1'; return 'cliente pediu revisão do semestre'; };
+        await anDestravar();   // motivo curto → recusa
+        const aindaTravado = !!anMesTravado(2);
+        await anDestravar();   // motivo válido → destrava
+        prompt = _prompt;
+        const destravou = !anMesTravado(2) && AN._entregas[0].destravada && AN._entregas[0].destravada.motivo.length >= 5;
+        const trilha = (AN.auditoria||[]).find(r => r.acao === 'destravado' && /revisão do semestre/.test(r.motivo||''));
+        anSet('receitas.a3_semret', 2, '91000', 'val');
+        const editouDepois = +AN.receitas.a3_semret[2] === 91000;
+        AN = _an; APP.user = _user;
+        return { temPatch: !!trava, ini: trava && trava.ini, fim: trava && trava.fim, periodo: trava && trava.periodo,
+          temValores: !!(trava && trava.valores && Array.isArray(trava.valores['receitas.a3_semret'])),
+          anRecebeu: !!anTrava, bloqueou, livre, repoz, aindaTravado, destravou, trilha: !!trilha, editouDepois }; })()`, ctx);
+      chk('5bs · 📬 registrar a entrega TRAVA os meses do corte: grava _entregas (período, meses e o retrato dos valores entregues) no banco e na análise aberta',
+        o.temPatch === true && o.periodo === 's1' && o.ini === 0 && o.fim === 5 && o.temValores === true && o.anRecebeu === true);
+      chk('5bs · mês entregue é intocável na grade (anSet recusa); mês fora do corte segue editável',
+        o.bloqueou === true && o.livre === true);
+      chk('5bs · importação que sobrescreve mês travado é REPOSTA pelo retrato da entrega (anTravaRepor)',
+        o.repoz === true);
+      chk('5bs · destravar exige motivo (≥5): recusa o curto, aceita o válido, assina a trilha (acao=destravado) e libera a edição',
+        o.aindaTravado === true && o.destravou === true && o.trilha === true && o.editouDepois === true); }
+    chk('5bs · aviso dos meses travados na Análise Atual com o botão 🔓 Destravar; importador (anAplicado) chama a reposição',
+      /anDestravar\(\)/.test(html) && /Destravar meses entregues/.test(html) && /anTravaRepor\(\)/.test(html) && /Meses entregues travados/.test(html));
+    chk('5bs · lacre 795f5d26 intocado (trava é tela e trilha, nunca motor)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bs · v7.107.0 · badge e changelog', /APP_VERSAO = '7\.(?:10[7-9]|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.107\.0<\/b><\/td><td>24\/10\/2026/.test(html));
+    run(`document.getElementById('rl-periodo').value = ''; delete document.getElementById('rl-periodo').dataset.manual;`);
+  }
+
   // ═══ 5br · v7.106.0 — apuração por período (plano do cliente): corte trimestral/semestral nos documentos ═══
   // O motor é mensal e as apurações internas são trimestrais (IRPJ/CSLL do LP, adicional, LC 224),
   // então o número do período É a soma dos meses do corte — o que os testes cravam por PARTIÇÃO:
