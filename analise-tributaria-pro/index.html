@@ -379,13 +379,15 @@ ul.ap-lista li{margin-bottom:7px}
         <div class="stat"><div class="n" id="da-emp">–</div><div class="l">Empresas em análise</div></div>
         <div class="stat"><div class="n" id="da-anal">–</div><div class="l">Análises salvas</div></div>
         <div class="stat"><div class="n" id="da-rec">–</div><div class="l">Receita anual analisada</div></div>
-        <div class="stat"><div class="n" id="da-econ">–</div><div class="l">Economia potencial identificada</div></div>
+        <div class="stat"><div class="n" id="da-econ">–</div><div class="l">Economia potencial — análises no motor atual</div><div class="sub" id="da-econ-desat"></div></div>
       </div>
       <div class="rl-grid" style="margin-top:18px">
         <div class="card"><h3>Comparativo por empresa — Simples × Presumido × Real × Reforma 2033</h3><canvas id="ch-da-comp"></canvas></div>
         <div class="card"><h3>Melhor regime na carteira analisada</h3><canvas id="ch-da-melhor" style="max-height:300px"></canvas></div>
       </div>
       <div class="card" style="margin-top:18px">
+        <div class="toolbar" style="margin:0 0 6px"><button class="btn" onclick="dashCongelarFechadas()" title="Varre as análises FECHADAS sem execução congelada: as que recalculam idênticas ao centavo são refechadas com a execução congelada (nada muda no emitido); as divergentes saem numa lista para decisão caso a caso. v7.101.5">🧊 Congelar análises fechadas</button></div>
+        <div id="da-congelar-rel"></div>
         <h3>Empresas cadastradas para análise</h3>
         <div style="overflow-x:auto"><table>
           <thead><tr><th>Empresa</th><th>Regime atual</th><th>Ano</th><th class="num">Receita</th><th class="num">Simples</th><th class="num">Presumido</th><th class="num">Real</th><th>Melhor regime</th><th class="num">Economia/ano</th><th class="num">Reforma 2033</th><th></th></tr></thead>
@@ -490,7 +492,8 @@ ul.ap-lista li{margin-bottom:7px}
         <span style="flex:1"></span>
         <button class="btn solid" id="an-btn-salvar" onclick="comBotao('an-btn-salvar','Salvando',()=>anSalvar())">💾 Salvar análise</button>
         <button class="btn" onclick="anRecalcular()">Recalcular</button>
-        <button class="btn" onclick="anHistorico()" title="As três gravações mais recentes desta análise, com data e autor">🕘 Histórico</button>
+        <button class="btn" onclick="anHistorico()" title="As doze gravações mais recentes desta análise, com data e autor (o banco preserva 24 — v7.101.1)">🕘 Histórico</button>
+        <button class="btn" onclick="anExecucoes()" title="Registro imutável das execuções gravadas desta análise: quando, quem, motor (app + lacre), parâmetros e totais (v7.101.0 · B09)">📜 Execuções</button>
         <button class="btn" id="an-trava-btn" onclick="anFecharAbrir()" title="Fechada: os números ficam congelados no snapshot; edição e importação bloqueadas até reabrir">🔒 Fechar análise</button>
         <button class="btn" onclick="anVerificarMostrar()" title="Varre a análise e lista o que impede o cálculo, o que distorce o resultado e o que merece conferência">🔎 Verificar</button>
       </div>
@@ -800,9 +803,24 @@ ul.ap-lista li{margin-bottom:7px}
     <div id="page-versoes" style="display:none">
       <div class="page-title"><h1>Versões do sistema</h1><span class="crumb">Histórico de releases</span></div>
       <div id="lacre-box"></div>
+      <div id="regras-box"></div>
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.104.0</b></td><td>24/10/2026</td><td><b>🏷️ REGIME TRIBUTÁRIO POR ANO-BASE (B15): o regime deixa de vir só da ficha da empresa — cada análise pode registrar o regime vigente NAQUELE ano em Configurações da análise (campo "Regime tributário do ano-base"), e o app passa a usar essa informação onde o regime aparece. Motor e lacre <code>0a257d66</code> INTOCADOS: nenhum número muda.</b> Como funciona: a nova função <code>regimeDoAno(dados, empresa)</code> responde <code>cfg.regimeAno</code> quando preenchido e, na falta dele, o regime da ficha (comportamento de hoje) — e passou a ser usada nos três pontos que exibiam <code>empresa.regime</code>: a comparação ficha × elegibilidade do parecer (que avisa quando a ficha diverge), a capa do parecer impresso e o contexto enviado à consulta de IA. O campo herda para o ano seguinte via <code>CFG_HERDA</code> (como o Fator R e a LC 224) e entra na trilha de auditoria de configurações com rótulo próprio. Por que importa: empresa que ERA Lucro Presumido em 2024 e virou Simples em 2025 tinha o parecer de 2024 reimpresso com o regime atual da ficha; agora cada ano guarda o seu. Suíte: bloco 5bo (precedência da função, parecer funcional com regime do ano ≠ ficha, gravação/limpeza em Config, herança e auditoria). Varredura: 24 casos idênticos ao backup v7.99.1.</td></tr>
+                    <tr><td><b>v7.103.0</b></td><td>24/10/2026</td><td><b>📖 TABELA DE REGRAS DO MOTOR (B14): toda regra legal que o motor aplica agora está catalogada com VIGÊNCIA, FONTE, versão que a implementou, selo da entrega e registro de aprovação — na aba Versões, entre o lacre e o changelog. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> São 16 regras em <code>REGRAS_VIGENCIA</code>: das faixas da LC 123 (com os limites "até" inclusivos) à LC 224/2025 (IRPJ desde jan/2026, CSLL desde abr/2026), passando pela trava do sublimite, pelo RBT12 proporcionalizado, pelo Tema 69, pelo crédito de ICMS de MEI/Simples, pelo Lucro Real trimestral com trava de 30%, pela partilha da Res. 190/2026, pela decisão 8.9 do ISS retido, pelo art. 58 e pelos prazos da Res. 194/2026. <b>O princípio que a tabela torna visível e a suíte prova:</b> regra nova entra com data de início e <b>cálculo antigo não muda</b> — o lacre mantém os casos históricos ao centavo, e o teste de vigência mostra o mesmo caso da LC 224 em ano-base 2025 saindo SEM o acréscimo, batendo com a fórmula legal ao centavo. Alterar uma regra é re-selar: fica registrado na tabela, no changelog e no selo. Suíte: bloco 5bn.</td></tr>
+                    <tr><td><b>v7.102.0</b></td><td>24/10/2026</td><td><b>⚖️ SUÍTE INDEPENDENTE (B13): 16 casos com o valor esperado TRANSCRITO DA LEI, calculados fora do motor — e o motor fechou TODOS ao centavo, sem nenhuma "diferença aceita" a registrar. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Até aqui, a suíte provava que o motor não MUDOU (lacre, gabaritos históricos); faltava provar que ele está CERTO contra uma referência externa. O bloco novo da suíte (seção 1b) traz 16 gabaritos cuja expectativa é a fórmula legal escrita à mão, sem chamar nenhuma função do app: <b>(1-9)</b> as nove fronteiras de faixa do Anexo I — 180.000,00 em cima e 180.000,12 logo acima, e assim por diante até 3.599.999,88 (LC 123, art. 18: "até" é inclusivo); <b>(10)</b> a 6ª faixa com a trava do ICMS nos TRÊS estados do art. 24 da Res. 140/2018 — RBA abaixo do sublimite (RBT12 efetivo do mês, premissa declarada desde a v7.42), o mês do cruzamento dos R$ 3,6 mi rateado, e dali em diante a alíquota efetiva máxima da 5ª faixa; <b>(11-12)</b> Fator R dos dois lados dos 28% (art. 18, § 5º-J); <b>(13-14)</b> Lucro Presumido sem e com adicional trimestral de IRPJ (Lei 9.249, art. 3º, § 1º); <b>(15)</b> LC 224/2025 com o excedente acumulado de R$ 1,25 mi/tri e a noventena da CSLL (IN RFB 2.305); <b>(16)</b> Lucro Real trimestral com prejuízo no 1º trimestre e a trava de 30% da compensação (Lei 9.065, art. 15), com o adicional sobre a base DEPOIS de compensar. Divergência máxima medida na implantação: <b>R$ 0,0000</b>. O CI passa a falhar se qualquer versão futura afastar o motor da lei nesses pontos. Suíte: seção 1b + bloco 5bm.</td></tr>
+                    <tr><td><b>v7.101.5</b></td><td>21/10/2026</td><td><b>🧊 CONGELADOR DE ANÁLISES FECHADAS EM LOTE — o B08 aplicado à carteira inteira, com a regra de ouro: congelar nunca muda um número emitido. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> As 73 análises fechadas antes da v7.100.0 não têm execução congelada (seus relatórios ainda saem do recálculo). O botão <b>🧊 Congelar análises fechadas</b>, no Dashboard, varre as fechadas e, para cada uma sem execução: recalcula com o motor atual e compara com o snapshot do fechamento — totais, DAS mês a mês e cenários 2033, com tolerância de um centavo. <b>Bateu</b> → refecha na hora com a execução congelada: o emitido não muda em NADA, só ganha a proteção; quem fechou e quando são preservados, o snapshot anterior vai ao histórico (evento <i>congelada</i>) e a execução entra no registro imutável (origem <i>refechar</i>). <b>Divergiu</b> → não toca: a análise sai numa lista nominal com as diferenças (é o caso da auditoria: 10 de 73), para decisão caso a caso pelo 🔁 Refechar — adotar número novo é decisão profissional, nunca automática. <b>Também nesta versão:</b> a fonte da tabela de prazos passa a citar a <b>Res. 186/2026</b> como a norma cujo calendário a Res. 194/2026 alterou (conferido na imprensa oficial em 21/10/2026 — as datas em uso não mudam). Suíte: bloco 5bl.</td></tr>
+                    <tr><td><b>v7.101.4</b></td><td>18/10/2026</td><td><b>🛡️ PERFIL DE DEMONSTRAÇÃO ISOLADO (B18 · LGPD): a conta de teste deixa de enxergar a carteira real. Motor e lacre <code>0a257d66</code> INTOCADOS — esta versão é banco e política, não código de cálculo.</b> (Achado novo 5 da auditoria de 18/10/2026, <b>confirmado por leitura direta do banco em 18/10</b>: um único escritório cadastrado e a conta <code>teste@artecon.cnt.br</code> vinculada a ele, enxergando as 263 empresas reais — CNPJ, receita e valores.) A correção usa o isolamento multi-tenant que JÁ existe desde a v7.37.0 (RLS por <code>escritorio_id</code>): <code>banco/atp/setup_v71014.sql</code> (idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>) <b>(1)</b> cria o escritório "Demonstração"; <b>(2)</b> move a conta de teste para ele — a RLS passa a esconder todas as empresas, análises, históricos e consultas do escritório real; <b>(3)</b> semeia UMA empresa fictícia rotulada ("EMPRESA DEMONSTRAÇÃO LTDA (FICTÍCIA)", CNPJ inválido de propósito) para a demonstração não abrir vazia — nenhuma empresa real é tocada (não há UPDATE nem DELETE em <code>atp_empresas</code>); <b>(4)</b> traz o <b>teste de acesso negativo</b> em BEGIN/ROLLBACK: a conta de teste tem de ver 1 empresa (a fictícia) e 0 análises reais, e a contraprova mostra que o escritório real não vê a fictícia. A análise de exemplo da demonstração deve ser montada pelo próprio app, logado na conta de teste, com dados inventados. Suíte: bloco 5bk.</td></tr>
+                    <tr><td><b>v7.101.3</b></td><td>18/10/2026</td><td><b>🧾 RODAPÉ RASTREÁVEL NOS RELATÓRIOS (B12): todo documento identifica a execução de origem — motor (app + lacre), empresa, ano-base e emissão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1)</b> Os quatro relatórios de fluxo — Consolidado, Conferência de cálculos, Comparativo de Regimes e Reforma — ganham o rodapé impresso <code>rlRodapeExec</code>: análise aberta sai com "recálculo do motor atual — app vX · lacre Y"; análise fechada com execução congelada sai com o motor DO FECHAMENTO (app, lacre e data) e a versão que imprimiu. <b>(2)</b> A apresentação declara o mesmo na tela "Sobre este estudo" (a linha "Números" passa a dizer quando os valores vêm da execução congelada). <b>(3)</b> O parecer já identificava a execução desde a v7.100.0, no rodapé legal. Com isso, nenhum PDF emitido pelo sistema sai sem dizer QUAL execução o produziu — auditável meses depois contra o registro imutável da v7.101.0. Suíte: bloco 5bj.</td></tr>
+                    <tr><td><b>v7.101.2</b></td><td>18/10/2026</td><td><b>🧪 TESTE AUTOMÁTICO DE CONSISTÊNCIA ENTRE TELAS (B11): o CI passa a FALHAR se qualquer total divergir além do arredondamento entre os cartões da Análise, o resumo gravado (fonte do Dashboard) e o parecer. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> O bloco novo da suíte (5bi) atravessa o caso-gabarito 3 — o mais completo: art. 24, teto do ISS, exportação, impedimento, Fator R — pelos três caminhos que o usuário vê: <b>(1)</b> os cartões da Análise têm de imprimir exatamente a fórmula única de exibição (<code>totExib</code>, v7.42.1), ao centavo; <b>(2)</b> o resumo que o <code>anSalvar</code> grava (e o Dashboard lê) não pode divergir dos cartões além de R$ 0,06 — a folga de arredondamento declarada na v7.42.1; <b>(3)</b> os totais do parecer (<code>parecerDados</code>) idem; <b>(4)</b> os cenários 2033 do parecer têm de ser idênticos, ao centavo, ao <code>calcCenariosReforma</code> do mesmo resultado. Resultado na implantação: divergência máxima medida de <b>R$ 0,0000</b> — as fórmulas únicas construídas desde a v7.42.1 convergem; o teste existe para DENUNCIAR a próxima mudança que quebrar isso, antes de qualquer publicação. Nenhuma linha do app mudou além do badge e desta nota. Suíte: bloco 5bi.</td></tr>
+                    <tr><td><b>v7.101.1</b></td><td>18/10/2026</td><td><b>🕘 HISTÓRICO ROBUSTO (B10): 12 versões na tela (24 preservadas no banco), autor gravado PELO SERVIDOR e DELETE só de administrador. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Pendência 3 do relatório de 18/10/2026: "guarda só 3 versões, o autor vem do navegador e qualquer usuário apaga linhas".) <b>(1) Profundidade:</b> o visor 🕘 Histórico passa a listar as <b>12</b> gravações mais recentes, e a poda do banco preserva <b>24</b> por empresa/ano. <b>(2) Autor confiável:</b> trigger <code>atp_hist_autor</code> grava <code>gravado_por</code> a partir do e-mail do token (auth.jwt) — o que o navegador mandar é descartado; ninguém assina pelo colega. <b>(3) Ninguém apaga:</b> a política de DELETE exige papel <code>admin</code> (<code>atp_sou_admin</code>); a poda roda como SECURITY DEFINER e não depende dela. Tudo em <code>banco/atp/setup_v71011.sql</code> (idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>), que inclui o teste opcional em BEGIN/ROLLBACK provando que <b>usuário comum não apaga histórico</b>, e a consulta para conferir se o setup antigo deixou trigger de poda com outro nome. Sem o SQL aplicado, o app segue como hoje — apenas listando até 12 se existirem. Suíte: bloco 5bh.</td></tr>
+                    <tr><td><b>v7.101.0</b></td><td>18/10/2026</td><td><b>📜 REGISTRO DE EXECUÇÕES IMUTÁVEL (B09): cada gravação deixa quem, quando, o motor (app + lacre), as impressões digitais dos parâmetros e os totais — numa tabela que não aceita alteração nem exclusão. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O quê:</b> salvar (<code>anSalvar</code>), fechar (<code>anFecharAbrir</code>) e refechar (<code>anRefecharCore</code>) passam a chamar <code>execRegistrar</code>, que insere na tabela nova <code>atp_execucoes</code>: cnpj/ano, data, origem, <code>app</code> (APP_VERSAO), <code>lacre</code> (LACRE_HASH), usuário, totais do ano (receita, Simples, LP, LR, DAS), cenários 2033 e <code>params</code> — hashes dos anexos, da folha, da reforma e do cfg da análise (<code>execParams</code>), que permitem provar depois COM QUE parâmetros o número saiu. <b>(2) Imutável em duas camadas</b> (<code>banco/atp/setup_v7101.sql</code>, idempotente, <b>para a sua revisão — o app não aplica nada no banco sozinho</b>): RLS do escritório só com SELECT e INSERT (sem política de UPDATE/DELETE, a API não altera nem apaga) e trigger que recusa UPDATE/DELETE por qualquer caminho, console incluído. <b>(3) Sem o SQL aplicado, nada quebra:</b> o registro falha em silêncio (um aviso por sessão no console) e o app segue normal. <b>(4) Visor:</b> botão <b>📜 Execuções</b> ao lado do Histórico lista o registro da análise aberta. Com o resumo carimbado (v7.99.4) e a execução congelada do fechamento (v7.100.0), fecha-se o circuito da Prioridade 1: a mesma execução dá os mesmos totais no Dashboard, no parecer e na conferência — e agora fica provado QUANDO e COM O QUÊ cada número foi produzido. Suíte: bloco 5bg.</td></tr>
+                    <tr><td><b>v7.100.0</b></td><td>18/10/2026</td><td><b>🔒 RELATÓRIO DE ANÁLISE FECHADA SAI DO SNAPSHOT (decisão B08): o fechamento congela a EXECUÇÃO completa, e parecer, conferência e relatórios passam a sair dela — o documento emitido NÃO muda quando o motor muda. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achado novo 1 da auditoria de 18/10/2026: 10 das 73 análises fechadas recalculavam diferente do snapshot; a maior diferença, R$ 285.962,24.) <b>(1) O problema:</b> o snapshot do fechamento só alimentava um aviso na tela da análise — Relatórios, parecer e conferência recalculavam com o motor ATUAL, de modo que uma atualização do app mudava, em silêncio, o que já havia sido emitido ao cliente. <b>(2) Execução congelada:</b> <code>anSnapshotCalc</code> passa a gravar no snapshot a execução completa — resultado (<code>exec.res</code>), cenários da Reforma congelados dentro dele (<code>res.__cen</code>, devolvidos pelo próprio <code>calcCenariosReforma</code>, o portão único dos cenários) e a base projetada dos documentos (<code>exec.base</code>, pela nova função pura <code>baseReformaDe</code>) — mais o <b>lacre</b> da época. <b>(3) Relatórios leem o fechamento:</b> análise fechada com execução carrega <code>RL.exec</code>; <code>RL.res</code> e <code>rlBaseReforma</code> saem do congelado; o motor atual roda apenas para MEDIR a divergência, que aparece no aviso (verde: "este documento sai da execução congelada"), nunca no documento. O rodapé legal do parecer declara o motor DO FECHAMENTO (versão, lacre e data), com a versão que imprimiu ao lado. <b>(4) Fechamentos antigos</b> (anteriores à v7.100.0, sem execução): seguem no recálculo, agora com aviso âmbar "SEM execução congelada" nos relatórios e na trava. <b>(5) 🔁 Refechar com o motor atual</b> (<code>anRefechar</code>): um clique recalcula, grava snapshot novo com a execução congelada, mantém a análise fechada e registra o evento <i>refechada</i> (de → para) no histórico — é o caminho para atualizar fechamento antigo ou divergente. Trocar parâmetros não recalcula execução congelada. <b>(6) Suíte:</b> guardas de versão relaxadas para o minor de 3 dígitos (a exatidão do badge segue garantida pela guarda da 1ª linha do changelog). Bloco 5bf.</td></tr>
+                    <tr><td><b>v7.99.5</b></td><td>18/10/2026</td><td><b>✍️ TEXTOS QUE AFIRMAVAM DEMAIS (B06) e REGISTRO OBRIGATÓRIO DA DECISÃO JUDICIAL ao desligar a LC 224 (B07). Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) Elegibilidade com receita estimada (achado A03):</b> o texto "não é elegível … já supera o teto desde o início do período" afirmava com certeza mesmo quando a receita era apenas lançada ou presumida. Agora a frase declara a FONTE — RBAA informada (segue assertiva), valores lançados/estimados na análise, ou presunção pelo primeiro mês — e, fora da RBAA declarada, termina pedindo a confirmação da receita do ano anterior na Configuração antes de decidir. <b>(2) Aba Compras/ICMS·IPI harmonizada com a v7.97.0 (achado A06):</b> os hints do quadro de ICMS e da estimativa de PIS/COFINS passaram a dizer que a base do crédito JÁ EXCLUI a parcela de fornecedores MEI/Simples, que não destaca ICMS (LC 123/2006, art. 23). <b>(3) Lacre "quatro casos" (achado da auditoria):</b> o cartão da aba Versões dizia "dois casos-gabarito" desde a v7.30.0; o lacre cobre QUATRO desde a v7.95.1 (comércio, serviços, estresse do art. 24 e empresa nova) — o texto agora diz isso. <b>(4) LC 224 com fundamento registrado (B07):</b> desligar a chave "Não aplicar (liminar / decisão judicial)" passou a EXIGIR o número do processo e a data da decisão (campos novos na Configuração, <code>cfg.lc224Proc</code>/<code>cfg.lc224Data</code>); sem o registro, a regra continua aplicada e o aviso explica. O registro herda entre anos junto com a chave (CFG_HERDA) e cada mudança entra na trilha de alterações com rótulo próprio. Suíte: bloco 5be.</td></tr>
+                    <tr><td><b>v7.99.4</b></td><td>18/10/2026</td><td><b>🏷️ O RESUMO GRAVADO PASSA A DECLARAR O MOTOR QUE O CALCULOU, e o Dashboard marca "desatualizada", alerta VALOR NEGATIVO e separa o total de economia. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> (Achados A01 e novo 3 da auditoria de 18/10/2026.) <b>(1) O problema:</b> o Dashboard lê o resumo do último Salvar de cada análise — calculado pelo motor daquela época. Com 108 das 109 análises gravadas antes da v7.96/v7.97/LC 224, o "Economia potencial identificada" de R$ 7,9 mi somava resultados de motores diferentes, e uma análise exibia Presumido <b>negativo</b> (−R$ 220.249,89, defeito corrigido na v7.96.0) sem aviso algum. <b>(2) Resumo com carimbo:</b> <code>anSalvar</code> e <code>rfSalvar</code> gravam <code>motor:{app, lacre}</code> no resumo; o ramo do rfSalvar que preserva o resumo de outra gravação preserva também o motor dela — carimbar ali seria mentir. Resumo sem carimbo = anterior à v7.99.4 = desatualizado por definição. <b>(3) Dashboard honesto:</b> <code>dashMotorInfo</code> compara o lacre gravado com o atual; a linha ganha o selo <b>"desatualizada"</b> (com o motor de origem no título) e <b>"valor negativo"</b> em vermelho quando o resumo guarda número abaixo de zero; o cartão do topo passa a somar só as análises do motor atual, com a nota "+ R$ X em N análise(s) com motor antigo — fora do total" e o alerta de negativos. Nenhum número gravado muda: a mudança é dizer DE ONDE cada um veio. Suíte: bloco 5bd.</td></tr>
+                    <tr><td><b>v7.99.3</b></td><td>18/10/2026</td><td><b>⏳ ESTADO "CARREGANDO" NA TROCA DE EMPRESA e BLOQUEIO TOTAL quando a leitura do banco falha. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> Dois defeitos com a mesma raiz (achados A04 e novo 4 da auditoria de 18/10/2026): <b>(1) Conclusão antes da carga.</b> Ao trocar de empresa, a tela desenhava uma análise NOVA — receita zero e conclusões calculadas do nada (confiança "ALTO") — no intervalo entre o pedido e a resposta do banco. Agora a troca liga o estado <code>AN_CARREGANDO</code>: os cartões mostram "⏳ Carregando a análise do banco…", o veredito some e o recálculo não desenha NENHUMA conclusão até a carga terminar. <b>(2) Falha de leitura virava análise em branco gravável.</b> Se a leitura desse erro, o <code>catch</code> criava uma análise vazia e apagava a marca de placeholder; sem <code>_verEm</code>, a guarda de conflito de versão não disparava e o Salvar podia substituir a análise gravada por uma em branco. Agora a falha deixa a análise <b>bloqueada</b>: continua placeholder, ganha <code>_erroLeitura</code> com o motivo, a tela mostra a tarja "⛔ A leitura desta análise falhou" com botão <b>Tentar de novo</b> — e <code>anBloqueada()</code> corta edição (grade e setters), lançamento, importação, preenchimento e gravação (<code>anSalvar</code> recusa e devolve <code>false</code>) tanto durante a carga quanto após a falha. Suíte: bloco 5bc.</td></tr>
+                    <tr><td><b>v7.99.2</b></td><td>18/10/2026</td><td><b>📅 PRAZOS DA RES. CGSN Nº 194/2026 numa tabela única e SPLIT PAYMENT dito como cenário, nunca como fato. Motor e lacre <code>0a257d66</code> INTOCADOS.</b> <b>(1) O problema dos prazos (achado A02 da auditoria externa):</b> a Res. CGSN nº 194/2026 (DOU 28/09/2026) alterou os prazos que a Res. 190/2026 havia fixado — opção pelo Simples para 2027 de <b>1º/09 a 15/10/2026</b> (já encerrada), opção pelo regime regular de IBS/CBS (híbrido) de <b>1º/09 a 30/10/2026</b>, regularização de pendências até 30/10, cancelamento de 03/11 a 20/12; empresas em início de atividade: Simples de 16/10 a 31/12 e IBS/CBS de 31/10 a 31/12 — e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão. <b>(2) A correção estrutural (B02):</b> nasce a tabela <code>PRAZOS_LEGAIS</code> por exercício, única fonte de toda data de prazo legal: o parágrafo de prazos do parecer, os cartões da apresentação (<code>AP_PRAZOS</code>), os "Pontos de atenção" e os resumos derivam dela (<code>prazoD</code>, <code>prazoProximo</code>, <code>prazoVencido</code>), e a suíte acusa data fixa fora da tabela. O resumo da apresentação passa a apontar o <b>próximo prazo em aberto</b> na data da geração, em vez de uma data congelada. <b>(3) Split payment (B03, achado novo 6):</b> o parecer dizia que a CBS e o IBS "passam a ser recolhidos na fonte" — o split como fato consumado. O CGIBS informou em agosto/2026 que o split <b>não</b> estará disponível no início da cobrança efetiva (jan/2027) e não há data confirmada para operar. Todos os textos passam a declarar: mecanismo previsto na LC 214/2025 (art. 33), em regulamentação, sem data para operar; valores = <b>cenário conservador</b> de caixa. O cartão de caixa da apresentação e a seção do parecer ganham o rótulo "(cenário)", e uma instrução nova impede a IA de atribuir data de início ao split. Suíte: bloco 5bb.</td></tr>
                     <tr><td><b>v7.99.1</b></td><td>08/10/2026</td><td><b>📇 Cadastro único da empresa (fase 1): data de abertura, CNAE e situação no Simples/MEI passam a morar NA FICHA, e a análise anual lê a data de abertura de lá. Lacre <code>0a257d66</code> INTOCADO.</b> <b>(1) O problema</b>: o início de atividade era digitado dentro de cada análise anual (só mês/ano), não passava de um ano para o outro, a importação do PGDAS-D o sobrescrevia em silêncio — e a consulta de CNPJ recebia a data de abertura da Receita e a descartava. <b>(2) Ficha da empresa</b> (<code>sql/setup_v7991.sql</code>: colunas <code>data_abertura</code>, <code>cnae_codigo</code>, <code>data_exclusao_simples</code>, <code>data_opcao_simei</code>, <code>data_exclusao_simei</code>, <code>natureza_juridica</code>, <code>receita_consultada_em</code>): "Preencher pela Receita" traz data de abertura, CNAE (código — descrição) e a situação no Simples/MEI com datas; a data de abertura é editável; a lista de empresas ganha a coluna Abertura. <b>(3) A análise lê a ficha</b>: análise nova (troca de empresa, ano novo herdando configuração, empresa adotada na importação) sem início próprio recebe a data de abertura da ficha quando ela é do ano-base ou do anterior (<code>cfg.inicioOrigem = 'E'</code>, selo "E · ficha da empresa" na Configuração); análise existente ganha o botão "Usar a data de abertura da ficha" (evento <i>ficha</i> na trilha). O que já está na análise (digitado ou PGDAS-D) prevalece; editar à mão derruba o selo. Com isso o limite do Simples, o RBT12 e a LC 224 proporcionais passam a partir da data da Receita. <b>(4) Verificar</b>: acusa início da análise diferente da abertura da ficha, ficha com abertura e análise sem início, e ficha sem data. Fases 2 (regime por ano) e 3 (Imobiliária e Classificação lendo a ficha) ficam para depois. Suíte: bloco 5ba.</td></tr>
                     <tr><td><b>v7.99.0</b></td><td>07/10/2026</td><td><b>⚖️ LC 224/2025 — acréscimo de 10% nos percentuais de presunção do Lucro Presumido sobre a receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre). LACRE RE-SELADO <code>8ab9c16a</code> → <code>0a257d66</code>: casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, R$ 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos.</b> <b>(1) A regra</b> (art. 4º da LC 224/2025; IN RFB 2.305/2025, alterada pela IN 2.306/2026): o acréscimo é <b>relativo</b> — 8% → 8,8%, 16% → 17,6%, 32% → 35,2%; CSLL 12% → 13,2% e 32% → 35,2% — e incide só sobre a parcela da receita bruta (de atividades, inclusive exportação; sem financeiras) que ultrapassa o limite. Vigência: IRPJ desde 1º/01/2026 e CSLL desde 1º/04/2026 (noventena). <b>(2) Como o motor aplica</b>: por trimestre, limite de R$ 1,25 mi <b>acumulado</b> no ano (o que sobra de um trimestre compensa nos seguintes; o 4º fecha a conta anual — a variação do excedente acumulado pode ser negativa e devolve acréscimo cobrado antes); acréscimo na base = excedente × 10% × presunção média ponderada do trimestre (equivale ao rateio proporcional por atividade); entra no 3º mês do trimestre, antes do adicional (que também sobe). Empresa que começou no ano tem o limite proporcional aos trimestres de atividade (início de atividade da Configuração). <b>(3) Chave na Configuração</b> — "LC 224/2025 — presunção +10%": <i>Aplicar</i> (padrão) ou <i>Não aplicar (liminar / decisão judicial)</i>; herdada entre anos como parâmetro da empresa (<code>cfg.lc224 === false</code>). As ADIs 7920, 7936, 7944 e 7982 estão pendentes no STF. <b>(4) Onde aparece</b>: memória mensal (linha da base do IRPJ e da CSLL com excedente, limite acumulado, presunção média e fonte), memória anual, premissas (parâmetro próprio), Verificar (aviso quando aplicada ou desligada), regra de texto para a IA do parecer e <code>res.lc224 / T.lc224</code> (trimestre a trimestre). Ano-base anterior a 2026 não muda. Suíte: bloco 5az.</td></tr>
                     <tr><td><b>v7.98.0</b></td><td>07/10/2026</td><td><b>✍️ ISS, PIS e COFINS passam a aceitar valor informado, e toda substituição de valor apurado exige MOTIVO. Até aqui só ICMS e IPI podiam ser substituídos (aba ICMS·IPI); ISS, PIS e COFINS eram sempre fórmula × alíquota. Lacre <code>8ab9c16a</code> INTOCADO.</b> <b>(1) Campos novos</b> — <code>trib.iss</code>, <code>trib.pisLP</code>, <code>trib.cofinsLP</code>, <code>trib.pisLR</code>, <code>trib.cofinsLR</code> (null = automático), editáveis no quadro apurado da aba ICMS·IPI. PIS/COFINS são separados por regime porque o Presumido é cumulativo (0,65%/3%) e o Real não cumulativo (1,65%/7,6%). O ISS informado vale no LP, no LR e no mês impedido do Simples; o PIS/COFINS do Real informado entra na base do lucro (despesa dedutível), antes do IRPJ/CSLL. <b>(2) Motivo obrigatório</b> — ao substituir um valor apurado (ICMS, IPI, ISS, PIS, COFINS) o app pede o motivo (mínimo 5 caracteres); sem ele a alteração não é aplicada. O motivo fica no evento da trilha de alterações (<code>auditoria[].motivo</code>) com usuário, data e hora, junto do valor apurado que valia (<code>deAuto</code>) e do valor novo. Apagar a célula (volta ao automático) e "Restaurar automático" não pedem motivo — a ação é autoexplicativa e também fica registrada. <b>(3) Onde aparece</b> — memória mensal do LP e do LR: a parcela sai como <i>valor informado manualmente — apurado pelo motor R$ X · motivo · quem · quando</i>; memória anual: aviso com a contagem de células substituídas; Trilha de alterações: coluna Ação mostra o motivo; dica da célula: idem. "Restaurar automático" passa a limpar também ISS/PIS/COFINS. Suíte: bloco 5ay.</td></tr>
@@ -2658,6 +2676,7 @@ async function foLancar(){
   if (!AN || !AN.cnpj || limparCNPJ(AN.cnpj) !== cnpjE){
     toast('Abra a análise da empresa ' + (cnpjE?fmtCNPJ(cnpjE):'da consulta') + ' primeiro (módulo Análise Atual).'); return; }
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para lançar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   const mapa = cfopMapLer(cnpjE);
   const cfops = Object.entries(base.por).sort((a,b)=>b[1]-a[1]);
   const totGeral = cfops.reduce((a,x)=>a+x[1],0) + base.semCfop || 1;
@@ -4507,6 +4526,7 @@ function lrApurar(out, cfg){
 let PARAMS = { anexos: JSON.parse(JSON.stringify(ANEXOS_DEFAULT)), folha: {...FOLHA_PERC_DEFAULT}, escritorio: { respNome:'', respCRC:'', respQualif:'Contador' } };
 let AN = null;          // análise corrente
 let AN_SUJO = false;    // v7.5.7: há importação/edição ainda não salva no banco
+let AN_CARREGANDO = false;   // v7.99.3 · B04: leitura do banco em andamento — nenhuma conclusão na tela e nada editável
 // todo importador chama isto depois de mexer na análise: marca pendência e redesenha
 // ══ v7.63.0 (auditoria A02/A03/A04 · 2ª varredura) · A FAIXA TAMBÉM VALE PARA O QUE VEM DE ARQUIVO ══
 // A primeira correção pôs a validação no anSet (digitação) e na Configuração. A segunda varredura
@@ -4645,6 +4665,7 @@ function anSanear(d){
 }
 function anAplicado(){
   if (anTravada()){ toast('Análise FECHADA 🔒 — a importação não foi gravada. Reabra (🔓) para aplicar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04: nada entra numa análise em carga ou com leitura falhada
   // v7.63.0 · nada entra fora de faixa, venha de onde vier
   { const aj = anSanear(AN);
     if (aj.length) alert('O arquivo trazia ' + aj.length + ' valor(es) impossível(is), que foram ajustados:\n\n'
@@ -4778,9 +4799,9 @@ const AN_SECOES = [
     ['IPI'], ['compras.baseIpiCred','Base p/ crédito de IPI'],
   ]},
   { id:'impostos', nome:'🧾 ICMS · IPI', linhas:[
-    ['ICMS — preencha só para substituir o valor apurado; em branco, o app calcula pelas bases × % da Config'],
+    ['ICMS — preencha só para substituir o valor apurado; em branco, o app calcula pelas bases × % da Config (compras sem ST já excluída a parcela de fornecedores MEI/Simples — v7.97.0)'],
     ['icms.cred','Crédito de ICMS (substituir) — igual ao quadro acima','nul'], ['icms.deb','Débito de ICMS (substituir) — igual ao quadro acima','nul'],
-    ['PIS/COFINS no Presumido e no Real — nota a nota (v7.89.0). Em branco, o app estima: (revenda sem ST + com redução) × % ICMS de vendas; compras p/ revenda × % ICMS de compras'],
+    ['PIS/COFINS no Presumido e no Real — nota a nota (v7.89.0). Em branco, o app estima: (revenda sem ST + com redução) × % ICMS de vendas; compras p/ revenda (menos a parcela de MEI/Simples, que não destaca ICMS) × % ICMS de compras'],
     ['icms.tema69','ICMS destacado nas saídas — Tema 69 (nota a nota)','nul'], ['icms.lei14592','ICMS nas aquisições p/ revenda — Lei 14.592/2023 (nota a nota)','nul'],
     ['Crédito transferido por fornecedor do Simples (v7.97.0) — só o que a optante INFORMOU na NF-e (CSOSN 101/201, LC 123/2006, art. 23, § 1º). Em branco = zero. O MEI nunca transfere crédito.'],
     ['icms.credSimples','Crédito de ICMS informado nas NF de optantes do Simples (nota a nota)','nul'],
@@ -4952,7 +4973,9 @@ function audRotulo(campo){
     sublimite:'Sublimite', sublimiteValor:'Sublimite (valor próprio)', lrPeriodo:'Período do Lucro Real', lrPrejIrpj:'Prejuízo fiscal inicial', lrPrejCsll:'Base negativa CSLL inicial', projJanela:'Janela da projeção', anoRefParecer:'Ano de referência do parecer',
     credLRpct:'% creditável no LR', folhaPerc:'Percentuais de folha', ratBasico:'RAT básico', fap:'FAP', travaNoDas:'Trava na guia', arredondaPorTributo:'Arredondar por tributo', frComposicao:'Composição do Fator R', dedIssRetido:'Deduz ISS retido', issRetidoNaCarga:'ISS retido na carga',
     transpPresuncao:'Presunção transporte', icmsTranspV:'ICMS transporte %', transpCredPres:'Crédito presumido transporte', sem13Pago:'Sem pagamento de 13º',
-    icmsSaldoIni:'Saldo credor de ICMS em 1º/jan', lc224:'LC 224/2025 — presunção +10% (aplicar?)' };
+    icmsSaldoIni:'Saldo credor de ICMS em 1º/jan', lc224:'LC 224/2025 — presunção +10% (aplicar?)',
+    lc224Proc:'LC 224/2025 — processo da decisão que desliga', lc224Data:'LC 224/2025 — data da decisão',
+    regimeAno:'Regime tributário do ano-base' };   // v7.99.5 · B07 · v7.104.0 · B15
   if (sec === 'cfg') return CFG[k] || ('Configuração · ' + k);
   if (sec === 'folha13') return ({ prolabore13:'Pró-labore 13º', salarios13:'Proventos 13º', baseFgts13:'Base FGTS 13º' })[k] || k;
   if (sec === 'reforma') return ({ receita:'Reforma · receita anual tributável', baseIS:'Reforma · base do Imposto Seletivo', credSimplesPct:'Reforma · % crédito s/ compras do Simples' })[k] || ('Reforma · ' + k);
@@ -5093,8 +5116,20 @@ function snSituacaoTexto(EL, ano){
   if (!EL) return '';
   const teto = fmtR(EL.teto || SN_TETO_CHEIO), a = +ano || (typeof AN !== 'undefined' && AN ? +AN.ano : new Date().getFullYear());
   const pctExc = EL.excesso != null ? (EL.excesso*100).toFixed(1).replace('.', ',') + '%' : '';
-  if (EL.estado === 'inelegivel')
-    return 'A empresa não é elegível ao Simples Nacional em ' + a + ': a receita bruta ' + (EL.fonte === 'declarado' ? 'do ano anterior, conforme informado, ' : '') + 'já supera o teto de ' + teto + ' desde o início do período' + (pctExc ? ' (excesso de ' + pctExc + ')' : '') + ': não pode optar pelo Simples Nacional em ' + a + ', e o regime não entra no comparativo do ano.';
+  if (EL.estado === 'inelegivel'){
+    // v7.99.5 · B06 (achado A03): o que é estimativa não pode ser afirmado como certeza. A fonte
+    // da receita entra na frase e, fora da RBAA declarada, a conclusão vem qualificada, com o
+    // pedido de confirmar o dado antes de decidir.
+    const _fonte = EL.fonte === 'declarado'
+      ? 'a receita bruta do ano anterior, conforme informado, já supera'
+      : EL.fonte === 'presumido'
+      ? 'a receita lançada indica, por presunção (RBT12 dos 12 meses anteriores não informado), receita acima de'
+      : 'a receita bruta dos 12 meses anteriores, conforme os valores lançados ou estimados na análise, supera';
+    return 'A empresa não é elegível ao Simples Nacional em ' + a + ': ' + _fonte + ' o teto de ' + teto
+      + ' desde o início do período' + (pctExc ? ' (excesso de ' + pctExc + ')' : '')
+      + ': não pode optar pelo Simples Nacional em ' + a + ', e o regime não entra no comparativo do ano.'
+      + (EL.fonte === 'declarado' ? '' : ' A conclusão usa valores informados na análise — confirme a receita bruta do ano anterior (RBAA) na Configuração antes de decidir.');
+  }
   if (EL.estado === 'transicao'){
     if (EL.excesso > 0.20)
       return 'Considerando que a empresa estava regularmente no Simples Nacional em ' + a + ', a receita interna ultrapassou o limite anual de ' + teto + ' em mais de 20% (' + pctExc + ')' + (EL.mesEstouro ? ', em ' + MESES_LONGO[EL.mesEstouro-1] : '') + ': a exclusão produz efeitos a partir do mês seguinte ao da ocorrência do excesso (LC 123/2006, art. 3º, § 9º).';
@@ -5423,6 +5458,7 @@ function anIcmsRestaurar(){
 async function anSimplesMeiPreencher(){
   if (!AN || !AN.cnpj){ toast('Abra a análise de uma empresa primeiro.'); return; }
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para preencher.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   let rs = [];
   try { rs = await supa('GET','atp_fornec',{ params:{ cnpj:'eq.'+limparCNPJ(AN.cnpj), order:'consultado_em.desc', limit:'40', select:'*' } }) || []; }
   catch(e){ toast('Não foi possível ler os fornecedores gravados: ' + (e && e.message || e)); return; }
@@ -5523,6 +5559,7 @@ function faixaDoPath(path){
   return null;
 }
 function anSet(path, m, val, tipo) {
+  if (anBloqueada()){ anBloqueioAviso(); anRenderGrid(); return; }   // v7.99.3 · B04
   AN_SUJO = true;
   const { o,k } = anPath(AN, path);
   const _audDe = o[k][m] == null ? null : +o[k][m], _audOg = ((AN.origem||{})[path]||[])[m] || null;   // v7.94.3
@@ -5912,9 +5949,20 @@ function anRenderConfig() {
     <div><label>Presunção do transporte (LP) <span class="hint">(v7.48.0)</span></label><select id="cf-transp" onchange="anAplicarConfig(true)" title="Transporte de CARGAS presume 8% no IRPJ, como o comércio; transporte de PASSAGEIROS presume 16% (Lei 9.249/95, art. 15, §1º, II, 'a'). A CSLL é 12% nos dois casos. Vale para as receitas dos blocos de Comunicação/Transporte."><option value="cargas" ${String(c.transpPresuncao||'cargas')!=='passageiros'?'selected':''}>Cargas — IRPJ 8%</option><option value="passageiros" ${String(c.transpPresuncao)==='passageiros'?'selected':''}>Passageiros — IRPJ 16%</option></select></div>
     <div><label>Base IRPJ comércio (LP)</label><select id="cf-bcom" onchange="anAplicarConfig(true)"><option value="0.08" ${c.lpBaseCom==.08?'selected':''}>8%</option><option value="0.16" ${c.lpBaseCom==.16?'selected':''}>16%</option></select></div>
     <div><label>Adicional de IRPJ</label><select id="cf-adic" onchange="anAplicarConfig(true)"><option value="trimestral" ${c.adicionalIR=='trimestral'?'selected':''}>Trimestral</option><option value="mensal" ${c.adicionalIR=='mensal'?'selected':''}>Mensal (estimativa)</option><option value="off" ${c.adicionalIR=='off'?'selected':''}>Não calcular</option></select></div>
+    <div><label>Regime tributário neste ano-base <span class="hint">(v7.104.0 · B15)</span></label>
+      <select id="cf-regime-ano" onchange="anAplicarConfig(true)" title="O regime que a empresa efetivamente adotou NESTE ano-base. Em branco, vale o regime da ficha da empresa. O parecer, a capa e o payload da IA usam o regime do ano do relatório — o de 2025 sai com o regime de 2025, mesmo que a empresa tenha mudado depois. Herda entre anos como parâmetro da empresa.">
+        <option value="" ${!c.regimeAno?'selected':''}>— herdar da ficha da empresa —</option>
+        ${['Simples Nacional','MEI','Lucro Presumido','Lucro Real'].map(x=>`<option value="${x}" ${c.regimeAno===x?'selected':''}>${x}</option>`).join('')}
+      </select></div>
     <div><label>LC 224/2025 — presunção +10% <span class="hint">(v7.99.0)</span></label><select id="cf-lc224" onchange="anAplicarConfig(true)" title="LC 224/2025, art. 4º: a parcela da receita bruta acima de R$ 5 milhões no ano (R$ 1,25 milhão por trimestre, acumulado) tem os percentuais de presunção do IRPJ e da CSLL acrescidos em 10% (32% → 35,2%; 8% → 8,8%; CSLL 12% → 13,2%). IRPJ desde jan/2026, CSLL desde abr/2026 (IN RFB 2.305/2025 e 2.306/2026). Desligue só se a empresa tiver liminar ou decisão judicial — as ADIs 7920, 7936, 7944 e 7982 ainda não foram julgadas pelo STF.">
       <option value="sim" ${c.lc224===false?'':'selected'}>Aplicar (regra em vigor desde 2026)</option>
-      <option value="nao" ${c.lc224===false?'selected':''}>Não aplicar (liminar / decisão judicial)</option></select></div>
+      <option value="nao" ${c.lc224===false?'selected':''}>Não aplicar (liminar / decisão judicial)</option></select>
+      <!-- v7.99.5 · B07: desligar a LC 224 exige o processo e a data da decisão que o justifica — ficam no cfg e na trilha -->
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <input id="cf-lc224-proc" placeholder="Processo (nº CNJ) — obrigatório ao desligar" value="${esc(c.lc224Proc||'')}" onchange="anAplicarConfig(true)" title="Número do processo da liminar/decisão judicial que afasta a LC 224/2025 para esta empresa. Obrigatório para desligar a regra; entra na trilha de alterações." style="flex:2">
+        <input id="cf-lc224-data" type="date" value="${esc(c.lc224Data||'')}" onchange="anAplicarConfig(true)" title="Data da decisão judicial. Obrigatória para desligar a regra." style="flex:1">
+      </div>
+      ${c.lc224===false && c.lc224Proc ? `<div class="hint">Desligada pela decisão de ${c.lc224Data ? c.lc224Data.split('-').reverse().join('/') : '—'} no processo ${esc(c.lc224Proc)}.</div>` : ''}</div>
     <div><label>Sublimite ICMS/ISS (R$ 3,6 mi)</label><select id="cf-sublim" onchange="anAplicarConfig(true)"><option value="auto" ${(c.sublimite||'auto')=='auto'?'selected':''}>Aplicar trava da 5ª faixa</option><option value="off" ${c.sublimite=='off'?'selected':''}>Não aplicar</option></select></div>
     <div><label>Trava da 5ª faixa na guia <span class="hint">(v7.36.0)</span></label><select id="cf-travadas" onchange="anAplicarConfig(true)"><option value="sim" ${c.travaNoDas===false?'':'selected'}>Dentro do DAS (PGDAS-D)</option><option value="nao" ${c.travaNoDas===false?'selected':''}>Fora do DAS — legado</option></select></div>
     <div><label>ISS retido na carga do regime <span class="hint">(v7.79.0)</span></label><select id="cf-issretcarga" onchange="anAplicarConfig(true)" title="O ISS retido pelo tomador é imposto suportado na operação: a empresa recebe líquido. Contá-lo na carga mede o custo econômico; não contá-lo mede o desembolso próprio.">
@@ -6111,6 +6159,23 @@ function anAplicarConfig(silencioso) {
     lc224: (vRaw('cf-lc224', _cfg.lc224===false?'nao':'sim') || 'sim') !== 'nao' });   // v7.99.0 · false = liminar
   if (!(+AN.cfg.icmsSaldoIni > 0)) delete AN.cfg.icmsSaldoIni;   // v7.96.0: em branco = zero, e a chave não ocupa espaço
   if (AN.cfg.lc224 !== false) delete AN.cfg.lc224;              // v7.99.0: ausente = aplica (padrão legal); só a exceção é gravada
+  // ═══ v7.99.5 · B07 — DESLIGAR A LC 224 EXIGE O PROCESSO E A DATA DA DECISÃO ═══
+  // A chave já existia (v7.99.0), mas desligava sem deixar rastro do fundamento. Agora o número do
+  // processo e a data da decisão são obrigatórios para desligar: sem eles a regra continua aplicada
+  // (o select volta a "sim" e o aviso explica). Os dois moram no cfg (lc224Proc/lc224Data), herdam
+  // entre anos como a própria chave e entram na trilha de alterações pelo audSincronizar.
+  { const _lcProc = String(vRaw('cf-lc224-proc', _cfg.lc224Proc||'')||'').trim();
+    const _lcData = String(vRaw('cf-lc224-data', _cfg.lc224Data||'')||'').trim();
+    if (AN.cfg.lc224 === false){
+      if (!_lcProc || !_lcData){
+        delete AN.cfg.lc224; delete AN.cfg.lc224Proc; delete AN.cfg.lc224Data;
+        const _sel = $id('cf-lc224'); if (_sel) _sel.value = 'sim';
+        toast('⚖️ Para DESLIGAR a LC 224/2025 informe o número do processo e a data da decisão judicial — sem o registro, a regra continua aplicada.');
+      } else { AN.cfg.lc224Proc = _lcProc; AN.cfg.lc224Data = _lcData; }
+    } else { delete AN.cfg.lc224Proc; delete AN.cfg.lc224Data; } }
+  // v7.104.0 · B15 — regime tributário DESTE ano-base (em branco = herda a ficha da empresa)
+  { const _rg = String(vRaw('cf-regime-ano', _cfg.regimeAno||'')||'').trim();
+    if (_rg) AN.cfg.regimeAno = _rg; else delete AN.cfg.regimeAno; }
   // v7.35.0 · período de apuração do Lucro Real e saldos de prejuízo (podem não existir em telas antigas)
   if (AN.cfg.arredondaPorTributo !== true) delete AN.cfg.arredondaPorTributo;   // v7.62.0: ausente ≠ false
   if (!(+AN.cfg.rbaa > 0)) delete AN.cfg.rbaa;                       // v7.70.0: em branco = não informada
@@ -6224,6 +6289,8 @@ function snAvisoHtml(el) {
 function anRecalcular() {
   setTimeout(()=>{ try{ anTravaRender(); }catch(e){/* silêncio proposital (A10): banner cosmético */} }, 0);   // v7.26.0: banner da trava acompanha o recálculo
   if (!AN) return;
+  if (AN_CARREGANDO) { anRenderCarregando(); return; }      // v7.99.3 · B04: nenhuma conclusão antes da carga
+  if (AN._erroLeitura) { anRenderErroLeitura(); return; }   // v7.99.3 · B04: leitura falhou — nenhum número na tela
   let r;
   try { r = calcular(AN, PARAMS.anexos, folhaPercDaEmpresa()); } catch(e) { console.error(e); return; }
   AN._res = r;
@@ -6360,6 +6427,36 @@ function lrQuadroApuracao(r){
   </div>`;
 }
 
+// ═══ v7.99.3 · B04 — ESTADO "CARREGANDO" E BLOQUEIO EM FALHA DE LEITURA ═══
+// (A04 e achado novo 4 da auditoria de 18/10/2026.) Dois defeitos com a mesma raiz: ao trocar de
+// empresa a tela desenhava uma análise NOVA (receita zero, conclusões calculadas do nada) no
+// intervalo entre o pedido e a resposta do banco; e, se a leitura FALHASSE, o catch criava uma
+// análise em branco SEM a marca de placeholder — editável e gravável por cima da linha existente,
+// porque sem `_verEm` a guarda de conflito de versão nem dispara. Agora: enquanto carrega, os
+// cartões mostram o estado "carregando" e nada pode ser editado, importado ou gravado; se a
+// leitura falhar, a análise fica BLOQUEADA (placeholder + `_erroLeitura`) até uma recarga dar certo.
+function anBloqueada(){
+  if (AN_CARREGANDO) return 'carregando';
+  if (AN && AN._erroLeitura) return 'erro';
+  return '';
+}
+function anBloqueioAviso(){
+  toast(anBloqueada()==='carregando'
+    ? '⏳ A análise ainda está sendo carregada do banco — aguarde a carga terminar.'
+    : '⛔ A leitura desta análise FALHOU — nada pode ser editado ou gravado sobre ela. Selecione a empresa de novo (ou recarregue a página) para tentar outra vez.');
+}
+function anRenderCarregando(){
+  const r = $id('an-resumo'), v = $id('an-veredito'), d = $id('an-detalhe');
+  if (r) r.innerHTML = '<div class="stat" style="grid-column:1/-1;opacity:.8"><div class="n" style="font-size:16px">⏳ Carregando a análise do banco…</div><div class="l">nenhuma conclusão é exibida antes de a carga terminar</div></div>';
+  if (v) v.style.display = 'none';
+  if (d) d.innerHTML = '';
+}
+function anRenderErroLeitura(){
+  const r = $id('an-resumo'), v = $id('an-veredito'), d = $id('an-detalhe');
+  if (r) r.innerHTML = '<div class="stat" style="grid-column:1/-1;border:1px solid var(--danger,#c0392b)"><div class="n" style="font-size:15px;color:var(--danger,#c0392b)">⛔ A leitura desta análise falhou — nenhum número é exibido</div><div class="l">'+esc(String((AN && AN._erroLeitura)||''))+'</div><div class="sub" style="margin-top:6px"><button class="btn" onclick="anTrocarEmpresa()">Tentar de novo</button></div></div>';
+  if (v) v.style.display = 'none';
+  if (d) d.innerHTML = '';
+}
 async function anTrocarEmpresa() {
   const cnpj = $id('an-empresa').value;
   // trocar de empresa/ano recarrega do banco: o que foi importado e não salvo se perderia em silêncio
@@ -6379,6 +6476,7 @@ async function anTrocarEmpresa() {
     if (APP.page==='config') anRenderConfig();
     return;
   }
+  AN_CARREGANDO = true; anRenderCarregando();   // v7.99.3 · B04: nenhuma conclusão aparece antes da carga terminar
   try {
     const rows = await supa('GET','atp_analises',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, limit:'1' } });
     AN = anNormalizar(rows.length ? rows[0].dados : null, cnpj, ano);
@@ -6391,12 +6489,23 @@ async function anTrocarEmpresa() {
       AN._snapshot = rows[0].snapshot || null;
       AN._fechadoPor = rows[0].fechado_por || ''; AN._fechadoEm = rows[0].fechado_em || null;
     }
-  } catch { AN = anNovo(cnpj, ano); }
-  delete AN._placeholder;   // v7.94.1 · carregada (ou criada de propósito para empresa sem linha): deixa de ser placeholder
-  audFotoBase(AN);          // v7.94.3 · retrato do que veio do banco: a próxima importação compara contra isto
-  AN_SUJO = false;
-  anRenderTabs(); anRenderGrid(); anRecalcular();
-  if (APP.page==='config') anRenderConfig();   // v7.44.0: a carga assíncrona redesenha também a Configuração — antes ela podia exibir padrões de fábrica sobre empresa com configuração salva
+    delete AN._placeholder;   // v7.94.1 · carregada (ou criada de propósito para empresa sem linha): deixa de ser placeholder
+    audFotoBase(AN);          // v7.94.3 · retrato do que veio do banco: a próxima importação compara contra isto
+  } catch (e) {
+    // v7.99.3 · B04 (achado novo 4): a leitura falhou — a versão anterior criava aqui uma análise
+    // EM BRANCO, apagava o placeholder e deixava o Salvar passar (sem `_verEm` a guarda de
+    // conflito não dispara). Agora a análise nasce bloqueada e nada é editável ou gravável.
+    console.error('anTrocarEmpresa — leitura falhou:', e);
+    AN = anNovo(cnpj, ano);
+    AN._placeholder = true;   // segue placeholder: anSalvar continua recusando gravar por cima de linha existente
+    AN._erroLeitura = (e && e.message) || String(e);
+    toast('⚠️ A leitura da análise no banco FALHOU — edição e gravação bloqueadas até uma recarga dar certo.');
+  } finally {
+    AN_SUJO = false;
+    AN_CARREGANDO = false;   // v7.99.3 · carga terminou (bem ou mal): o estado some e a tela diz o que houve
+    anRenderTabs(); anRenderGrid(); anRecalcular();
+    if (APP.page==='config') anRenderConfig();   // v7.44.0: a carga assíncrona redesenha também a Configuração — antes ela podia exibir padrões de fábrica sobre empresa com configuração salva
+  }
 }
 // ═══ v7.49.0 · AS ALÍQUOTAS SÃO DA EMPRESA; O ANO SÓ AJUSTA O QUE MUDOU ═══
 // Não existe cadastro central de alíquotas: a configuração vive dentro da análise de cada ano
@@ -6407,7 +6516,8 @@ async function anTrocarEmpresa() {
 const CFG_HERDA = ['iss','icmsV','icmsC','ipiV','ipiC','icmsTranspV','transpCredPres','lpBaseServ',
   'lpBaseCom','lpBaseServCsll','lpBaseComCsll','transpPresuncao','folhaPerc','adicionalIR','sublimite',
   'travaNoDas','lrPeriodo','projJanela','anoRefParecer','credLRpct',
-  'lc224'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa
+  'lc224','lc224Proc','lc224Data',
+  'regimeAno'];   // v7.89.0 · o % creditável é parâmetro da empresa, herda · v7.99.0 · liminar da LC 224 também é da empresa · v7.99.5 · B07: o registro da decisão herda junto · v7.104.0 · B15: o regime do ano herda como ponto de partida
 // NÃO se herda o que é do ano: rbt12Lanc, rbt12ExpLanc, folha12Lanc, rbt12Direto, rbt12ExpDireto, lrPrejIrpj,
 // lrPrejCsll e snAntAcima — são apuração, não parâmetro.
 async function cfgHerdar(an, cnpj, ano){
@@ -6425,6 +6535,54 @@ async function cfgHerdar(an, cnpj, ano){
 }
 function anMudou(){ anTrocarEmpresa(); }
 // ═══ v7.12: histórico de versões — as 3 últimas por empresa/ano, com autoria ═══
+// ═══ v7.101.0 · B09 — REGISTRO DE EXECUÇÕES (imutável) ═══
+// Cada gravação que produz números (salvar, fechar, refechar) deixa um registro imutável na
+// atp_execucoes: quem, quando, com que motor (app + lacre), com que parâmetros (impressões
+// digitais) e que totais saíram. A tabela é só-INSERT (setup_v7101.sql — revisado e aplicado
+// POR VOCÊ; o app nunca mexe no banco sozinho); sem ela, o app funciona normalmente e avisa
+// uma vez por sessão no console.
+let EXEC_LOG_AVISADO = false;
+function execParams(cfg){
+  const h = o => { try { return lacreHash(JSON.stringify(o ?? null)); } catch(e){ return 'erro'; } };
+  return { anexos: h(PARAMS.anexos), folha: h(PARAMS.folha), reforma: h(PARAMS.reforma || null), cfg: h(cfg || null) };
+}
+async function execRegistrar(origem, cnpj, ano, res, reforma, cfg){
+  if (!cnpj || !res || !res.totais) return false;
+  const T = res.totais;
+  let cen = null;
+  try { const C = calcCenariosReforma(res, reforma || null); const L33 = C.REF[C.REF.length-1];
+    cen = { dentro: cenDentro(T, L33), hib: L33.hib, regular: L33.regular }; } catch(e){/* cen2033 é opcional no registro */}
+  const reg = { cnpj, ano: +ano, em: new Date().toISOString(), origem, app: APP_VERSAO, lacre: LACRE_HASH,
+    usuario: APP?.user?.email || null,
+    totais: { receita:+T.receita||0, simples:+T.simples||0, lp:+T.lp||0, lr:+T.lr||0, das:+T.das||0, lrIncompleto: !!T.lrIncompleto },
+    cen2033: cen, params: execParams(cfg) };
+  try { await supa('POST','atp_execucoes',{ body:[reg] }); return true; }
+  catch(e){ if (!EXEC_LOG_AVISADO){ EXEC_LOG_AVISADO = true; console.warn('execução não registrada (rode o setup_v7101.sql):', e.message); } return false; }
+}
+// v7.101.0 · B09 — visor do registro: quando, quem, motor e totais de cada gravação
+async function anExecucoes(){
+  const cnpj = (AN && AN.cnpj) || $id('an-empresa').value || '';
+  const ano  = +(AN?.ano) || +$id('an-ano').value;
+  if (!cnpj) { toast('Selecione a empresa no topo.'); return; }
+  let rs = [];
+  try { rs = await supa('GET','atp_execucoes',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, order:'em.desc', limit:'40' } }) || []; }
+  catch(e){ alert('Não consegui ler o registro de execuções.\n\nSe o script setup_v7101.sql ainda não foi executado no Supabase, a tabela não existe.\n\nDetalhe: ' + (e.message||e)); return; }
+  const el = $id('an-hist'); if (!el) return;
+  el.style.display = '';
+  if (!rs.length){
+    el.innerHTML = `<h3 style="margin:0">Execuções gravadas — registro imutável</h3>
+      <div class="hint">Nenhuma execução registrada desta análise (${ano}) — a primeira entra na próxima gravação (após o setup_v7101.sql).</div>
+      <button class="btn" style="margin-top:10px" onclick="$id('an-hist').style.display='none'">Fechar</button>`;
+    return;
+  }
+  const linhas = rs.map(r => `<tr><td>${new Date(r.em).toLocaleString('pt-BR')}</td><td>${esc(r.origem||'')}</td><td>${esc(r.usuario||'—')}</td>
+    <td style="white-space:nowrap">v${esc(String(r.app||'?'))} · ${esc(String(r.lacre||'?'))}</td>
+    <td class="num">${r.totais?fmtR(+r.totais.simples||0):'—'}</td><td class="num">${r.totais?fmtR(+r.totais.lp||0):'—'}</td><td class="num">${r.totais?fmtR(+r.totais.lr||0):'—'}</td></tr>`).join('');
+  el.innerHTML = `<h3 style="margin:0">Execuções gravadas — registro imutável (B09)</h3>
+    <div class="hint">Cada gravação (salvar, fechar, refechar) registra quem, quando, o motor (app + lacre), as impressões digitais dos parâmetros e os totais. A tabela não aceita alteração nem exclusão pela API.</div>
+    <div style="overflow-x:auto;margin-top:8px"><table><thead><tr><th>Quando</th><th>Origem</th><th>Por</th><th>Motor</th><th class="num">Simples</th><th class="num">Presumido</th><th class="num">Real</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <button class="btn" style="margin-top:10px" onclick="$id('an-hist').style.display='none'">Fechar</button>`;
+}
 async function anHistGravar(reg){
   try {
     await supa('POST','atp_analises_hist',{ body:[{ cnpj:reg.cnpj, ano:reg.ano, dados:reg.dados,
@@ -6438,7 +6596,7 @@ async function anHistorico(){
   let rs = [];
   try {
     rs = await supa('GET','atp_analises_hist',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`,
-      order:'gravado_em.desc', limit:'3' } }) || [];
+      order:'gravado_em.desc', limit:'12' } }) || [];   // v7.101.1 · B10: 12 versões (a poda do banco preserva 24)
   } catch(e){
     alert('Não consegui ler o histórico.\n\nSe o script setup_v712.sql ainda não foi executado no Supabase, a tabela não existe.\n\nDetalhe: ' + (e.message||e));
     return;
@@ -6482,7 +6640,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.99.1';
+const APP_VERSAO = '7.104.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 function anSnapshotCalc(){
   const T = AN?._res?.totais || {};
@@ -6493,10 +6651,56 @@ function anSnapshotCalc(){
   try { const C = calcCenariosReforma(AN._res, AN.reforma||null); const L33 = C.REF[C.REF.length-1];
     cen = { dentro: cenDentro(T, L33), hib: L33.hib, regular: L33.regular }; }
   catch(e){ cenErro = String(e && e.message || e); console.error('anSnapshotCalc/cenários:', e); }
-  return { versao: APP_VERSAO, em: new Date().toISOString(),
+  // ═══ v7.100.0 · B08 — A EXECUÇÃO COMPLETA VIAJA NO SNAPSHOT ═══
+  // Resultado, cenários (congelados em res.__cen) e a base projetada dos documentos. Com ela,
+  // Relatórios, parecer e conferência de análise fechada saem do FECHAMENTO, não do recálculo:
+  // o parecer emitido não muda quando o motor muda (decisão B08 — snapshot, com aviso e botão
+  // de refechamento). Se a serialização falhar, o snapshot sai sem exec e o app avisa que a
+  // análise segue no comportamento antigo (recálculo com aviso).
+  let exec = null, execErro = null;
+  try {
+    const res = JSON.parse(JSON.stringify(AN._res));
+    res.__cen = JSON.parse(JSON.stringify(calcCenariosReforma(AN._res, AN.reforma||null)));
+    exec = { res };
+    const B = baseReformaDe(AN, AN._res, AN.reforma||null);
+    if (B.proj){
+      const bres = JSON.parse(JSON.stringify(B.res));
+      bres.__cen = JSON.parse(JSON.stringify(calcCenariosReforma(B.res, B.reforma)));
+      exec.base = { res: bres, reforma: B.reforma ? JSON.parse(JSON.stringify(B.reforma)) : null,
+                    proj: JSON.parse(JSON.stringify(B.proj)), k: B.k };
+    }
+  } catch(e){ exec = null; execErro = String(e && e.message || e); console.error('anSnapshotCalc/exec:', e); }
+  return { versao: APP_VERSAO, lacre: LACRE_HASH, em: new Date().toISOString(),
     totais: { receita:T.receita||0, receitaExp:T.receitaExp||0, simples:T.simples||0, lp:T.lp||0, lr:T.lr||0, das:T.das||0 },
     cen2033: cen, cen2033Erro: cenErro,          // v7.63.0 (A06): a falha viaja no snapshot
+    exec, execErro,                              // v7.100.0 · B08
     dasMeses: (AN?._res?.meses||[]).map(M=>+(M.das||0).toFixed(2)) };
+}
+// v7.100.0 · B08 — refechar com o motor atual: recalcula, grava um NOVO snapshot (com a execução
+// congelada) e mantém a análise fechada. O snapshot anterior deixa de valer e o refechamento fica
+// registrado no histórico. É o caminho para atualizar um fechamento antigo ou divergente sem o
+// vai-e-vem de reabrir e fechar à mão.
+async function anRefecharCore(){
+  if (!AN || !AN.cnpj || !anTravada()) return false;
+  try { AN._res = calcular(AN, PARAMS.anexos, folhaPercDaEmpresa()); } catch(e){ toast('Não foi possível recalcular: ' + e.message); return false; }
+  const antes = (AN._snapshot||{}).versao || '?';
+  const snap = anSnapshotCalc();
+  AN._status = 'fechada'; AN._snapshot = snap; AN._fechadoPor = APP?.user?.email||''; AN._fechadoEm = snap.em;
+  try {
+    await supa('PATCH', `atp_analises?cnpj=eq.${AN.cnpj}&ano=eq.${AN.ano}`,
+      { body:{ status:'fechada', fechado_por: AN._fechadoPor, fechado_em: snap.em, snapshot: snap } });
+    await anHistGravar({ cnpj:AN.cnpj, ano:AN.ano, dados:{...AN,_res:undefined,_verEm:undefined},
+      resumo:{ evento:'refechada', de:'app v'+antes, para:'app v'+APP_VERSAO, por: APP?.user?.email||'' } });
+    await execRegistrar('refechar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
+  } catch(e){ console.error('anRefecharCore:', e); toast('Não foi possível gravar o refechamento: ' + e.message); return false; }
+  anTravaRender();
+  return true;
+}
+async function anRefechar(){
+  if (!AN || !AN.cnpj){ toast('Selecione a empresa e abra a análise primeiro.'); return; }
+  if (!anTravada()){ toast('A análise não está fechada — use 🔒 Fechar análise.'); return; }
+  if (!await dlgSimNao('Refechar com o motor atual?', 'O aplicativo recalcula a análise com o motor atual (app v'+APP_VERSAO+'), grava um NOVO snapshot com a execução congelada e mantém a análise fechada. O snapshot anterior deixa de valer — se um parecer já foi entregue com os números antigos, avalie reemiti-lo. O refechamento fica registrado no histórico.', 'Sim, refechar', 'Não')) return;
+  if (await anRefecharCore()) toast('Análise refechada ✓ — snapshot novo com a execução do motor atual (app v'+APP_VERSAO+').');
 }
 async function anFecharAbrir(){
   if (!AN || !AN.cnpj){ toast('Selecione a empresa e abra a análise primeiro.'); return; }
@@ -6509,12 +6713,13 @@ async function anFecharAbrir(){
     toast('Análise reaberta — edição liberada.'); anTravaRender(); return;
   }
   if (AN_SUJO){ toast('Salve a análise antes de fechar (o snapshot congela a versão gravada).'); return; }
-  if (!await dlgSimNao('Fechar a análise?', 'O fechamento congela os resultados num snapshot (com a versão do app), registra quem fechou e bloqueia edição e importação. Após futuras atualizações do aplicativo, qualquer divergência entre o recálculo e o snapshot será avisada em vez de aplicada em silêncio.', 'Sim, fechar', 'Não')) return;
+  if (!await dlgSimNao('Fechar a análise?', 'O fechamento congela os resultados numa EXECUÇÃO completa (versão do app, lacre do motor, resultado e cenários) — os relatórios e o parecer desta análise passam a sair dela, e não mudam com atualizações do aplicativo. Registra quem fechou e bloqueia edição e importação; divergências do motor atual são avisadas, nunca aplicadas em silêncio.', 'Sim, fechar', 'Não')) return;
   const snap = anSnapshotCalc();
   AN._status = 'fechada'; AN._snapshot = snap; AN._fechadoPor = APP?.user?.email||''; AN._fechadoEm = snap.em;
   try {
     await supa('PATCH', `atp_analises?cnpj=eq.${AN.cnpj}&ano=eq.${AN.ano}`,
       { body:{ status:'fechada', fechado_por: AN._fechadoPor, fechado_em: snap.em, snapshot: snap } });
+    await execRegistrar('fechar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
     toast(`Análise ${AN.ano} fechada ✓ — snapshot gravado (app v${APP_VERSAO}).`);
   } catch(e){ alert('Não foi possível gravar o fechamento: '+e.message+'\n\nRode o setup_v726.sql no Supabase (colunas status/snapshot) e tente de novo.'); AN._status='aberta'; }
   anTravaRender();
@@ -6534,13 +6739,18 @@ function anTravaRender(){
     }
     if (difs.length) divg = `<div style="margin-top:6px;padding:8px 10px;border-left:4px solid #b03a2e;background:#fdedec;font-size:12px">
       <b>⚠️ O recálculo atual (app v${APP_VERSAO}) diverge do snapshot do fechamento (app v${snap.versao||'?'})</b> — os valores fechados permanecem no snapshot; nada foi alterado:<br>${difs.map(esc).join('<br>')}
-      <br><span class="hint">Para adotar os números novos, reabra a análise (🔓), recalcule e feche de novo.</span></div>`;
+      <br><span class="hint">Para adotar os números novos, use 🔁 Refechar com o motor atual, abaixo.</span></div>`;
   }
-  box.innerHTML = `<div class="card" style="border-left:4px solid #1e8449"><b>🔒 Análise fechada</b> por ${esc(AN._fechadoPor||'?')} em ${AN._fechadoEm?new Date(AN._fechadoEm).toLocaleString('pt-BR'):'?'} (app v${esc(String((AN._snapshot||{}).versao||'?'))}) — edição e importação bloqueadas.${divg}</div>`;
+  // v7.100.0 · B08: fechamento antigo (sem execução congelada) é avisado, e o refechamento vira um botão
+  const semExec = !(snap.exec && snap.exec.res)
+    ? `<div class="hint" style="margin-top:4px">⚠️ Fechamento anterior à v7.100.0 — sem execução congelada: os relatórios desta análise ainda usam o recálculo do motor atual. Refeche para congelar os números emitidos.</div>` : '';
+  box.innerHTML = `<div class="card" style="border-left:4px solid #1e8449"><b>🔒 Análise fechada</b> por ${esc(AN._fechadoPor||'?')} em ${AN._fechadoEm?new Date(AN._fechadoEm).toLocaleString('pt-BR'):'?'} (app v${esc(String((AN._snapshot||{}).versao||'?'))}) — edição e importação bloqueadas.${semExec}${divg}
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="anRefechar()" title="Recalcula com o motor atual (v${APP_VERSAO}) e grava um NOVO snapshot com a execução congelada — o anterior deixa de valer; o refechamento fica no histórico.">🔁 Refechar com o motor atual</button></div></div>`;
 }
 
 async function anSalvar() {
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para editar e gravar.'); return false; }
+  if (anBloqueada()){ anBloqueioAviso(); return false; }   // v7.99.3 · B04: leitura com erro (ou em andamento) não permite salvar
   if (!AN || !AN.cnpj) { toast('Selecione a empresa no topo (ou importe PGDAS/Faturamento, que o cadastro é automático).'); return false; }
   // ═══ v7.49.0 · rede de segurança: gravar em empresa/ano diferente do que está na tela ═══
   // Duas vezes já perdemos configuração assim (o 💾 da Reforma na v7.48.3 e a Configuração agora).
@@ -6575,9 +6785,11 @@ async function anSalvar() {
   }
   const T = AN._res?.totais || {};
   const body = [{ cnpj:AN.cnpj, ano:AN.ano, dados:{...AN, _res:undefined, _verEm:undefined, _placeholder:undefined},
-    resumo:{ receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto }, atualizado_em:new Date().toISOString() }];
+    resumo:{ receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto,
+      motor:{ app: APP_VERSAO, lacre: LACRE_HASH } }, atualizado_em:new Date().toISOString() }];   // v7.99.4 · B05: o resumo declara o motor que o calculou
   try { await supa('POST','atp_analises?on_conflict=cnpj,ano',{ body }); AN_SUJO = false; AN._verEm = body[0].atualizado_em;
     await anHistGravar(body[0]);
+    await execRegistrar('salvar', AN.cnpj, AN.ano, AN._res, AN.reforma||null, AN.cfg);   // v7.101.0 · B09
     if (AN._cfgHerdadaDe) delete AN._cfgHerdadaDe;   // v7.49.0: gravado — deixa de ser herança
     toast('Análise salva.'); return true; }
   catch(e){ console.error('anSalvar:', e); toast('Erro ao salvar: '+e.message); return false; }
@@ -6699,7 +6911,7 @@ async function issCorrigir(i){
 // ═══════════ PARÂMETROS ═══════════
 function prAuto(){
   if (AN) anRecalcular();
-  if (RL && RL.dados) { RL.res = calcular(RL.dados, PARAMS.anexos, folhaPercDaEmpresa(RL.dados.cfg)); }
+  if (RL && RL.dados && !RL.exec) { RL.res = calcular(RL.dados, PARAMS.anexos, folhaPercDaEmpresa(RL.dados.cfg)); }   // v7.100.0 · B08: execução congelada não se recalcula por troca de parâmetro
   // v7.16.3: a Reforma aberta acompanha na hora a mudança das alíquotas
   if (RF) { RF.aliq = JSON.parse(JSON.stringify(PARAMS.reforma || RF_ALIQ_DEFAULT)); rfCalcular?.(); }
 }
@@ -6818,6 +7030,7 @@ function anInicioFichaBotaoHtml(c){
 function anInicioDaFichaAplicar(){
   if (!AN) return;
   if (anTravada()){ toast('Análise FECHADA 🔒 — reabra (🔓) para alterar.'); return; }
+  if (anBloqueada()){ anBloqueioAviso(); return; }   // v7.99.3 · B04
   const de = String(AN.cfg.inicioAtividade||'');
   if (!anInicioDaFicha(AN)){ toast('A ficha da empresa não tem data de abertura no ano-base ou no anterior.'); return; }
   audCelula('cfg.inicioAtividade', null, de || null, AN.cfg.inicioAtividade, 'ficha', { origemPara:'E' });
@@ -7585,6 +7798,10 @@ function cenRank(T, L){
 // Cenários da Reforma p/ empresa do Simples: por dentro × híbrido (LC 214) × fora do Simples.
 // Mescla os dados salvos com os padrões ano a ano (análises antigas podem não ter todos os campos).
 function calcCenariosReforma(res, reforma) {
+  // v7.100.0 · B08: execução CONGELADA no fechamento carrega os próprios cenários (res.__cen).
+  // Devolvê-los aqui — no único portão dos cenários — é o que impede o motor atual de recalcular
+  // um documento emitido de análise fechada. Resultado vivo não tem __cen e segue o caminho normal.
+  if (res && res.__cen) return res.__cen;
   const T = res.totais, meses = res.meses;
   const rfx = Object.assign({ benefRec:{}, benefCred:{}, contra:{}, receita:0, baseIS:0, credSimplesPct:0 }, reforma||{});
   // v7.1 (A5): sem compras informadas na aba Reforma, usa as compras de revenda da própria análise
@@ -8079,7 +8296,7 @@ function qxExportar(){
 }
 
 // ═══ v7.30.0 — LACRE DO MOTOR DE CÁLCULO ═══
-// Dois casos-gabarito (os mesmos da suíte de testes/CI) viajam DENTRO do app. A cada troca de
+// Os casos-gabarito da suíte de testes/CI (dois na origem; QUATRO desde a v7.95.1) viajam DENTRO do app. A cada troca de
 // versão, o app recalcula tudo com os PADRÕES DE FÁBRICA (anexos, folha, alíquotas da Reforma —
 // parâmetros editados pelo usuário NÃO entram) e confere o resultado, ao centavo, contra o selo
 // (hash) gravado nesta versão. Divergência = o motor mudou sem intenção → alerta vermelho.
@@ -8101,6 +8318,37 @@ const LACRE_CASOS = [
   // despesas creditáveis (aluguel PJ, energia, administrativas) sem composição → NID (v7.95.0). Cobre o que os casos 1-3 não cobriam.
   { nome:'Caso 4 — Empresa nova (RBT12 zero, Anexo V, despesas creditáveis)', inp: {"cnpj": "44444444000199", "ano": 2026, "cfg": {"iss": 0.05, "icmsV": 0, "icmsC": 0, "ipiV": 0, "ipiC": 0, "rbt12Direto": 0, "rbt12Lanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rbt12ExpLanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "folha12Lanc": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "lpBaseServ": 0.32, "lpBaseCom": 0.08, "lpBaseServCsll": 0, "lpBaseComCsll": 0.12, "transpPresuncao": "cargas", "icmsTranspV": 0, "transpCredPres": 0, "folhaPerc": {}, "adicionalIR": "trimestral", "sublimite": "auto", "lrPeriodo": "trimestral", "lrPrejIrpj": 0, "lrPrejCsll": 0, "inicioAtividade": "2026-02"}, "receitas": {"a5r": [0, 0, 36848.65, 30515.5, 31904.89, 32513.52, 34000, 34000, 34000, 34000, 34000, 34000]}, "folha": {"prolabore": [0, 0, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600], "salarios": [0, 0, 1436.09, 1436.09, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08], "baseFgts": [0, 0, 1436.09, 1436.09, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08, 1436.08], "prov13": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "provFerias": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, "folha13": {"prolabore13": 0, "salarios13": 0, "baseFgts13": 0}, "compras": {}, "icms": {"cred": [null, null, null, null, null, null, null, null, null, null, null, null], "deb": [null, null, null, null, null, null, null, null, null, null, null, null]}, "ipi": {"cred": [null, null, null, null, null, null, null, null, null, null, null, null], "deb": [null, null, null, null, null, null, null, null, null, null, null, null]}, "despesas": {"adm": [0, 0, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000], "vendas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "fiscais": [0, 0, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300], "financeiras": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "outras": [0, 0, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200], "credAlugueisPJ": [0, 0, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500], "credEnergia": [0, 0, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]}, "origem": {}} }];
 const LACRE_HASH = '0a257d66';   // v7.99.0 — RE-SELADO: LC 224/2025, art. 4º — acréscimo de 10% na presunção do IRPJ/CSLL do Presumido sobre a receita acima de R$ 1,25 mi/trimestre (acumulado no ano; IRPJ desde jan/2026, CSLL desde abr/2026; IN RFB 2.305/2025 e 2.306/2026). Casos 1 (2025), 2 e 4 (abaixo do limite) idênticos ao centavo; caso 3 (2026, 7,97 mi) LP 1.720.823,72 → 1.733.585,77 (IRPJ +5.550,37, adicional +3.700,25, CSLL +3.511,44); LR, DAS e Reforma "dentro/híbrido" intactos. Anterior: 8ab9c16a (v7.95.1). // v7.95.1 — RE-SELADO: entra o CASO 4 (empresa nova, RBT12 zero, Anexo V, despesas creditáveis); casos 1-3 idênticos ao centavo. Anterior: ba7dcb90 (v7.95.0). // v7.95.0 — RE-SELADO: base própria do híbrido (dedução do ICMS/ISS da partilha) e despesas creditáveis na composição; casos 1, 2 e 3 mudam no híbrido 2027-2032 e no limite superior. Anterior: 22197ef1 (v7.94.0). // v7.94.0 — RE-SELADO: ICMS/ISS do período impedido pela mesma conta gráfica do Presumido/Real (aba ICMS·IPI prevalece) e partilha sem ICMS/ISS no mês impedido; casos 1 e 2 intactos, caso 3 muda. Anterior: 453f7b32 (v7.91.0). // v7.48.0 — RE-SELADO: o ICMS destacado passou a sair da base do IBS/CBS (LC 214, art. 12, §2º, V) e o transporte passou a gerar débito de ICMS no LP/LR. Anterior: e1a25234 (v7.45.0); antes fa39eefb (v7.35.0)
+// ═══ v7.103.0 · B14 — TABELA DE REGRAS DO MOTOR: VIGÊNCIA, FONTE E APROVAÇÃO ═══
+// Cada regra legal que o motor aplica entra aqui com a data em que a LEI passou a valer
+// (vigencia), a fonte, a versão do app que a implementou, o selo do lacre daquela entrega e o
+// registro de aprovação (changelog, decisão numerada ou chave de configuração). Regra nova entra
+// com data de início e o cálculo antigo não muda — o que a suíte prova com o lacre (casos
+// históricos intactos) e com o teste de vigência (ex.: LC 224 não alcança ano-base 2025).
+const REGRAS_VIGENCIA = [
+  { id:'lc123-faixas', regra:'Alíquota efetiva por faixa do RBT12 (Anexos I–V), limites "até" inclusivos', fonte:'LC 123/2006, art. 18 e Anexos', vigencia:'desde 01/2018', versao:'7.0', selo:'conferida pelo lacre 0a257d66 e pela suíte independente (B13)', aprovacao:'núcleo do motor; gabaritos da planilha de referência' },
+  { id:'fator-r', regra:'Fator R mensal (folha ÷ receita, 12 meses rolantes) decide Anexo III × V', fonte:'LC 123/2006, art. 18, § 5º-J; Res. CGSN 140/2018, art. 26', vigencia:'desde 01/2018', versao:'7.17.0', selo:'0a257d66', aprovacao:'decisão 8.10 (conjunto do art. 26; nenhum segundo Fator R)' },
+  { id:'sublimite-trava', regra:'Acima do sublimite de R$ 3,6 mi: ICMS/ISS pela alíquota efetiva máxima da 5ª faixa (trava), com os três estados do art. 24', fonte:'LC 123/2006, arts. 13-A e 20; Res. CGSN 140/2018, arts. 21, III, "b", e 24', vigencia:'desde 01/2018', versao:'7.42.0', selo:'0a257d66', aprovacao:'premissa declarada na v7.42 (RBT12 efetivo do mês); suíte independente caso 10' },
+  { id:'rbt12-proporcional', regra:'RBT12 proporcionalizado para empresa com menos de 13 meses de atividade', fonte:'Res. CGSN 140/2018, art. 22, §§ 2º e 3º', vigencia:'desde 01/2018', versao:'7.52.0', selo:'47f3f10b (casos intactos)', aprovacao:'decisões 8.14/8.15; validada contra 6 DAS declarados (desvio máx. R$ 0,01)' },
+  { id:'impedimento-sublimite', regra:'Excesso do sublimite acima de 20%: ICMS/ISS fora do DAS a partir do mês seguinte, pela conta gráfica', fonte:'LC 123/2006, art. 20, § 1º; Res. CGSN 140/2018, art. 12', vigencia:'desde 01/2018', versao:'7.58.0 e 7.94.0', selo:'453f7b32 → 22197ef1 (re-selado, caso 3)', aprovacao:'decisão 8.20 (varredura sobre o realizado)' },
+  { id:'tema69', regra:'ICMS destacado fora da base de PIS/COFINS no LP (sem dupla exclusão do monofásico); exclusão no LR', fonte:'STF, Tema 69 (RE 574.706); Lei 14.592/2023', vigencia:'tese com trânsito em 2021', versao:'7.18.0', selo:'0a257d66', aprovacao:'changelog v7.18.0; campos nota a nota desde a v7.89.0' },
+  { id:'icms-simples-mei', regra:'Compra de MEI/Simples fora da base do crédito de ICMS; crédito só do que a optante destaca', fonte:'LC 123/2006, art. 23, caput e § 1º', vigencia:'desde 12/2006', versao:'7.97.0', selo:'8ab9c16a (intocado — campo novo, padrão zero)', aprovacao:'changelog v7.97.0 (achado A06 da auditoria)' },
+  { id:'icms-saldo-credor', regra:'Saldo credor de ICMS transportado mês a mês (nunca ICMS negativo no total)', fonte:'não cumulatividade — CF, art. 155, § 2º, I', vigencia:'estrutural', versao:'7.96.0', selo:'re-selado na v7.96.0', aprovacao:'changelog v7.96.0 (origem do Presumido negativo da auditoria)' },
+  { id:'lr-trimestral', regra:'Lucro Real trimestral: mês negativo entra na base; prejuízo compensado com trava de 30%; adicional após a compensação', fonte:'Lei 9.065/95, art. 15; Lei 9.430/96, arts. 1º e 2º', vigencia:'desde 01/1995', versao:'7.35.0', selo:'b394cf9e → fa39eefb (re-selado)', aprovacao:'changelog v7.35.0; modo mensal-legado preservado; suíte independente caso 16' },
+  { id:'lc224', regra:'Presunção do IRPJ/CSLL +10% sobre a receita acima de R$ 1,25 mi/trimestre (acumulado no ano)', fonte:'LC 224/2025, art. 4º; IN RFB 2.305/2025 e 2.306/2026', vigencia:'IRPJ desde 01/2026 · CSLL desde 04/2026', versao:'7.99.0', selo:'8ab9c16a → 0a257d66 (re-selado)', aprovacao:'changelog v7.99.0; chave cfg.lc224 com registro de liminar obrigatório (v7.99.5 · B07)' },
+  { id:'ibscbs-base', regra:'ISS configurado e ICMS destacado fora da base do IBS/CBS, pelo remanescente de cada ano', fonte:'LC 214/2025, art. 12, § 2º, V', vigencia:'transição 2027–2032', versao:'7.45.0 e 7.48.0', selo:'5a5562df → e1a25234 (re-selado)', aprovacao:'changelog v7.45.0/v7.48.0' },
+  { id:'partilha-190', regra:'Partilha do DAS por vigência na transição (novos Anexos I–V) e regime híbrido do art. 22-A', fonte:'Res. CGSN 190/2026; EC 132/2023', vigencia:'de 2027 a 2033', versao:'7.17.0 e 7.95.0', selo:'22197ef1 → ba7dcb90 (re-selado: base própria do híbrido)', aprovacao:'changelog v7.95.0 (revisão técnica de 17/09/2026)' },
+  { id:'iss-retido', regra:'ISS retido na fonte NÃO deduz a base do IBS/CBS (dedução = ISS do LP)', fonte:'LC 214/2025, art. 12, § 2º, V (leitura conservadora)', vigencia:'transição 2027–2032', versao:'7.54.0', selo:'47f3f10b', aprovacao:'decisão 8.9, declarada no app; chave cfg.dedIssRetido para a leitura alternativa (v7.69.0)' },
+  { id:'credito-art58', regra:'Crédito de IBS/CBS sobre compra de optante: montante devido no Simples (1ª faixa do Anexo I, conservador)', fonte:'LC 214/2025, art. 47, § 9º; Res. CGSN 190/2026, art. 58, §§ 4º-6º', vigencia:'de 2027 em diante', versao:'7.29.0 e 7.91.0', selo:'5996c4be → 453f7b32 (re-selado: fim do proxy)', aprovacao:'especificação "v7.91 revisado" (P0/P1)' },
+  { id:'split-cenario', regra:'Split payment tratado como CENÁRIO conservador (100% retido, 15% a.a.), nunca como retenção vigente', fonte:'LC 214/2025, art. 33; CGIBS (ago/2026): sem data para operar', vigencia:'sem data confirmada', versao:'7.36.3 e 7.99.2', selo:'não toca o motor', aprovacao:'B03 do relatório de 18/10/2026; instrução da IA impede data de início' },
+  { id:'prazos-194', regra:'Prazos legais de opção por exercício numa tabela única (PRAZOS_LEGAIS)', fonte:'Res. CGSN 194/2026 (DOU 28/09/2026), que alterou o calendário da Res. 186/2026', vigencia:'exercício 2027', versao:'7.99.2', selo:'não toca o motor', aprovacao:'B02 do relatório de 18/10/2026; conferida na imprensa oficial em 21/10/2026' } ];
+function regrasRender(){
+  const box = $id('regras-box'); if (!box) return;
+  box.innerHTML = `<div class="card"><h3>Regras do motor — vigência, fonte e aprovação <span class="hint" style="font-weight:400">(v7.103.0 · B14)</span></h3>
+    <div class="hint">Cada regra entra com a data em que a lei passou a valer; regra nova não muda cálculo antigo — o lacre e a suíte independente provam. Alterar regra é re-selar: fica registrado aqui e no changelog.</div>
+    <div style="overflow-x:auto;margin-top:8px"><table><thead><tr><th>Regra</th><th>Fonte legal</th><th>Vigência</th><th>No app desde</th><th>Selo</th><th>Aprovação / registro</th></tr></thead><tbody>
+    ${REGRAS_VIGENCIA.map(r=>`<tr><td class="rot"><b>${esc(r.regra)}</b></td><td style="font-size:11px">${esc(r.fonte)}</td><td style="white-space:nowrap">${esc(r.vigencia)}</td><td style="white-space:nowrap">v${esc(r.versao)}</td><td style="font-size:11px">${esc(r.selo)}</td><td style="font-size:11px">${esc(r.aprovacao)}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
+}
 function lacreHash(str){ let h = 0x811c9dc5;
   for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
   return h.toString(16).padStart(8,'0'); }
@@ -8133,6 +8381,7 @@ function lacreBoot(forcar){
   try { localStorage.setItem('atp_lacre', JSON.stringify(LACRE_ST)); } catch {}
   if (!r.ok) toast('⚠️ LACRE DO MOTOR: os cálculos desta versão DIVERGEM do selo — veja a aba Versões.');
   lacreRender();
+  try { regrasRender(); } catch(e){ console.error('regrasRender:', e); }   // v7.103.0 · B14: a tabela de regras acompanha o lacre na aba Versões
 }
 let LACRE_ST = null;
 function lacreRender(){
@@ -8148,7 +8397,7 @@ function lacreRender(){
       <button class="btn" style="margin-left:auto" onclick="lacreBoot(true)">Revalidar agora</button>
     </div>
     <div class="hint" style="margin-top:6px">${ok
-      ? 'Os dois casos-gabarito embutidos foram recalculados nesta versão com os padrões de fábrica e bateram, ao centavo, com o selo gravado na entrega — o motor não sofreu alteração acidental. Regras alteradas de propósito são re-seladas e registradas no changelog abaixo.'
+      ? 'Os quatro casos-gabarito embutidos (comércio no sublimite, serviços com Fator R, estresse do art. 24 e empresa nova) foram recalculados nesta versão com os padrões de fábrica e bateram, ao centavo, com o selo gravado na entrega — o motor não sofreu alteração acidental. Regras alteradas de propósito são re-seladas e registradas no changelog abaixo.'
       : (LACRE_ST.erro ? ('Erro ao recalcular: '+LACRE_ST.erro) : 'Os cálculos produzidos por esta versão NÃO batem com o selo gravado na entrega. Não use os resultados para decisão até verificar — restaure a versão anterior e reporte.')}</div>
     ${linhas?`<table style="margin-top:8px"><thead><tr><th>Caso-gabarito</th><th class="num">DAS anual</th><th class="num">Lucro Presumido</th><th class="num">Lucro Real</th><th class="num">2033 híbrido</th><th class="num">2033 regular</th></tr></thead><tbody>${linhas}</tbody></table>`:''}
   </div>`;
@@ -8305,7 +8554,8 @@ async function rfSalvar() {
   const T = (_mesmo && AN._res?.totais) ? AN._res.totais : (dados._res?.totais || {});
   const _resumo = _mesmo || !_resumoAtual
     ? { receita:T.receita, simples:T.simples, lp:T.lp, lr:T.lr, lrIncompleto: !!T.lrIncompleto, reforma2033: RF._res?.linhas?.at(-1)?.total,
-        snElegivel: (AN?._sn?.estado || 'elegivel') !== 'inelegivel' }
+        snElegivel: (AN?._sn?.estado || 'elegivel') !== 'inelegivel',
+        motor:{ app: APP_VERSAO, lacre: LACRE_HASH } }   // v7.99.4 · B05 (o ramo abaixo preserva o resumo — e o motor — de quem o gravou)
     : { ..._resumoAtual, reforma2033: RF._res?.linhas?.at(-1)?.total };   // preserva o resumo do ano
   try { await supa('POST','atp_analises?on_conflict=cnpj,ano',{ body:[{ cnpj:RF.cnpj, ano:RF.ano, dados,
     resumo:_resumo, atualizado_em:new Date().toISOString() }] });
@@ -10120,7 +10370,7 @@ function rlConsolidado(rot, n) {
       <div class="hint" style="margin-top:8px">Transição: PIS/COFINS saem em 2027 (entra a CBS plena); ICMS/ISS caem 10% ao ano de 2029 a 2032 e zeram em 2033 (entra o IBS); IPI apenas até 2026. Reduções de IBS/CBS conforme a classificação cClassTrib das notas importadas.${cen&&cen.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise; use "⚡ Preencher da análise" e salve.</b>':''}</div>
     </div>`;
   }
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h + rlRodapeExec();   // v7.101.3 · B12
 }
 
 // ═══════════ RELATÓRIOS ═══════════
@@ -10140,11 +10390,23 @@ async function rlCarregar() {
   empGlobalSet(cnpj, ano);
   if (!cnpj) { RL.dados=null; rlRender(); return; }
   RL.empresa = EMPRESAS.find(e=>e.cnpj===cnpj) || null;
-  let dados = null;
+  let dados = null, linha = null;
   try {
     const rows = await supa('GET','atp_analises',{ params:{ select:'*', cnpj:`eq.${cnpj}`, ano:`eq.${ano}`, limit:'1' } });
-    if (rows.length) dados = rows[0].dados;
+    if (rows.length) { linha = rows[0]; dados = linha.dados; }
   } catch {}
+  // ═══ v7.100.0 · B08 — ANÁLISE FECHADA: OS DOCUMENTOS SAEM DO FECHAMENTO ═══
+  // (Achado novo 1 da auditoria de 18/10/2026: 10 das 73 fechadas recalculavam diferente do
+  // snapshot, a maior em R$ 285.962,24.) Fechada com execução congelada: RL.res é o resultado
+  // gravado no fechamento e os cenários vêm congelados nele (res.__cen) — o motor atual roda SÓ
+  // para medir a divergência do aviso. Fechada ANTES da v7.100.0 (snapshot sem exec): mantém o
+  // recálculo, com aviso de que o documento pode divergir do emitido.
+  RL.fechada = null; RL.exec = null; RL.divergeAtual = null;
+  if (linha && linha.status === 'fechada'){
+    RL.fechada = { snapshot: linha.snapshot || null, por: linha.fechado_por || '', em: linha.fechado_em || null };
+    const sx = linha.snapshot && linha.snapshot.exec;
+    if (sx && sx.res) RL.exec = sx;
+  }
   if (!dados && AN && AN.cnpj===cnpj && +AN.ano===ano) dados = AN;   // análise aberta não salva
   // v7.56.3 · o relatório sempre partiu da análise GRAVADA. Quem edita a grade e vem direto para
   // Relatórios vê os números ANTIGOS e conclui que a alteração não teve efeito — foi o que
@@ -10166,7 +10428,17 @@ async function rlCarregar() {
   // carregar a chave da análise (cnpj|ano) e são descartados quando ela muda.
   { const chaveIA = cnpj + '|' + ano;
     if (RL._ia && RL._ia.chave !== chaveIA){ RL._ia = null; RL._iaErro = null; } }
-  RL.res = dados ? calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg)) : null;
+  RL.res = RL.exec ? RL.exec.res : (dados ? calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg)) : null);   // v7.100.0 · B08
+  if (RL.exec && dados){ try {   // v7.100.0 · B08: o recálculo atual mede a divergência para o aviso — o documento não o usa
+      const atual = calcular(dados, PARAMS.anexos, folhaPercDaEmpresa(dados.cfg));
+      const S = (RL.fechada.snapshot && RL.fechada.snapshot.totais) || RL.exec.res.totais || {};
+      const difs = [];
+      for (const [k,rot] of [['simples','Simples'],['lp','Presumido'],['lr','Real'],['das','DAS']]){
+        const a = +S[k]||0, b = +atual.totais[k]||0;
+        if (Math.abs(a-b)>0.015) difs.push(rot+': '+fmtR(a)+' (fechado) → '+fmtR(b)+' (motor atual)');
+      }
+      if (difs.length) RL.divergeAtual = difs;
+    } catch(e){ console.error('divergência do fechamento:', e); } }
   RL.reforma = dados?.reforma || null;
   RL.cmp = null;
   RL.forn = null;                                          // v7.20.0: consulta mais recente de cada tipo p/ o parecer
@@ -10470,22 +10742,38 @@ function premissaCreditoIBS(D){
 // Projeta a análise E a aba Reforma JUNTAS (rfProjetar × k), exatamente como o parecer fazia
 // sozinho. Parecer, conferência e relatório "Reforma" leem DAQUI — divergir ficou impossível.
 // Ano completo (ou vazio): devolve o realizado puro, k = 1, e nenhum documento se move.
-function rlBaseReforma(){
-  const vazio = { res: RL.res, reforma: RL.reforma, proj: null, k: 1 };
-  if (!RL.dados || !RL.res) return vazio;
-  const PJ = projJanelaEfetiva((RL.dados.cfg)||{});
-  let P = null; try { P = anProjetarAno(RL.dados, PJ.v); } catch(e){ P = null; }
+// v7.100.0 · B08: a projeção da base virou função PURA (dados/res/reforma entram por parâmetro),
+// para o fechamento poder congelar exatamente o que os documentos leem — realizado e projetado.
+function baseReformaDe(dados, res, reforma){
+  const vazio = { res, reforma, proj: null, k: 1 };
+  if (!dados || !res) return vazio;
+  const PJ = projJanelaEfetiva((dados.cfg)||{});
+  let P = null; try { P = anProjetarAno(dados, PJ.v); } catch(e){ P = null; }
   if (!P) return vazio;
   try {
     const r = calcular(P.dados, PARAMS.anexos, folhaPercDaEmpresa(P.dados.cfg));
-    const intReal = Math.max(0, (RL.res.totais.receita||0) - (RL.res.totais.receitaExp||0));
+    const intReal = Math.max(0, (res.totais.receita||0) - (res.totais.receitaExp||0));
     const intProj = Math.max(0, (r.totais.receita||0) - (r.totais.receitaExp||0));
     const k = intReal > 0.005 ? intProj/intReal : 1;
-    P.k = k; P.origem = PJ.origem; P.tReal = RL.res.totais;
-    return { res: r, reforma: rfProjetar(RL.reforma, k), proj: P, k };
-  } catch(e){ console.error('rlBaseReforma', e); return vazio; }
+    P.k = k; P.origem = PJ.origem; P.tReal = res.totais;
+    return { res: r, reforma: rfProjetar(reforma, k), proj: P, k };
+  } catch(e){ console.error('baseReformaDe', e); return vazio; }
+}
+function rlBaseReforma(){
+  // v7.100.0 · B08: análise fechada com execução congelada — os documentos leem o fechamento
+  if (RL.exec){
+    if (RL.exec.base && RL.exec.base.res) return { res: RL.exec.base.res, reforma: RL.exec.base.reforma, proj: RL.exec.base.proj, k: RL.exec.base.k || 1 };
+    return { res: RL.res, reforma: RL.reforma, proj: null, k: 1 };
+  }
+  return baseReformaDe(RL.dados, RL.res, RL.reforma);
 }
 
+// v7.104.0 · B15 — o regime tributário é DO ANO, não da ficha: a análise pode registrar o regime
+// que a empresa efetivamente adotou naquele ano-base (cfg.regimeAno); em branco, vale a ficha.
+// O relatório de 2025 sai com o regime de 2025, mesmo que a empresa tenha mudado em 2026.
+function regimeDoAno(dados, empresa){
+  return String((dados && dados.cfg && dados.cfg.regimeAno) || (empresa && empresa.regime) || '');
+}
 function parecerDados(){
   // v7.39.0 · ano incompleto → o parecer fala do ANO, não do pedaço lançado.
   // v7.46.0 · a projeção saiu daqui para a rlBaseReforma() — os MESMOS números de antes,
@@ -10499,7 +10787,7 @@ function parecerDados(){
   let cen = null; try { cen = calcCenariosReforma(_res, _reforma); } catch(e){ console.error('parecer/cenários', e); }
   const REF = (cen && cen.REF) || [];
   const anos = REF.filter(l=>l.ano>=2027);
-  const regime = String(RL.empresa?.regime||'').toLowerCase();
+  const regime = regimeDoAno(RL.dados, RL.empresa).toLowerCase();   // v7.104.0 · B15: regime do ano, não da ficha
   // O RBT12 que define a variante do documento é o REALIZADO: uma estimativa não pode, sozinha,
   // transformar um parecer de optante em parecer de regime regular. Quando a projeção cruza o teto,
   // isso vira ALERTA (abaixo), não mudança de variante.
@@ -10640,7 +10928,7 @@ function parecerTextosPadrao(D){
     b.enquadramento = 'Empresa optante do Simples Nacional (RBT12 máximo realizado de '+fmtR(D.rbtMax)+'). ' + (D.snTexto||'') + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. Com a reforma, surge uma decisão nova: manter o IBS/CBS dentro do DAS ("por dentro"), recolhê-lo separadamente ("híbrido") ou sair do regime.';
     b.caminho = 'Permanecendo "por dentro" do DAS, a carga do Simples não é alterada pela reforma. Os caminhos alternativos foram quantificados nos quadros a seguir — a decisão depende sobretudo do perfil da clientela (quem aproveita o crédito de IBS/CBS).';
     b.cenarios = D.L33 ? (function(){ const d33 = D.dRef;
-      return 'Em '+D.anoRef+' ('+parAnoRefRotulo(D.anoRef)+'): por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; fora do Simples '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). Como decidir entre eles: o caminho POR DENTRO mantém tudo no DAS — é o de menor burocracia e preserva o caixa (nada é retido na fonte), mas o cliente PJ do regime regular recebe crédito reduzido de IBS/CBS, o que pode pesar no preço quando a clientela é majoritariamente empresarial. O HÍBRIDO (art. 22-A da Res. CGSN 140/2018) desconta do DAS as parcelas de CBS/IBS e recolhe esses tributos por fora, no regime regular: o cliente passa a receber crédito integral — vantagem comercial concreta em vendas B2B —, ao custo de duas apurações, do split payment sobre os recebimentos e de opção semestral nas janelas de setembro e março (art. 40-D). SAIR DO SIMPLES leva ao regime regular pleno ('+D.L33.regNome+' no caso), fazendo sentido quando o crescimento aproxima a empresa do teto ou quando praticamente toda a clientela exige crédito integral. Em resumo: clientela de consumo final favorece o por dentro; clientela PJ relevante pede a comparação entre o ganho comercial do crédito e o custo adicional quantificado acima.'; })() : 'Preencha e salve a aba Reforma para os cenários de '+D.anoRef+'.';
+      return 'Em '+D.anoRef+' ('+parAnoRefRotulo(D.anoRef)+'): por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; fora do Simples '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). Como decidir entre eles: o caminho POR DENTRO mantém tudo no DAS — é o de menor burocracia e preserva o caixa (nada é retido na fonte), mas o cliente PJ do regime regular recebe crédito reduzido de IBS/CBS, o que pode pesar no preço quando a clientela é majoritariamente empresarial. O HÍBRIDO (art. 22-A da Res. CGSN 140/2018) desconta do DAS as parcelas de CBS/IBS e recolhe esses tributos por fora, no regime regular: o cliente passa a receber crédito integral — vantagem comercial concreta em vendas B2B —, ao custo de duas apurações, do split payment sobre os recebimentos (quando o mecanismo entrar em operação) e de opção semestral (art. 40-D — para o 1º semestre/2027: '+prazoD(2027,'ibscbs')+', Res. 194/2026). SAIR DO SIMPLES leva ao regime regular pleno ('+D.L33.regNome+' no caso), fazendo sentido quando o crescimento aproxima a empresa do teto ou quando praticamente toda a clientela exige crédito integral. Em resumo: clientela de consumo final favorece o por dentro; clientela PJ relevante pede a comparação entre o ganho comercial do crédito e o custo adicional quantificado acima.'; })() : 'Preencha e salve a aba Reforma para os cenários de '+D.anoRef+'.';
   } else if (D.variante==='acima'){
     b.enquadramento = (D.snTexto || ('Com RBT12 máximo realizado de '+fmtR(D.rbtMax)+', a empresa está acima do limite de R$ 4,8 milhões e não pode optar pelo Simples Nacional.')) + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. A análise compara os regimes aplicáveis — Lucro Presumido e Lucro Real — e mede, ano a ano, o que passará a pagar a mais ou a menos com a reforma.';
     b.caminho = 'O regime de menor carga em cada ano da transição está identificado nos quadros. O aumento decorrente da reforma é estrutural e atinge todo o mercado: o que está ao alcance da empresa é pagar o menor valor possível em cada exercício e preparar o caixa para o split payment.';
@@ -10649,11 +10937,11 @@ function parecerTextosPadrao(D){
     b.enquadramento = 'A empresa apura hoje pelo regime regular ('+D.regimeHojeNome+'), com RBT12 máximo realizado de '+fmtR(D.rbtMax)+'. ' + (D.snTexto||'') + ' Período efetivamente analisado: '+D.janelaTxt+(D.janelaMeses && D.janelaMeses<12?(D.proj?' — os meses seguintes foram projetados pela média dos lançados, de modo que os valores representam o ano-calendário estimado':' — os valores refletem esse período, não o ano-calendário completo'):'')+'. Além do efeito da reforma no regime atual, este parecer simula a entrada no Simples e os três caminhos que ele oferece na transição.';
     b.caminho = 'O comparativo responde duas perguntas: quanto a reforma encarece o regime atual, ano a ano; e se a opção pelo Simples reduziria a carga — inclusive nos cenários "por dentro" e híbrido de 2033.';
     b.cenarios = D.L33 ? (function(){ const d33 = D.dRef;
-      return 'Em '+D.anoRef+': Simples por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; regime regular '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). A leitura é a mesma da seção anterior: o por dentro minimiza burocracia e preserva o caixa, mas limita o crédito repassado ao cliente PJ; o híbrido troca custo e split payment por crédito integral ao cliente (opção semestral — art. 40-D); o regime regular pleno se justifica com clientela quase toda PJ ou crescimento além do teto. A opção pelo Simples é formalizada em setembro, com efeitos a partir de janeiro seguinte.'; })() : '';
+      return 'Em '+D.anoRef+': Simples por dentro '+fmtR(d33)+'/ano; híbrido '+fmtR(D.L33.hib)+'/ano; regime regular '+fmtR(D.L33.regular)+'/ano ('+D.L33.regNome+'). A leitura é a mesma da seção anterior: o por dentro minimiza burocracia e preserva o caixa, mas limita o crédito repassado ao cliente PJ; o híbrido troca custo e split payment por crédito integral ao cliente (opção semestral — art. 40-D); o regime regular pleno se justifica com clientela quase toda PJ ou crescimento além do teto. A opção pelo Simples é formalizada no prazo regulamentar ('+prazoD(2027,'simples')+' para 2027 — Res. CGSN nº 194/2026), com efeitos a partir de janeiro seguinte.'; })() : '';
   }
   b.retrato = 'Os quadros desta seção mostram os fatores do negócio que pesaram na conclusão: a composição da receita entre comércio/indústria e serviços e, quando houver PGDAS importado, a decomposição do DAS por tributo.';
   b.split = D.split.fonteMes>0.005
-    ? 'Com a reforma, a CBS e o IBS da própria venda passam a ser recolhidos na fonte (split payment) no momento do pagamento. '+(D.variante==='simples'?'No caminho "por dentro", nada é retido — o IBS/CBS segue no DAS mensal e o caixa é preservado. Nos caminhos híbrido e fora do Simples, ':'')+'a retenção estimada é de '+fmtR(D.split.fonteMes)+' por mês em '+(D.split.ano||2032)+' — '+fmtR(D.split.giroAno)+' por ano que deixam de transitar pelo caixa, com custo financeiro estimado de '+fmtR(D.split.custoAno)+'/ano (15% a.a., mínimo Selic), além da perda de flexibilidade para administrar o imposto.'
+    ? 'A LC 214/2025 (art. 33) prevê o split payment — a separação da CBS e do IBS da própria venda no momento do pagamento —, mecanismo ainda em regulamentação e ainda sem data confirmada para operar: o CGIBS informou, em agosto/2026, que ele não estará disponível no início da cobrança efetiva, em janeiro/2027. Os valores a seguir são cenário conservador do impacto no caixa para quando o mecanismo operar, e não uma retenção vigente. '+(D.variante==='simples'?'No caminho "por dentro", nada é retido — o IBS/CBS segue no DAS mensal e o caixa é preservado. Nos caminhos híbrido e fora do Simples, ':'')+'a retenção estimada é de '+fmtR(D.split.fonteMes)+' por mês em '+(D.split.ano||2032)+' — '+fmtR(D.split.giroAno)+' por ano que deixariam de transitar pelo caixa, com custo financeiro estimado de '+fmtR(D.split.custoAno)+'/ano (15% a.a., mínimo Selic), além da perda de flexibilidade para administrar o imposto.'
     : 'Preencha a aba Reforma para estimar o impacto do split payment no caixa.';
   b.plano = D.variante==='simples' ? [
     {quando:'Agora · '+(RL.dados.ano||''), titulo:'Formalizar o caminho escolhido', texto:'Registrar a decisão sobre o recolhimento do IBS/CBS (por dentro × híbrido) e revisar o enquadramento dos anexos com a contabilidade.'},
@@ -10716,7 +11004,9 @@ function ppTarjaSemDados(){
 function ppPremissasLegais(){
   const _ar = (RL && RL.dados) ? audResumo(RL.dados) : null;   // v7.94.3
   const _trilha = _ar ? ` · Dados de entrada: ${_ar.manuais} alteração(ões) manual(is)${_ar.sobreImportado ? ' (' + _ar.sobreImportado + ' sobre valor importado)' : ''} e ${_ar.lotes} importação(ões) registradas na trilha de alterações (Conferência, bloco 0).` : '';
-  return `<div class="pp-notaia" style="margin-top:6px">Premissas legais desta emissão: LC 123/2006 (limite, sublimite e Fator R — arts. 3º, 13-A, 18, 19 e 20) · Res. CGSN nº 140/2018 (arts. 22, 24 e 26) e nº 190/2026 (Anexos I–V por vigência, art. 22-A, art. 40-D, art. 58) · EC 132/2023 e LC 214/2025 (IBS/CBS, art. 8º, art. 12 §2º V, arts. 47–58) · Lei 9.249/95 e 9.430/96 (Presumido) · Lei 9.065/95 (Real) · STF Tema 69 e Lei 14.592/2023 · alíquotas de referência Res. CGIBS nº 14/2026 (estimativa; definitivas pelo cálculo do TCU homologado pelo Senado). Motor Análise Tributária Pro v${APP_VERSAO} · lacre ${LACRE_HASH} · data-base ${new Date().toLocaleDateString('pt-BR')}.${_trilha}</div>`;
+  return `<div class="pp-notaia" style="margin-top:6px">Premissas legais desta emissão: LC 123/2006 (limite, sublimite e Fator R — arts. 3º, 13-A, 18, 19 e 20) · Res. CGSN nº 140/2018 (arts. 22, 24 e 26) e nº 190/2026 (Anexos I–V por vigência, art. 22-A, art. 40-D, art. 58) · EC 132/2023 e LC 214/2025 (IBS/CBS, art. 8º, art. 12 §2º V, arts. 47–58) · Lei 9.249/95 e 9.430/96 (Presumido) · Lei 9.065/95 (Real) · STF Tema 69 e Lei 14.592/2023 · alíquotas de referência Res. CGIBS nº 14/2026 (estimativa; definitivas pelo cálculo do TCU homologado pelo Senado). ${(RL && RL.exec && RL.fechada && RL.fechada.snapshot)
+    ? `Motor da execução congelada no fechamento — Análise Tributária Pro v${esc(String(RL.fechada.snapshot.versao||'?'))} · lacre ${esc(String(RL.fechada.snapshot.lacre||'?'))} · fechada em ${RL.fechada.snapshot.em?new Date(RL.fechada.snapshot.em).toLocaleDateString('pt-BR'):'?'} (documento impresso pela v${APP_VERSAO})`
+    : `Motor Análise Tributária Pro v${APP_VERSAO} · lacre ${LACRE_HASH} · data-base ${new Date().toLocaleDateString('pt-BR')}`}.${_trilha}</div>`;
 }
 function rlParecer(){
   const D = parecerDados();
@@ -10778,7 +11068,7 @@ function rlParecer(){
   h += `<div class="pp-page pp-capa"><img class="pp-bg" src="capa.jpg" onerror="this.style.display='none';this.parentNode.classList.add('pp-semarte')">
     <div class="pp-capa-cliente"><div class="pp-capa-lbl">Estudo elaborado para</div>
       <div class="pp-capa-nome">${esc(emp.razao_social)||RL.dados.cnpj||''}</div>
-      <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${RL.empresa?.regime?' · '+RL.empresa.regime:''}</div>
+      <div class="pp-capa-cnpj">CNPJ ${fmtCNPJ(RL.dados.cnpj)}${regimeDoAno(RL.dados, RL.empresa)?' · '+esc(regimeDoAno(RL.dados, RL.empresa)):''}</div>
       <div class="pp-capa-data">Ano-base ${anoTx} · ${hoje}</div></div></div>`;
 
   // ── PÁG: introdução + enquadramento (v7.38.3: separada do "caminho" — a combinada estourava e cortava o parágrafo final) ──
@@ -10839,7 +11129,9 @@ function rlParecer(){
         este estudo considera retenção equivalente a <b>100% do débito bruto</b> projetado de IBS/CBS
         no momento do pagamento. <b>Esse percentual é premissa do modelo</b>, adotada para medir o
         pior caso de caixa — <b>não</b> é percentual definitivo fixado pela legislação, que ainda
-        depende de regulamentação. Custo financeiro a 15% a.a. (proxy da Selic mínima) sobre um mês
+        depende de regulamentação. O mecanismo está <b>ainda sem data confirmada para operar</b>: o
+        CGIBS informou, em agosto/2026, que não estará disponível no início da cobrança efetiva, em
+        janeiro/2027. Custo financeiro a 15% a.a. (proxy da Selic mínima) sobre um mês
         de retenção, como saldo médio financiado ao longo do ano.</td></tr>
     </tbody></table>
     <div class="hint" style="margin-top:6px">Este quadro permite a outro profissional reproduzir ou revisar os resultados deste parecer a partir das mesmas premissas.</div>
@@ -10927,7 +11219,7 @@ function rlParecer(){
         ? 'Economia teórica acumulada ao permanecer "por dentro", frente ao 2º melhor caminho — mantidas as premissas do estudo'
         : 'Economia teórica acumulada do regime de menor carga frente ao outro — mantidas as premissas do estudo (não é economia frente à carga atual)'}</div><canvas id="pc-acum" height="130"></canvas></div>`:''}
     ${TX.cenarios?`<p class="pp-p" style="font-size:9.5pt"><b>Leitura dos três caminhos:</b> ${TX.cenarios}</p>`:''}
-    ${secao(++NS,'Split payment — impacto no caixa')}
+    ${secao(++NS,'Split payment — impacto no caixa (cenário)')}
     <div class="pp-split">
       ${D.variante==='simples'?`<div class="pp-card"><div class="t">Por dentro · na fonte</div><div class="v" style="color:#0f7a5a">R$ 0</div><div class="s">IBS/CBS segue no DAS — caixa preservado</div></div>`:''}
       <div class="pp-card"><div class="t">${D.variante==='simples'?'Híbrido/Fora · na fonte':'Recolhido na fonte'}</div><div class="v">${fmtR(D.split.fonteMes)}</div><div class="s">por mês (${D.split.ano||2032}) · retido no pagamento</div></div>
@@ -10935,7 +11227,7 @@ function rlParecer(){
       <div class="pp-card"><div class="t">Custo financeiro</div><div class="v">${fmtR(D.split.custoAno)}</div><div class="s">por ano · 15% a.a. (mín. Selic)</div></div>
     </div>
     <div class="hint" style="margin-top:6px">
-      <b>Como chegamos nesses números:</b> retenção mensal = débito bruto de IBS/CBS projetado para 2032 (regime ${D.variante==='simples'?'híbrido, pior caso':D.L33?D.L33.regNome:'regular'}) ÷ 12 meses — considera <b>100% do débito</b> retido no pagamento (art. 33 da LC 214/2025, sem descontar eventuais créditos do próprio período) e não desconta o prazo entre retenção e apropriação, ainda não regulamentado. Volume anual segregado = retenção mensal × 12 — é o total que passa pelo split ao longo do ano, e <b>não</b> a necessidade simultânea de caixa, que é da ordem de um mês de retenção. Custo financeiro anual = retenção mensal × <b>15% a.a.</b> (taxa Selic mínima estimada, aplicada sobre um mês de retenção como proxy do saldo médio financiado ao longo do ano).
+      <b>Como chegamos nesses números:</b> retenção mensal = débito bruto de IBS/CBS projetado para 2032 (regime ${D.variante==='simples'?'híbrido, pior caso':D.L33?D.L33.regNome:'regular'}) ÷ 12 meses — considera <b>100% do débito</b> retido no pagamento (art. 33 da LC 214/2025, sem descontar eventuais créditos do próprio período) e não desconta o prazo entre retenção e apropriação, ainda não regulamentado. Volume anual segregado = retenção mensal × 12 — é o total que passa pelo split ao longo do ano, e <b>não</b> a necessidade simultânea de caixa, que é da ordem de um mês de retenção. Custo financeiro anual = retenção mensal × <b>15% a.a.</b> (taxa Selic mínima estimada, aplicada sobre um mês de retenção como proxy do saldo médio financiado ao longo do ano). O split ainda não está em operação (CGIBS, ago/2026) — este quadro é cenário conservador para planejamento.
     </div>
     <p class="pp-p">${TX.split}</p>
   </div></div>`;
@@ -10972,9 +11264,9 @@ function rlParecer(){
         fica de fora (LC 214/2025, arts. 47 a 57). A não cumulatividade é ampla, mas <b>não é
         irrestrita</b>. Por isso é essencial <b>exigir o documento fiscal em todas as aquisições</b>:
         sem ele não há crédito, e a análise deixa de refletir a realidade da empresa.</li>
-      <li>A decisão a ser formalizada em <b>setembro/2026</b> valerá para o período de <b>janeiro a junho/2027</b>, com possibilidade de nova opção em <b>março/2027</b>, válida para o segundo semestre (art. 40-D da Res. CGSN 140/2018, incluído pela Res. 190/2026).</li>
+      <li>A opção pelo recolhimento de IBS/CBS no regime regular, formalizada no prazo de <b>${prazoD(2027,'ibscbs')}</b> (Res. CGSN nº 194/2026), valerá para o período de <b>janeiro a junho/2027</b>, com possibilidade de nova opção em <b>março/2027</b>, válida para o segundo semestre (art. 40-D da Res. CGSN 140/2018, incluído pela Res. 190/2026).</li>
     </ol>
-    ${D.variante!=='acima'?`<p class="pp-p" style="font-size:9.5pt"><b>Prazos da Res. CGSN nº 190/2026:</b> a opção pelo Simples Nacional passa a ser formalizada de 1º a 30 de setembro, com efeitos a partir de 1º de janeiro seguinte — para produzir efeitos em 2027, portanto, em setembro/2026 (art. 6º). A opção pelo recolhimento de IBS/CBS no regime regular (cenário híbrido) é semestral, nas janelas de setembro e março (art. 40-D). Quem ingressar no Simples em 1º/01/2027 deve confirmar receitas e folhas anteriores no módulo "Receitas Anteriores à Opção" do PGDAS-D até 20/12/2026 (competências dez/2025 a nov/2026) e até 20/01/2027 (dez/2026); sem manifestação, prevalece o pré-preenchimento da Receita Federal (arts. 144-D e 144-E).</p>`:''}
+    ${D.variante!=='acima'?`<p class="pp-p" style="font-size:9.5pt"><b>Prazos para 2027 (${PRAZOS_LEGAIS[2027].fonte}):</b> ${prazosLegais(2027).map(p=>`<b>${p.t}:</b> ${p.d} — ${p.x}`).join(' ')}</p>`:''}
   </div></div>`;
 
   // ── PÁG: encerramento e assinatura (v7.21.0: a relação de produtos × IBS/CBS virou relatório próprio) ──
@@ -11126,7 +11418,7 @@ function rlRfTribHtml(cen){
     h += `<tr><td>% da receita</td>` + anos.map(a=>`<td class="num">${pctR(totalAno[a])}</td>`).join('') + '</tr>';
     if (cen==='fora') h += `<tr class="hint"><td>Regime adotado no ano</td>` + anos.map(a=>`<td class="num">${(cel._regime?.[a]||0)===1?'Presumido':'Real'}</td>`).join('') + '</tr>';
     h += '</tbody></table></div>';
-    h += `<div class="hint" style="margin-top:8px">Em <b>2026 (ano-teste)</b> não há IBS/CBS a recolher — por isso as linhas aparecem vazias; o PIS/COFINS do ano permanece integral. Alíquotas do ano conforme Parâmetros (Res. CGIBS nº 14/2026); IBS/CBS líquidos repartidos na proporção CBS × IBS UF × IBS Mun. ${cen==='dentro'?'No "por dentro", o DAS permanece devido integralmente; as linhas ↳ abrem a partilha oficial de CBS/IBS dentro do DAS por vigência e a trava da 5ª faixa é recomposta ano a ano (teto do ISS decrescente + IBS pela fórmula própria) — <b>Res. CGSN nº 190/2026</b>, novos Anexos I–V da Res. 140/2018.':cen==='hibrido'?'Híbrido (art. 22-A da Res. CGSN 140/2018, incluído pela <b>Res. 190/2026</b>): DAS deduzido das parcelas de CBS/IBS da faixa/vigência + IBS/CBS por fora, no regime regular, com crédito integral ao cliente. Opção semestral nas janelas de setembro e março (art. 40-D); quem recebeu ressarcimento de créditos fica vedado ao regime único no ano do ressarcimento e no seguinte (art. 40-E).':'Regime regular: melhor entre Presumido e Real em cada ano, com os remanescentes da transição.'}${C.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise.</b>':''}</div>`;
+    h += `<div class="hint" style="margin-top:8px">Em <b>2026 (ano-teste)</b> não há IBS/CBS a recolher — por isso as linhas aparecem vazias; o PIS/COFINS do ano permanece integral. Alíquotas do ano conforme Parâmetros (Res. CGIBS nº 14/2026); IBS/CBS líquidos repartidos na proporção CBS × IBS UF × IBS Mun. ${cen==='dentro'?'No "por dentro", o DAS permanece devido integralmente; as linhas ↳ abrem a partilha oficial de CBS/IBS dentro do DAS por vigência e a trava da 5ª faixa é recomposta ano a ano (teto do ISS decrescente + IBS pela fórmula própria) — <b>Res. CGSN nº 190/2026</b>, novos Anexos I–V da Res. 140/2018.':cen==='hibrido'?'Híbrido (art. 22-A da Res. CGSN 140/2018, incluído pela <b>Res. 190/2026</b>): DAS deduzido das parcelas de CBS/IBS da faixa/vigência + IBS/CBS por fora, no regime regular, com crédito integral ao cliente. Opção semestral (art. 40-D — para o 1º semestre/2027: '+prazoD(2027,'ibscbs')+', Res. 194/2026); quem recebeu ressarcimento de créditos fica vedado ao regime único no ano do ressarcimento e no seguinte (art. 40-E).':'Regime regular: melhor entre Presumido e Real em cada ano, com os remanescentes da transição.'}${C.usouFallback?' <b>⚠️ Aba Reforma sem dados salvos — usei alíquotas-padrão e a receita da análise.</b>':''}</div>`;
     return h;
   } catch(e){ console.error('rlRfTribHtml:', e); return '<div class="hint">Não foi possível montar o quadro da Reforma para esta análise.</div>'; }
 }
@@ -11433,7 +11725,7 @@ async function parecerIA(){
     const _margemInt = (D.subMon && typeof D.subMon.margemLimite === 'number')
       ? D.subMon.margemLimite : (PARECER_TETO - _interno);
     const payload = {
-      empresa: { nome: RL.empresa?.razao_social||'', cnpj: RL.dados.cnpj||'', regime: RL.empresa?.regime||'', ano: RL.dados.ano },
+      empresa: { nome: RL.empresa?.razao_social||'', cnpj: RL.dados.cnpj||'', regime: regimeDoAno(RL.dados, RL.empresa), ano: RL.dados.ano },   // v7.104.0 · B15
       variante: D.variante, regimeHoje: D.regimeHojeNome, alertas: D.alertas,
       numeros: {
         receitaAnual: D.T.receita, receitaComercio: D.T.recCom, receitaServicos: D.T.recServ,
@@ -11571,6 +11863,11 @@ async function parecerIA(){
         + 'costuma ser 2032 (pior caso de caixa da transição) e pode ser DIFERENTE do ano de '
         + 'referência do estudo. Sempre cite o ano do próprio split ao falar da retenção; nunca '
         + 'escreva "no ano de referência" para esse número sem conferir que os dois coincidem.',
+        // ══ v7.99.2 · B03 — o split payment não é fato consumado ══════════════════════════
+        'O split payment ainda NÃO está em operação e não há data confirmada para sua entrada em operação: '
+        + 'o CGIBS informou, em agosto/2026, que ele não estará disponível no início da cobrança efetiva, '
+        + 'em janeiro/2027. Trate os valores de split SEMPRE como cenário conservador previsto na '
+        + 'LC 214/2025 (art. 33), nunca como retenção vigente — e NUNCA afirme uma data de início.',
       ],
       // v7.84.0 · o payload passa a dizer O QUE são os números, não só quais são
       splitAno: (D.split && D.split.ano) || null,
@@ -12982,9 +13279,46 @@ function rlProjPopular(){
   sel.value = cur;
 }
 // v7.56.3 · faixa de defasagem — entra no topo de qualquer relatório
+// ═══ v7.100.0 · B08 — o estado do FECHAMENTO entra em todo relatório (via rlAvisoDefasado) ═══
+function rlAvisoFechada(){
+  if (!RL || !RL.fechada) return '';
+  const s = RL.fechada.snapshot || {};
+  const quem = `${esc(RL.fechada.por||'?')} em ${RL.fechada.em?new Date(RL.fechada.em).toLocaleString('pt-BR'):'?'}`;
+  if (RL.exec){
+    const divg = (RL.divergeAtual && RL.divergeAtual.length)
+      ? `<div style="margin-top:6px;padding:8px 10px;border-left:4px solid #b9770e;background:#fef6e7;font-size:12px"><b>O motor atual (v${APP_VERSAO}) daria números DIFERENTES:</b><br>${RL.divergeAtual.map(esc).join('<br>')}<br><span class="hint">O documento continua fiel ao fechamento — nada muda sozinho. Para adotar os números novos, refeche a análise.</span></div>` : '';
+    return `<div class="card no-print" style="border-left:4px solid #1e8449;background:#f2fbf6">
+      <b>🔒 Análise fechada — este documento sai da execução congelada no fechamento</b>
+      <div class="hint" style="margin-top:5px">Fechada por ${quem} · motor app v${esc(String(s.versao||'?'))} · lacre ${esc(String(s.lacre||'?'))}. Os números NÃO mudam com atualizações do aplicativo (decisão B08).</div>${divg}
+      <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="rlIrRefechar()">🔁 Abrir a análise para refechar com o motor atual</button></div></div>`;
+  }
+  return `<div class="card no-print" style="border-left:4px solid #b9770e;background:#fef6e7">
+    <b>⚠️ Análise fechada SEM execução congelada (fechamento anterior à v7.100.0)</b>
+    <div class="hint" style="margin-top:5px">Fechada por ${quem} (app v${esc(String(s.versao||'?'))}). Este documento usa o RECÁLCULO do motor atual (v${APP_VERSAO}) e pode divergir do que foi emitido no fechamento. Refeche a análise para congelar a execução e travar os números.</div>
+    <div class="toolbar" style="margin-top:8px"><button class="btn" onclick="rlIrRefechar()">🔁 Abrir a análise para refechar com o motor atual</button></div></div>`;
+}
+function rlIrRefechar(){
+  const cnpj = $id('rl-empresa').value; if (!cnpj) return;
+  empAnalisar(cnpj);
+  toast('Confira o ano no topo e use 🔁 Refechar com o motor atual, no aviso da análise fechada.');
+}
+// ═══ v7.101.3 · B12 — RODAPÉ RASTREÁVEL: todo relatório de fluxo identifica a execução de origem ═══
+// (O parecer já identifica desde a v7.100.0, no rodapé legal; a apresentação, na tela "Sobre".)
+// Este rodapé IMPRIME — ele é a identificação do documento, não um aviso de tela.
+function rlRodapeExec(){
+  if (!RL || !RL.dados) return '';
+  const emp = RL.empresa || {};
+  const ex = (RL.exec && RL.fechada && RL.fechada.snapshot) ? RL.fechada.snapshot : null;
+  return `<div class="hint" style="margin-top:12px;border-top:1px solid var(--borda,#e5e7eb);padding-top:6px;font-size:10px">
+    Execução de origem: ${ex
+      ? `congelada no fechamento — app v${esc(String(ex.versao||'?'))} · lacre ${esc(String(ex.lacre||'?'))} · fechada em ${ex.em?new Date(ex.em).toLocaleString('pt-BR'):'?'} · impresso pela v${APP_VERSAO}`
+      : `recálculo do motor atual — app v${APP_VERSAO} · lacre ${LACRE_HASH}`}
+    · ${esc(emp.razao_social || fmtCNPJ(RL.dados.cnpj||''))} · ano-base ${RL.dados.ano||'?'} · emitido em ${new Date().toLocaleString('pt-BR')}</div>`;
+}
 function rlAvisoDefasado(){
-  if (!RL || !RL.defasado || !RL.defasado.length) return '';
-  return `<div class="card no-print" style="border-left:4px solid #b3261e;background:#fff7f6">
+  const fechada = rlAvisoFechada();   // v7.100.0 · B08: todo relatório declara de onde saem os números
+  if (!RL || !RL.defasado || !RL.defasado.length) return fechada;
+  return fechada + `<div class="card no-print" style="border-left:4px solid #b3261e;background:#fff7f6">
     <b>⚠️ Este relatório está usando a análise GRAVADA, e a tela tem alterações mais recentes.</b>
     <div class="hint" style="margin-top:5px">Diferenças em: <b>${esc(RL.defasado.join(', '))}</b>.
     Os relatórios sempre partem do que está salvo no banco — não do que está aberto na aba Análise Atual.
@@ -13007,16 +13341,47 @@ async function rlSalvarERecarregar(){
 // Os textos curtos vêm dos textos do parecer (IA ou padrão) da MESMA análise; as frases "Em
 // resumo" são geradas do número, nunca da IA.
 const AP_TETO_TXT = 'R$ 4,8 mi';
-const AP_PRAZOS = [
-  { d:'1 a 30 de setembro/2026', t:'Opção pelo Simples Nacional para 2027', x:'A opção passa a ser feita em setembro, com efeitos em 1º de janeiro (art. 6º).', cls:'' },
-  { d:'setembro/2026 e março/2027', t:'Opção pelo híbrido', x:'Escolha semestral: setembro vale para jan–jun/2027; março, para o 2º semestre (art. 40-D).', cls:'pl' },
-  { d:'20/12/2026 e 20/01/2027', t:'Confirmar receitas anteriores no PGDAS-D', x:'Sem manifestação, vale o pré-preenchimento da Receita (arts. 144-D/E).', cls:'wa' } ];
+// ═══ v7.99.2 · B02 — PRAZOS LEGAIS POR EXERCÍCIO: TABELA ÚNICA ═══
+// A Res. CGSN nº 194/2026 (DOU 28/09/2026) ALTEROU os prazos que a Res. 190/2026 havia fixado —
+// e o app citava as datas antigas ("1º a 30 de setembro") em sete lugares, cada um escrito à mão.
+// Agora TODA data de prazo legal mora aqui: o parágrafo de prazos do parecer, os cartões da
+// apresentação (AP_PRAZOS), os "Pontos de atenção" e os resumos derivam desta tabela, e a suíte
+// acusa data fixa fora dela. `fim` (ISO) permite dizer se o prazo já venceu (prazoVencido) e
+// qual é o próximo em aberto (prazoProximo).
+const PRAZOS_LEGAIS = {
+  2027: {
+    fonte: 'Res. CGSN nº 194/2026, DOU de 28/09/2026, que alterou o calendário da Res. 186/2026',   // v7.101.5 · conferido na imprensa oficial em 21/10/2026
+    itens: {
+      simples:       { id:'simples', d:'1º/09 a 15/10/2026', fim:'2026-10-15',
+        t:'Opção pelo Simples Nacional para 2027',
+        x:'Formalizada no Portal do Simples, com efeitos a partir de 1º/01/2027 (prazo da Res. 194/2026, DOU 28/09/2026). Empresas em início de atividade: de 16/10 a 31/12/2026.', cls:'' },
+      ibscbs:        { id:'ibscbs', d:'1º/09 a 30/10/2026', fim:'2026-10-30',
+        t:'Opção pelo regime regular de IBS/CBS (híbrido) — 1º semestre/2027',
+        x:'Art. 40-D da Res. CGSN 140/2018: a opção é semestral — esta janela vale para jan–jun/2027; a de março/2027, para o 2º semestre. Início de atividade: de 31/10 a 31/12/2026.', cls:'pl' },
+      regularizacao: { id:'regularizacao', d:'até 30/10/2026', fim:'2026-10-30',
+        t:'Regularização de pendências da opção',
+        x:'Pendências que impedem o deferimento da opção pelo Simples devem ser resolvidas até esta data (Res. 194/2026).', cls:'wa' },
+      cancelamento:  { id:'cancelamento', d:'03/11 a 20/12/2026', fim:'2026-12-20',
+        t:'Cancelamento da opção feita para 2027',
+        x:'Janela para desfazer a opção antes do início dos efeitos (Res. 194/2026).', cls:'pl' },
+      pgdas:         { id:'pgdas', d:'20/12/2026 e 20/01/2027', fim:'2027-01-20',
+        t:'Confirmar receitas anteriores no PGDAS-D',
+        x:'Sem manifestação, vale o pré-preenchimento da Receita (arts. 144-D/E da Res. 190/2026): até 20/12/2026 (competências dez/2025–nov/2026) e até 20/01/2027 (dez/2026).', cls:'wa' } } } };
+function prazosLegais(ex){ const E = PRAZOS_LEGAIS[ex]; return E ? Object.values(E.itens) : []; }
+function prazoLegal(ex, id){ const E = PRAZOS_LEGAIS[ex]; return (E && E.itens[id]) || null; }
+function prazoD(ex, id){ const p = prazoLegal(ex, id); return p ? p.d : ''; }
+function prazoVencido(ex, id, hoje){ const p = prazoLegal(ex, id); if (!p || !p.fim) return false;
+  return (hoje || new Date()) > new Date(p.fim + 'T23:59:59'); }
+function prazoProximo(ex, hoje){ return prazosLegais(ex).filter(p => !prazoVencido(ex, p.id, hoje))
+  .sort((a,b) => a.fim < b.fim ? -1 : 1)[0] || null; }
+// v7.99.2 · os cartões da apresentação derivam da tabela — nenhuma data escrita à mão aqui
+const AP_PRAZOS = ['simples','ibscbs','pgdas'].map(k => { const p = prazoLegal(2027, k); return { d:p.d, t:p.t, x:p.x, cls:p.cls }; });
 const AP_ATENCAO = [
   'As alíquotas de IBS e CBS ainda são estimativas de referência (Res. CGIBS nº 14/2026).',
   'Os resultados mudam conforme novos meses forem lançados e a cada nova regulamentação.',
   'Clientes e fornecedores foram avaliados pela situação atual de cada um; a decisão deles altera o resultado.',
   'Sem nota fiscal nas compras não há crédito de IBS/CBS (LC 214/2025, arts. 47 a 57).',
-  'A opção de setembro vale para o 1º semestre de 2027; há nova janela em março.' ];
+  'A opção pelo IBS/CBS por fora ('+prazoD(2027,'ibscbs')+') vale para o 1º semestre de 2027; há nova janela em março.' ];
 
 // primeiras N frases de um texto (os textos da IA não têm tamanho previsível; a tela tem)
 function apFrases(txt, n){
@@ -13122,12 +13487,12 @@ function apTelas(A, modo){
   S.tempo = () => ({ html:`
     ${cab('A Reforma troca os impostos sobre o que a empresa vende','Esta tela mostra <b>quais tributos saem, quais entram e em que ano</b>. PIS, COFINS, ICMS e ISS serão substituídos pela CBS (federal) e pelo IBS (estados e municípios).')}
     <div class="ap-tempo">
-      <div class="ap-etapa"><div class="ano">2026</div><div class="tit">Ano de decidir</div><div class="txt">Nada muda na guia. Mas a opção pelo Simples para 2027 é feita em setembro deste ano.</div></div>
+      <div class="ap-etapa"><div class="ano">2026</div><div class="tit">Ano de decidir</div><div class="txt">Nada muda na guia. Mas a opção pelo Simples para 2027 é formalizada neste ano, no prazo da Res. 194/2026 (${prazoD(2027,'simples')}).</div></div>
       <div class="ap-etapa"><div class="ano">2027</div><div class="tit">A CBS entra</div><div class="txt">PIS e COFINS acabam e viram CBS. IBS começa em teste. ICMS e ISS continuam.</div></div>
       <div class="ap-etapa"><div class="ano">2029–2032</div><div class="tit">Transição</div><div class="txt">A cada ano o IBS sobe um degrau e ICMS/ISS descem o mesmo degrau.</div></div>
       <div class="ap-etapa fim"><div class="ano">2033</div><div class="tit">Modelo completo</div><div class="txt">Só IBS e CBS. Vale para todos os regimes — inclusive para o Simples.</div></div>
     </div>
-    ${resumo('em 2026 a guia não muda, mas a decisão que vale para 2027 é tomada agora, em setembro.')}` });
+    ${resumo('em 2026 a guia não muda, mas a decisão que vale para 2027 é tomada agora ('+prazoD(2027,'simples')+' — Res. 194/2026).')}` });
 
   // ── simplificada ──
   S.hoje = () => ({ html:`
@@ -13191,11 +13556,11 @@ function apTelas(A, modo){
         <p style="font-size:12.5px;margin:10px 0 0">Fornecedor do regime regular gera crédito cheio; do Simples, crédito pequeno; MEI e pessoa física, nenhum.</p>
       </div>
       <div class="ap-cartao">
-        <span class="ap-pill warn">Caixa (split payment)</span>
+        <span class="ap-pill warn">Caixa (split payment — cenário)</span>
         <div class="ap-num m warn" style="margin:12px 0 4px">${apR0(D.split.fonteMes)}/mês</div>
         <div class="ap-rot">retidos na hora do pagamento em ${D.split.ano||2032}${D.variante==='simples'?', se a empresa sair do DAS':''}</div>
         ${D.variante!=='acima' ? `<div style="margin-top:10px;padding:8px 10px;background:var(--ap-okbg);border-radius:8px;font-size:12.5px"><b style="color:var(--ap-ok)">Por dentro do DAS: nada é retido.</b></div>` : ''}
-        <p style="font-size:12.5px;margin:10px 0 0">No split, o imposto é separado antes de o dinheiro chegar à conta da empresa.</p>
+        <p style="font-size:12.5px;margin:10px 0 0">No split, o imposto é separado antes de o dinheiro chegar à conta da empresa. Ainda sem data confirmada para operar — valores de cenário.</p>
       </div>
     </div>
     ${resumo(V ? (V.pctNormal>=50 ? `clientes do regime regular respondem por ${apPct(V.pctNormal,0)} da receita. Se exigirem crédito cheio, o caminho híbrido precisa ser reavaliado — a conversa com eles decide.`
@@ -13208,7 +13573,7 @@ function apTelas(A, modo){
       <div>${(TX.plano||[]).slice(0,4).map((p,i)=>`<div class="ap-passo"><div class="n">${i+1}</div><div><div class="quando">${p.quando}</div><div class="oque">${p.titulo}</div><div class="como">${apFrases(p.texto,2)}</div></div></div>`).join('')}</div>
       <div>${AP_PRAZOS.map(p=>`<div class="ap-prazo"><div class="data ${p.cls}">${p.d}</div><div><b>${p.t}</b><span>${p.x}</span></div></div>`).join('')}</div>
     </div>
-    ${resumo(D.variante==='acima' ? 'a mudança entre Presumido e Real se formaliza com o primeiro recolhimento do ano; o split payment exige planejar o caixa desde 2027.' : 'a opção pelo Simples para 2027 é formalizada entre 1 e 30 de setembro de 2026.')}` });
+    ${resumo(D.variante==='acima' ? 'a mudança entre Presumido e Real se formaliza com o primeiro recolhimento do ano; o split payment — ainda sem data confirmada de início — pede caixa planejado com antecedência.' : 'a opção pelo Simples para 2027 é formalizada em '+prazoD(2027,'simples')+' (Res. CGSN nº 194/2026).')}` });
 
   S.recomendacaoS = () => ({ escuro:true, html:`
     <div class="ap-miolo" style="top:72px">
@@ -13260,7 +13625,7 @@ function apTelas(A, modo){
       <tr><th>Crédito de IBS/CBS</th><td>${A.cl>0.005?fmtR(A.cl)+' de compras do regime regular × '+apPct(A.alq*100,2)+' = '+fmtR(A.credReg)+'. ':''}${A.cs>0.005?fmtR(A.cs)+' de compras do Simples/MEI × '+apPct(A.p58*100,2)+' (art. 58, Res. CGSN 190/2026) = '+fmtR(A.credSimp)+'. ':''}${(A.cl+A.cs)<=0.005?esc(A.compras.texto):'Crédito total no ano de referência: '+fmtR(A.L?A.L.cred:0)+'.'}</td></tr>
       <tr><th>Alíquota de referência ${D.anoRef}</th><td>${apPct(A.alq*100,2)} (CBS + IBS, Res. CGIBS nº 14/2026). É estimativa: a definitiva depende do cálculo do TCU homologado pelo Senado.</td></tr>
       <tr><th>Transição do DAS</th><td>Novos Anexos I–V da Res. CGSN 190/2026: PIS/COFINS viram CBS em 2027; ICMS/ISS descem em degraus até 2033 e o IBS sobe na mesma medida.</td></tr>
-      <tr><th>Split payment</th><td>Premissa conservadora: 100% do débito bruto retido no pagamento; custo financeiro a 15% ao ano sobre um mês retido.</td></tr>
+      <tr><th>Split payment</th><td>Premissa conservadora: 100% do débito bruto retido no pagamento; custo financeiro a 15% ao ano sobre um mês retido. Mecanismo sem data confirmada para operar (CGIBS, ago/2026) — cenário conservador.</td></tr>
     </table>
     ${resumo('nenhuma premissa favorece a empresa: crescimento zero, crédito na menor faixa, split no pior caso. Se a realidade for melhor, o resultado só melhora.')}` });
 
@@ -13318,9 +13683,9 @@ function apTelas(A, modo){
     ${resumo(cam.length>2 ? `o ${cam[1].nome.toLowerCase()} custa ${apDif(cam[1].serie[i0]-cam[kMenor].serie[i0])} por ano a mais; ${cam[2].nome.toLowerCase()}, ${apDif(cam[2].serie[i0]-cam[kMenor].serie[i0])}. ${kMenor===0?'Nenhum dos dois compensa em '+D.anoRef+'.':cam[kMenor].nome+' é o menor em '+D.anoRef+'.'}` : (cam.length?`${cam[kMenor].nome} é o menor em ${D.anoRef}, por ${apDif(Math.abs(cam[0].serie[i0]-cam[1].serie[i0]))} ao ano.`:'preencha a aba Reforma.'),'ok')}` });
 
   S.split = () => ({ html:`
-    ${cab('Split payment: o efeito no caixa','Esta tela mostra <b>quanto ficaria retido na fonte</b>. No split, IBS e CBS são separados no momento do pagamento (LC 214, art. 33).')}
+    ${cab('Split payment: o efeito no caixa','Esta tela mostra <b>quanto ficaria retido na fonte</b>. No split, IBS e CBS são separados no momento do pagamento (LC 214, art. 33) — mecanismo ainda sem data confirmada para operar; os valores são cenário conservador.')}
     <div class="ap-grade" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
-      ${D.variante!=='acima'?`<div class="ap-cartao ok"><div class="ap-num m ok">R$ 0</div><div class="ap-rot">por dentro do DAS: nada retido na fonte</div></div>`:`<div class="ap-cartao warn"><div class="ap-num m warn">na fonte</div><div class="ap-rot">no regime regular a retenção vale desde ${D.sAnos[0]}</div></div>`}
+      ${D.variante!=='acima'?`<div class="ap-cartao ok"><div class="ap-num m ok">R$ 0</div><div class="ap-rot">por dentro do DAS: nada retido na fonte</div></div>`:`<div class="ap-cartao warn"><div class="ap-num m warn">na fonte</div><div class="ap-rot">no regime regular a retenção vale quando o split operar</div></div>`}
       <div class="ap-cartao warn"><div class="ap-num m warn">${fmtR(D.split.fonteMes)}</div><div class="ap-rot">por mês, retido no pagamento (${D.split.ano||2032}, pior ano)</div></div>
       <div class="ap-cartao"><div class="ap-num m">${fmtR(D.split.giroAno)}</div><div class="ap-rot">passa pelo split no ano — não é dinheiro parado</div></div>
       <div class="ap-cartao"><div class="ap-num m">${fmtR(D.split.custoAno)}</div><div class="ap-rot">custo financeiro por ano a 15% a.a.</div></div>
@@ -13367,7 +13732,7 @@ function apTelas(A, modo){
   S.plano = () => ({ html:`
     ${cab('Plano de ação','Esta tela mostra <b>o que fazer, em ordem, de agora até 2027</b>. Os prazos legais que sustentam cada passo estão na tela seguinte.')}
     <div class="ap-grade" style="grid-template-columns:repeat(4,1fr);gap:14px">${(TX.plano||[]).slice(0,4).map((p,i)=>`<div class="ap-cartao" style="min-height:330px"><div class="ap-passo" style="margin:0;flex-direction:column;gap:8px"><div class="n">${i+1}</div><div><div class="quando">${p.quando}</div><div class="oque">${p.titulo}</div><div class="como">${p.texto}</div></div></div></div>`).join('')}</div>
-    ${resumo(D.variante==='acima' ? 'definir o regime do ano seguinte, organizar os créditos e planejar o caixa para o split; reavaliar a cada ano.' : 'formalizar a opção em setembro, organizar os créditos das compras e reavaliar a cada ano da transição.')}` });
+    ${resumo(D.variante==='acima' ? 'definir o regime do ano seguinte, organizar os créditos e planejar o caixa para o split; reavaliar a cada ano.' : 'formalizar a opção no prazo regulamentar ('+prazoD(2027,'simples')+'), organizar os créditos das compras e reavaliar a cada ano da transição.')}` });
 
   S.atencaoPrazos = () => ({ html:`
     ${cab('Pontos de atenção e prazos','Esta tela mostra <b>o que pode alterar o resultado</b> e <b>as janelas da Res. CGSN nº 190/2026</b>. Perder a janela tem efeito por um semestre.')}
@@ -13375,7 +13740,7 @@ function apTelas(A, modo){
       <ul class="ap-lista">${[AP_ATENCAO[0], AP_ATENCAO[1].replace('Os resultados', 'Os dados cobrem '+D.janelaTxt+'; os resultados'), ...AP_ATENCAO.slice(2)].map(a=>`<li>${a}</li>`).join('')}</ul>
       <div>${AP_PRAZOS.map(p=>`<div class="ap-prazo"><div class="data ${p.cls}">${p.d}</div><div><b>${p.t}</b><span>${p.x}</span></div></div>`).join('')}</div>
     </div>
-    ${resumo('as alíquotas são estimativas e o resultado depende dos clientes; a data que não pode passar é 30 de setembro de 2026.','warn')}` });
+    ${resumo('as alíquotas são estimativas e o resultado depende dos clientes; '+(function(){ const p = prazoProximo(2027); return p ? 'a data que não pode passar é '+p.d+' ('+p.t.toLowerCase()+').' : 'os prazos de opção para 2027 já se encerraram.'; })(),'warn')}` });
 
   S.parecer = () => ({ html:`
     ${cab('Parecer e recomendação',`Esta tela mostra <b>a conclusão do estudo</b> para ${A.razao}, com os números que a sustentam.`)}
@@ -13390,12 +13755,13 @@ function apTelas(A, modo){
     </div>
     ${resumo(cam.length ? `${cam[kMenor].nome.toLowerCase()} é o caminho de menor custo em ${D.anoRef}. Reavaliar ${D.variante==='acima'?'a cada ano':'se os clientes exigirem crédito ou'} quando as alíquotas definitivas saírem.` : 'preencha a aba Reforma para concluir.','ok')}` });
 
-  S.encerramento = () => ({ escuro:true, html:`
+  S.encerramento = () => { const _exAp = (RL.exec && RL.fechada && RL.fechada.snapshot) ? RL.fechada.snapshot : null;   // v7.101.3 · B12
+    return { escuro:true, html:`
     <div class="ap-miolo" style="top:72px">
     <h1 style="margin-bottom:22px">Sobre este estudo</h1>
     <div class="ap-grade" style="grid-template-columns:1fr 1fr;gap:34px">
       <div style="font-size:14px;color:#e6eef5;line-height:1.55">
-        <p style="margin:0 0 12px"><b style="color:#fff">Números:</b> calculados pelo Análise Tributária Pro v${APP_VERSAO} sobre os lançamentos reais da empresa. Lacre do motor ${LACRE_HASH} na emissão.</p>
+        <p style="margin:0 0 12px"><b style="color:#fff">Números:</b> calculados pelo Análise Tributária Pro ${_exAp ? `v${esc(String(_exAp.versao||'?'))} — execução congelada no fechamento da análise (lacre ${esc(String(_exAp.lacre||'?'))}, fechada em ${_exAp.em?new Date(_exAp.em).toLocaleDateString('pt-BR'):'?'}; apresentação montada pela v${APP_VERSAO})` : `v${APP_VERSAO} sobre os lançamentos reais da empresa. Lacre do motor ${LACRE_HASH} na emissão`}.</p>
         <p style="margin:0 0 12px"><b style="color:#fff">Textos analíticos:</b> ${A.iaOk?'gerados por inteligência artificial em '+esc(RL._ia.quando)+', a partir dos números apurados. A IA não calcula; p':'textos padrão do sistema. P'}remissas e conclusões foram revisadas pelo responsável técnico.</p>
         <p style="margin:0;font-size:12.5px;color:#c9d8e6">Estimativas em moeda constante do ano-base; alíquotas de IBS/CBS de referência (Res. CGIBS nº 14/2026) sujeitas a recalibração. Não substituem a apuração formal de cada período.</p>
       </div>
@@ -13404,7 +13770,7 @@ function apTelas(A, modo){
         <div style="font-size:14px;color:#c9d8e6">${A.assin.qual}${A.assin.crc?' · CRC '+A.assin.crc:''}<br>Artecon Artes Contábeis · Palhoça/SC · ${A.hoje}</div>
         <div style="margin-top:20px;font-size:13px;color:#9fb3c8">À disposição para esclarecimentos.</div>
       </div>
-    </div></div>` });
+    </div></div>` }; };
 
   const ROTEIRO = modo==='simplificada'
     ? ['capa','tempo','hoje','caminhosS','creditoS','fazerS','recomendacaoS']
@@ -13561,7 +13927,7 @@ function rlRender() {
   $id('rl-cab').style.display='block';
   $id('rl-titulo').textContent = ({regimes:'Comparativo de Regimes Tributários', consolidado:'Consolidado Analítico — Simples · Presumido · Real · Reforma', registros:'Detalhamento dos Registros', reforma:'Reforma Tributária — Transição 2026–2033', parecer:'Parecer — Estudo de Impacto da Reforma Tributária', conferencia:'Conferência de Cálculos — Memória (documento interno)', apresentacao_s:'Apresentação — Estudo de Impacto da Reforma Tributária (simplificada)', apresentacao_c:'Apresentação — Estudo de Impacto da Reforma Tributária (completa)'})[tipo];
   $id('rl-sub').innerHTML = `<b>${emp?.razao_social||''}</b> · CNPJ ${fmtCNPJ(RL.dados.cnpj)} · Ano-base ${RL.dados.ano} · Periodicidade: ${$id('rl-per').selectedOptions[0].text} · Artecon Artes Contábeis`;
-  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlConferencia(); return; }   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
+  if (tipo==='conferencia'){ $id('rl-corpo').innerHTML = rlAvisoDefasado() + subCriticoHtml(emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano)) + rlConferencia() + rlRodapeExec(); return; }   // v7.101.3 · B12   // v7.90.0 · também a memória   // v7.87.0 · erro crítico no topo, em qualquer modo
   // v7.87.0 (§13) · erro crítico do sublimite BLOQUEIA parecer e apresentações — decisão de 10/09/2026
   { const _crit = (tipo==='parecer' || apres) ? emissaoCritica(RL.res, (RL.dados||{}).cfg, (RL.dados||{}).ano) : null;   // v7.90.0 · sublimite OU memória
     if (_crit) { $id('rl-corpo').innerHTML = subCriticoHtml(_crit) + '<div class="card placeholder"><h2>Emissão bloqueada</h2><p>O parecer não pode ser concluído enquanto a inconsistência do sublimite existir. Corrija na aba RBT12 (informe a RBAA ou importe o PGDAS-D) ou na Configuração da empresa (tratamento do sublimite) e gere de novo. A <b>Conferência de cálculos</b> segue disponível para diagnóstico.</p></div>'; return; } }
@@ -13890,7 +14256,7 @@ function rlRegimes(rot, n) {
   ${usouFallback?'⚠️ Aba Reforma sem dados desta empresa: usei as alíquotas-padrão da transição e a receita da análise, sem créditos de compras nem reduções — preencha a aba Reforma para refinar.':''}
   ${(rfxInfo?.contra?.compras_lrlp||0)+(rfxInfo?.contra?.compras_simples||0)>0?'Créditos de IBS/CBS calculados sobre as compras informadas na aba Reforma.':''}</div></div></div></div>`;
   }
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + rlCmpHtml() + h + rlRodapeExec();   // v7.101.3 · B12
   // v7.79.4 · o gráfico desenhava a barra do Simples com a mesma cor das demais, e ela é a MENOR:
   // visualmente, a recomendação. Indisponível passa a levar cinza e o rótulo marcado.
   rlChart('ch-seis', { type:'bar', data:{
@@ -14024,7 +14390,7 @@ function rlReforma() {
   for (const L of linhas) h += `<tr${L.ano===2033?' style="font-weight:700"':''}><td>${L.ano}</td><td class="num">${(L.alq*100).toFixed(2)}%</td><td class="num">${fmt(L.deb)}</td><td class="num">${fmt(L.cred)}</td><td class="num">${fmt(L.liq)}</td><td class="num">${fmt(L.is)}</td><td class="num">${fmt(L.rem)}</td><td class="num">${fmt(L.total)}</td></tr>`;
   h += `</tbody></table></div><div class="hint" style="margin-top:8px">Estimativas conforme parâmetros editáveis salvos na análise (EC 132/2023 · LC 214/2025). IS sem direito a crédito; créditos limitados nas aquisições do Simples.</div></div>`;
   if (window.__refCen) h += refCenCard(window.__refCen, RL.res.totais);
-  $id('rl-corpo').innerHTML = rlAvisoDefasado() + h;
+  $id('rl-corpo').innerHTML = rlAvisoDefasado() + h + rlRodapeExec();   // v7.101.3 · B12
   rlChart('ch-rf', { type:'line', data:{ labels:anos, datasets:[
     { label:'IBS/CBS líquido + IS', data:linhas.map(l=>l.liq+l.is), borderColor:CORES.simples, backgroundColor:CORES.simples, fill:false },
     { label:'Tributos atuais remanescentes', data:linhas.map(l=>l.rem), borderColor:CORES.lp, backgroundColor:CORES.lp, fill:false },
@@ -14037,26 +14403,107 @@ function rlReforma() {
 }
 
 // ═══════════ DASHBOARD DE ANÁLISES ═══════════
+// ═══ v7.99.4 · B05 — O RESUMO GRAVADO CARREGA O MOTOR QUE O CALCULOU ═══
+// (Achados A01 e novo 3 da auditoria de 18/10/2026.) O Dashboard lê o resumo do último Salvar —
+// que pode ter sido calculado por um motor antigo (108 das 109 análises eram anteriores à v7.96/
+// v7.97/LC 224). O total de economia somava maçã com laranja, e uma análise guardava Presumido
+// NEGATIVO (−R$ 220.249,89, corrigido na v7.96.0) sem nenhum aviso. Agora o resumo gravado leva
+// `motor:{ app, lacre }`; o Dashboard compara o lacre gravado com o atual, marca a linha
+// "desatualizada", alerta valor negativo e separa o total de economia em atualizadas ×
+// desatualizadas. Resumo sem motor gravado = anterior à v7.99.4 = desatualizado por definição.
+function dashMotorInfo(r){
+  const mot = (r && r.motor) || null;
+  const desatualizada = !mot || mot.lacre !== LACRE_HASH;
+  const negativo = !!r && [r.simples, r.lp, r.lr].some(v => v!=null && +v < -0.005);
+  return { mot, desatualizada, negativo,
+    rotulo: desatualizada ? (mot && mot.app ? 'motor v'+mot.app : 'motor anterior à v7.99.4') : 'motor atual' };
+}
+// ═══ v7.101.5 — CONGELADOR DE ANÁLISES FECHADAS EM LOTE (o B08 aplicado à carteira) ═══
+// As análises fechadas ANTES da v7.100.0 não têm execução congelada: seus relatórios ainda saem
+// do recálculo. Este botão varre as fechadas e, para cada uma sem execução: recalcula com o motor
+// atual e compara com o snapshot do fechamento (totais, DAS mês a mês e cenários 2033, ao
+// centavo). BATEU → refecha na hora com a execução congelada: os números emitidos não mudam em
+// nada, só ganham a proteção; quem fechou e quando fechou são preservados, o snapshot anterior
+// vai para o histórico (evento "congelada") e a execução entra no registro imutável. DIVERGIU →
+// NÃO toca: a análise sai numa lista para decisão caso a caso (reabrir/refechar pelo 🔁, que
+// adota os números do motor atual — decisão profissional, nunca automática).
+async function dashCongelarFechadas(){
+  const el = $id('da-congelar-rel');
+  if (!confirm('Congelar as análises FECHADAS cujo recálculo bate ao centavo com o snapshot?\n\nAs que baterem são refechadas com a execução congelada — os números emitidos NÃO mudam, só ficam protegidos contra atualizações do motor. As divergentes não são tocadas: saem numa lista para decisão caso a caso.')) return;
+  let rows = [];
+  try { rows = await supa('GET','atp_analises',{ params:{ select:'cnpj,ano,status,snapshot,dados,fechado_por,fechado_em', status:'eq.fechada', order:'ano.desc', limit:'500' } }) || []; }
+  catch(e){ toast('Não consegui ler as análises fechadas: ' + e.message); return; }
+  const rel = { congeladas:[], jaCongeladas:0, divergentes:[], erros:[] };
+  let i = 0;
+  for (const r of rows){
+    i++; if (el) el.innerHTML = `<div class="hint">🧊 Congelando… ${i}/${rows.length}</div>`;
+    try {
+      if (r.snapshot && r.snapshot.exec && r.snapshot.exec.res){ rel.jaCongeladas++; continue; }
+      const an = anNormalizar(JSON.parse(JSON.stringify(r.dados||{})), r.cnpj, r.ano); an.cnpj = r.cnpj; an.ano = r.ano;
+      const res = calcular(an, PARAMS.anexos, folhaPercDaEmpresa(an.cfg));
+      const S = (r.snapshot && r.snapshot.totais) || {};
+      const difs = [];
+      for (const [k,rot] of [['simples','Simples'],['lp','Presumido'],['lr','Real'],['das','DAS']]){
+        const a = +S[k]||0, b = +res.totais[k]||0;
+        if (Math.abs(a-b) > 0.015) difs.push(`${rot}: ${fmtR(a)} → ${fmtR(b)}`);
+      }
+      const dm = (r.snapshot && r.snapshot.dasMeses) || null;
+      if (dm) for (let m=0; m<12; m++) if (Math.abs((+dm[m]||0) - (+(res.meses[m]||{}).das||0)) > 0.015){ difs.push(`DAS de ${MESES[m]}: ${fmtR(+dm[m]||0)} → ${fmtR(+(res.meses[m]||{}).das||0)}`); break; }
+      let cenNovo = null;
+      try { const C = calcCenariosReforma(res, an.reforma||null); const L33 = C.REF[C.REF.length-1];
+        cenNovo = { dentro: cenDentro(res.totais, L33), hib: L33.hib, regular: L33.regular }; } catch(e){/* silêncio proposital (A10): sem cenários, o congelador compara só totais e DAS */}
+      const cenAnt = r.snapshot && r.snapshot.cen2033;
+      if (cenAnt && cenNovo) for (const k of ['dentro','hib','regular'])
+        if (Math.abs((+cenAnt[k]||0) - (+cenNovo[k]||0)) > 0.015){ difs.push(`Reforma 2033 (${k}): ${fmtR(+cenAnt[k]||0)} → ${fmtR(+cenNovo[k]||0)}`); break; }
+      if (difs.length){ rel.divergentes.push({ cnpj:r.cnpj, ano:r.ano, difs }); continue; }
+      // bate ao centavo: congela pelo MESMO caminho do refechamento, preservando quem fechou
+      const _an = AN;
+      let snap; try { AN = an; AN._status = 'fechada'; AN._res = res; snap = anSnapshotCalc(); } finally { AN = _an; }
+      await supa('PATCH', `atp_analises?cnpj=eq.${r.cnpj}&ano=eq.${r.ano}`,
+        { body:{ snapshot: snap, fechado_por: r.fechado_por || APP?.user?.email || '', fechado_em: r.fechado_em || snap.em } });
+      await anHistGravar({ cnpj:r.cnpj, ano:r.ano, dados:{...an,_res:undefined},
+        resumo:{ evento:'congelada', de:'app v'+String((r.snapshot||{}).versao||'?'), para:'app v'+APP_VERSAO,
+                 snapshotAnterior: r.snapshot || null, por: APP?.user?.email||'' } });
+      await execRegistrar('refechar', r.cnpj, r.ano, res, an.reforma||null, an.cfg);
+      rel.congeladas.push({ cnpj:r.cnpj, ano:r.ano });
+    } catch(e){ rel.erros.push({ cnpj:r.cnpj, ano:r.ano, erro: (e && e.message) || String(e) }); }
+  }
+  if (el) el.innerHTML = `<div class="card" style="border-left:4px solid #1a5276;margin-top:10px">
+    <b>🧊 Congelamento das análises fechadas — resultado</b>
+    <div class="hint" style="margin-top:6px">${rel.congeladas.length} congelada(s) agora (números idênticos ao centavo — nada mudou no que foi emitido) · ${rel.jaCongeladas} já estavam congeladas · ${rel.divergentes.length} divergente(s), não tocadas · ${rel.erros.length} erro(s).</div>
+    ${rel.congeladas.length ? `<div class="hint" style="margin-top:4px">Congeladas: ${rel.congeladas.map(x=>esc(empNomeDe(x.cnpj)||fmtCNPJ(x.cnpj))+' · '+x.ano).join(' — ')}</div>` : ''}
+    ${rel.divergentes.length ? `<div style="margin-top:8px;padding:8px 10px;border-left:4px solid #b9770e;background:#fef6e7;font-size:12px"><b>Divergentes — o motor atual dá números DIFERENTES do fechamento; decida caso a caso (abra a análise e use 🔁 Refechar para adotar os novos):</b><br>${rel.divergentes.map(d=>`<b>${esc(empNomeDe(d.cnpj)||fmtCNPJ(d.cnpj))} · ${d.ano}</b>: ${d.difs.map(esc).join(' · ')}`).join('<br>')}</div>` : ''}
+    ${rel.erros.length ? `<div class="hint" style="margin-top:4px;color:var(--danger,#c0392b)">Erros: ${rel.erros.map(d=>esc(fmtCNPJ(d.cnpj))+' · '+d.ano+' ('+esc(d.erro)+')').join(' — ')}</div>` : ''}
+  </div>`;
+  toast(`🧊 ${rel.congeladas.length} congelada(s) · ${rel.divergentes.length} divergente(s) para decisão · ${rel.jaCongeladas} já congeladas.`);
+  dashAnalises();
+}
 async function dashAnalises() {
   let emps = [], anals = [];
   try { emps = await supa('GET','atp_empresas',{ params:{ select:'*', analise:'is.true', order:'razao_social.asc', limit:'500' } }); } catch {}
   try { anals = await supa('GET','atp_analises',{ params:{ select:'cnpj,ano,resumo,atualizado_em', order:'atualizado_em.desc', limit:'500' } }); } catch {}
   $id('da-emp').textContent = emps.length;
   $id('da-anal').textContent = anals.length;
-  let recTot = 0, econTot = 0;
+  let recTot = 0, econAtu = 0, econDesat = 0, nAtu = 0, nDesat = 0, nNeg = 0;
   const linhas = [];
   for (const e of emps) {
     const as = anals.filter(a=>a.cnpj===e.cnpj).sort((a,b)=>b.ano-a.ano);
     if (!as.length) { linhas.push({e, a:null}); continue; }
     const a = as[0], r = a.resumo||{};
     recTot += +r.receita||0;
+    const _mi = dashMotorInfo(r);   // v7.99.4 · B05
+    if (_mi.negativo) nNeg++;
     if (r.simples!=null && r.lp!=null && r.lr!=null) {
-      const ord = (r.lrIncompleto ? [+r.simples,+r.lp] : [+r.simples,+r.lp,+r.lr]).sort((x,y)=>x-y); econTot += ord[1]-ord[0];   // v7.88.0 (P1-01)
+      const ord = (r.lrIncompleto ? [+r.simples,+r.lp] : [+r.simples,+r.lp,+r.lr]).sort((x,y)=>x-y);   // v7.88.0 (P1-01)
+      if (_mi.desatualizada) { econDesat += ord[1]-ord[0]; nDesat++; } else { econAtu += ord[1]-ord[0]; nAtu++; }
     }
     linhas.push({e, a});
   }
   $id('da-rec').textContent = recTot ? fmtR(recTot) : '–';
-  $id('da-econ').textContent = econTot ? fmtR(econTot) : '–';
+  $id('da-econ').textContent = (nAtu || !nDesat) ? (econAtu ? fmtR(econAtu) : '–') : '–';
+  $id('da-econ-desat').innerHTML =
+    (nDesat ? `+ ${fmtR(econDesat)} em ${nDesat} análise(s) gravada(s) com motor antigo — fora do total; abra e salve para atualizar` : (nAtu ? 'todas as análises no motor atual' : ''))
+    + (nNeg ? `<div style="color:var(--danger,#c0392b)"><b>⚠️ ${nNeg} análise(s) com valor NEGATIVO gravado — reabra, recalcule e salve</b></div>` : '');
   // gráficos comparativos
   try { window._chDa1?.destroy(); window._chDa2?.destroy(); } catch {}
   const comAnalise = linhas.filter(x=>x.a?.resumo && x.a.resumo.simples!=null);
@@ -14078,6 +14525,10 @@ async function dashAnalises() {
   }
   $id('da-tbody').innerHTML = linhas.length ? linhas.map(({e,a})=>{
     const r = a?.resumo||{};
+    // v7.99.4 · B05: a linha diz com que motor o resumo foi gravado — e grita se houver valor negativo
+    const _mi = a ? dashMotorInfo(r) : null;
+    const marcas = _mi ? ((_mi.desatualizada ? ` <span class="badge" style="background:#b9770e;color:#fff;font-size:10px" title="Resumo gravado com ${_mi.rotulo} — o motor atual (lacre ${LACRE_HASH}) pode dar outro resultado. Abra a análise e salve para atualizar.">desatualizada</span>` : '')
+      + (_mi.negativo ? ` <span class="badge" style="background:#c0392b;color:#fff;font-size:10px" title="Há valor NEGATIVO gravado neste resumo — reabra a análise, recalcule e salve.">valor negativo</span>` : '')) : '';
     let melhor = '—', econ = null;
     if (r.simples!=null && r.lp!=null && r.lr!=null) {
       // v7.77.0 · a MESMA guarda que o gráfico ao lado já usava: empresa inelegível não tem o
@@ -14092,7 +14543,7 @@ async function dashAnalises() {
       const ord = cands.slice().sort((x,y)=>x-y); econ = ord.length>1 ? ord[1]-ord[0] : null;
     }
     return `<tr><td><b>${e.razao_social||fmtCNPJ(e.cnpj)}</b><div class="hint">${fmtCNPJ(e.cnpj)}</div></td>
-      <td>${e.regime||'—'}</td><td>${a?a.ano:'<span class="hint">sem análise</span>'}</td>
+      <td>${e.regime||'—'}</td><td>${a?a.ano+marcas:'<span class="hint">sem análise</span>'}</td>
       <td class="num">${r.receita!=null?fmt(r.receita):'—'}</td><td class="num">${r.simples!=null?fmt(r.simples):'—'}</td>
       <td class="num">${r.lp!=null?fmt(r.lp):'—'}</td><td class="num">${r.lr!=null?fmt(r.lr):'—'}</td>
       <td>${melhor!=='—'?`<span class="badge ok">${melhor}</span>`:'—'}</td><td class="num">${econ!=null?fmt(econ):'—'}</td>
