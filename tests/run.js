@@ -5340,6 +5340,87 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '795f5d26'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5br · v7.106.0 — apuração por período (plano do cliente): corte trimestral/semestral nos documentos ═══
+  // O motor é mensal e as apurações internas são trimestrais (IRPJ/CSLL do LP, adicional, LC 224),
+  // então o número do período É a soma dos meses do corte — o que os testes cravam por PARTIÇÃO:
+  // t1+t2+t3+t4 == ano e s1 == t1+t2, ao centavo, em todas as chaves somáveis.
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const _pSnap = run('JSON.stringify(PARAMS)');
+    run('PARAMS = { anexos: JSON.parse(JSON.stringify(ANEXOS_DEFAULT)), folha: {...FOLHA_PERC_DEFAULT} }');
+    // receita CRESCENTE por mês para os períodos diferirem de verdade (50k em jan → 160k em dez)
+    const inp = mk({ a3_semret: Array(12).fill(0).map((_,i)=>50000+i*10000) }, 1200000, { ano: 2026, adicionalIR:'trimestral' });
+    ctx.__inp = inp;
+    const o = run(`(function(){ const r = calcular(__inp, ANEXOS_DEFAULT, FOLHA_PERC_DEFAULT);
+      const chaves = ['receita','simples','lp','lr','das','dasGuia','sublimite','dasPisCof','dasIcmsIss','fgts'];
+      const P = p => periodoTotais(r, p);
+      const tA = P('ano'), t1 = P('t1'), t2 = P('t2'), t3 = P('t3'), t4 = P('t4'), s1 = P('s1'), s2 = P('s2');
+      const part = chaves.every(k => Math.abs((t1[k]+t2[k]+t3[k]+t4[k]) - tA[k]) < 0.02
+        && Math.abs((s1[k]+s2[k]) - tA[k]) < 0.02 && Math.abs((t1[k]+t2[k]) - s1[k]) < 0.02);
+      const anoIgual = chaves.every(k => Math.abs(tA[k] - (+r.totais[k]||0)) < 0.02);
+      const difere = Math.abs(s1.lp - s2.lp) > 1;   // receita crescente → períodos diferentes
+      const el = periodoEleicao(r, 's1', true);
+      const eleOk = Math.abs(el.menor - Math.min(el.T.simples, el.T.lp, el.T.lr)) < 0.005;
+      const adT4 = r.meses[11].lp.adicional || 0;   // adicional trimestral mora no 3º mês do trimestre (T4 = dez; T1 fica abaixo dos 60 mil)
+      const adOk = adT4 > 0.005 && Math.abs((t4.lp - r.meses[9].lp.total - r.meses[10].lp.total - r.meses[11].lp.total)) < 0.005;
+      return { part, anoIgual, difere, eleOk, adOk, rotS1: periodoInfo('s1').curto(2026), rotAno: periodoInfo('nao-existe').rot }; })()`);
+    chk('5br · PARTIÇÃO ao centavo: t1+t2+t3+t4 == ano e s1 == t1+t2 em todas as chaves somáveis; corte "ano" == totais de sempre',
+      o.part === true && o.anoIgual === true && o.difere === true);
+    chk('5br · eleição do período usa os totais do CORTE (menor entre Simples/LP/LR do período) e o adicional trimestral mora no trimestre dele',
+      o.eleOk === true && o.adOk === true);
+    chk('5br · rótulos: período conhecido formata "1º semestre/2026"; período desconhecido cai no ano completo',
+      o.rotS1 === '1º semestre/2026' && o.rotAno === 'Ano completo');
+    { const d = run(`(function(){ const r = calcular(__inp, ANEXOS_DEFAULT, FOLHA_PERC_DEFAULT);
+        const soS1 = JSON.parse(JSON.stringify(r)); for (let i=6;i<12;i++) soS1.meses[i].receita = 0;
+        return { semPlano: periodoPadrao({}, r), semestralCheio: periodoPadrao({ plano_apuracao:'semestral' }, r),
+          semestralSoS1: periodoPadrao({ plano_apuracao:'semestral' }, soS1),
+          trimestralCheio: periodoPadrao({ plano_apuracao:'trimestral' }, r),
+          anual: periodoPadrao({ plano_apuracao:'anual' }, r) }; })()`);
+      chk('5br · padrão do seletor segue o PLANO da ficha: sem plano/anual = ano; semestral = último semestre com receita; trimestral = último trimestre com receita',
+        d.semPlano === 'ano' && d.anual === 'ano' && d.semestralCheio === 's2' && d.semestralSoS1 === 's1' && d.trimestralCheio === 't4'); }
+    { const f = run(`(function(){
+        RL.dados = __inp; RL.dados.cnpj = '12121212000112'; RL.dados.ano = 2026;
+        RL.res = calcular(__inp, ANEXOS_DEFAULT, FOLHA_PERC_DEFAULT); RL.reforma = null; RL.empresa = { razao_social:'TESTE PERIODO', cnpj:'12121212000112' };
+        RL.exec = null; RL.fechada = false;
+        document.getElementById('rl-periodo').value = 's1'; document.getElementById('rl-periodo').dataset.manual = '1';
+        rlRegimes(PER_ROTULOS[1], 1);
+        const hS1 = document.getElementById('rl-corpo').innerHTML;
+        document.getElementById('rl-periodo').value = 'ano';
+        rlRegimes(PER_ROTULOS[1], 1);
+        const hAno = document.getElementById('rl-corpo').innerHTML;
+        const T1 = periodoTotais(RL.res, 's1');
+        return { corteDeclarado: /1º semestre\\/2026/.test(hS1), semReforma: !/2033/.test(hS1),
+          valorS1: hS1.indexOf(fmtR(T1.lp)) >= 0, anoTem2033: /2033/.test(hAno),
+          notaCorte: /documento anual/.test(hS1) }; })()`);
+      chk('5br · Comparativo com corte s1: declara o período, usa os totais do corte, traz a nota e DEIXA os cenários 2033 para o documento anual',
+        f.corteDeclarado === true && f.semReforma === true && f.valorS1 === true && f.notaCorte === true);
+      chk('5br · Comparativo com corte "ano" segue EXATAMENTE como sempre (cenários 2033 presentes)', f.anoTem2033 === true); }
+    { const e = await vm.runInContext(`(async()=>{ const _supa = supa; const _user = APP.user; APP.user = { email:'entrega@teste' };
+        const hist = [];
+        supa = async (m,t,op)=>{ if (m==='POST' && t==='atp_analises_hist'){ hist.push(op.body[0]); return []; } return []; };
+        document.getElementById('rl-periodo').value = 's1';
+        document.getElementById('rl-tipo').value = 'regimes';
+        try { await rlRegistrarEntrega(); } finally { supa = _supa; APP.user = _user; }
+        const h = hist.find(x => x && x.resumo && x.resumo.evento === 'entrega-periodo') || null;
+        return { tem: !!h, periodo: h && h.resumo.periodo, temTotais: !!(h && h.resumo.totais && h.resumo.totais.lp != null),
+          por: h && h.resumo.por, app: h && h.resumo.app, lacre: h && h.resumo.lacre }; })()`, ctx);
+      chk('5br · 📬 Registrar entrega: Histórico ganha o evento entrega-periodo com corte, totais, autor, app e lacre',
+        e.tem === true && e.periodo === 's1' && e.temTotais === true && e.por === 'entrega@teste' && /^7\./.test(String(e.app)) && /^[0-9a-f]{8}$/.test(String(e.lacre))); }
+    chk('5br · barra de Relatórios tem o seletor "Período do documento" e o botão de registrar a entrega',
+      /id="rl-periodo"/.test(html) && /rlPeriodoTrocar\(/.test(html) && /rlRegistrarEntrega\(\)/.test(html));
+    chk('5br · ficha da empresa tem o PLANO de apuração (Artecon) e o salvar grava plano_apuracao',
+      /id="emp-plano"/.test(html) && /plano_apuracao/.test(html) && /setup_v7106/.test(html));
+    chk('5br · parecer e conferência declaram o corte: página "Apuração do período" no parecer e cartão do período na conferência',
+      /Apuração do período/.test(html) && /rlPeriodoCard\(\)/.test(html) && /refere(m)?-se ao exercício/.test(html));
+    { const sql = fs.existsSync(path.join(RAIZ,'banco','atp','setup_v7106.sql')) ? fs.readFileSync(path.join(RAIZ,'banco','atp','setup_v7106.sql'),'utf8') : '';
+      chk('5br · setup_v7106.sql: coluna plano_apuracao em atp_empresas, idempotente e com as três opções',
+        /add column if not exists plano_apuracao/.test(sql) && /atp_empresas/.test(sql) && /trimestral/.test(sql) && /semestral/.test(sql) && /anual/.test(sql)); }
+    chk('5br · lacre 795f5d26 intocado (corte é leitura dos meses, nunca motor)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5br · v7.106.0 · badge e changelog', /APP_VERSAO = '7\.(?:10[6-9]|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.106\.0<\/b><\/td><td>24\/10\/2026/.test(html));
+    ctx.__inp = null; run('PARAMS = ' + JSON.stringify(JSON.parse(_pSnap)));
+    run(`document.getElementById('rl-periodo').value = ''; delete document.getElementById('rl-periodo').dataset.manual;`);
+  }
+
   // ═══ 5bq · v7.105.1 — refechamento EM LOTE das divergentes (decisão tomada caso a caso em 24/10) ═══
   {
     const run = c => vm.runInContext(c, ctx);
