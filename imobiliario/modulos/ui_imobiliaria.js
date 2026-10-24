@@ -35,6 +35,27 @@ function ligarMoney(){
   });
 }
 function txt(id){ return (($(id)||{}).value || '').trim(); }
+/* v1.6.4 (auditoria F05): nome acessível programático — associa cada <label> da
+   marcação ao campo que o segue no mesmo bloco quando não há "for", e liga a
+   ajuda do campo via aria-describedby. Leitores de tela passam a anunciar a
+   finalidade dos campos financeiros (ex.: v-val, v-raj). */
+var ROTULO_SEQ = 0;
+function ligarRotulos(){
+  document.querySelectorAll('#page-imobiliaria label').forEach(function(lb){
+    if (lb.htmlFor) return;
+    var alvo = null, el = lb.nextElementSibling;
+    while (el && !alvo) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) alvo = el; else el = el.nextElementSibling; }
+    if (!alvo && lb.parentElement) alvo = lb.parentElement.querySelector('input,select,textarea');
+    if (!alvo) return;
+    if (!alvo.id) alvo.id = 'imob-campo-' + (++ROTULO_SEQ);
+    lb.htmlFor = alvo.id;
+    var ajuda = alvo.nextElementSibling;
+    if (ajuda && ajuda.classList && ajuda.classList.contains('ajuda-campo')) {
+      if (!ajuda.id) ajuda.id = alvo.id + '-ajuda';
+      alvo.setAttribute('aria-describedby', ajuda.id);
+    }
+  });
+}
 var money = RL.money, pct = RL.pct, esc = RL.esc;
 function hojeISO(){ var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function versaoApp(){ return (window.ModulosInfo && ModulosInfo.imobiliario && ModulosInfo.imobiliario.versao) || '?'; }
@@ -84,6 +105,7 @@ function abrirAba(k){
     if (k === 'memoria') imobMemoriaAba();
     if (k === 'cadastro') imobCadastroTipo();
     if (k === 'opcional' || k === 'venda' || k === 'locacao' || k === 'permuta' || k === 'comparativo') ligarMoney();
+    if (k === 'venda' || k === 'permuta' || k === 'comparativo') avisarRajDivergente(k);   // v1.6.4 — F02
   });
 }
 function ligarAbas(){
@@ -150,7 +172,10 @@ function imobMemoria(res, operacao){
     if (ehAlq) {
       // v1.3.0: linha de alíquota mostra PERCENTUAIS, nunca R$ 0,00
       valorCel = '<div>IBS <b>' + pct(l.ibs_reduzida,4) + '</b></div><div>CBS <b>' + pct(l.cbs_reduzida,4) + '</b></div>';
-      entradaTxt = 'IBS padr&atilde;o ' + pct(ex.ibs_padrao,2) + ' · CBS padr&atilde;o ' + pct(ex.cbs_padrao,2) + ' · redu&ccedil;&atilde;o ' + ex.reducao_pct + '%' +
+      // v1.6.4 (auditoria F01): os padrões exibidos são os do PRÓPRIO cálculo (escada do ano, quando houver)
+      var pIbs = l.entrada && typeof l.entrada.ibs_padrao === 'number' ? l.entrada.ibs_padrao : ex.ibs_padrao;
+      var pCbs = l.entrada && typeof l.entrada.cbs_padrao === 'number' ? l.entrada.cbs_padrao : ex.cbs_padrao;
+      entradaTxt = 'IBS padr&atilde;o ' + pct(pIbs,2) + ' · CBS padr&atilde;o ' + pct(pCbs,2) + ' · redu&ccedil;&atilde;o ' + ex.reducao_pct + '%' +
         (ex.editadas.length && ex.reducao_pct !== l.ibs_reduzida ? '' : '') +
         (PR.alteradas(PREM).some(function(p){ return /reducao|padrao/.test(p.chave); }) ? ' <span class="badge b-edit">premissa editada — original: ' + pct(PR.CATALOGO.ibs_padrao.valor,2) + ' / ' + pct(PR.CATALOGO.cbs_padrao.valor,2) + ' com ' + (operacao === 'locacao' ? 70 : 50) + '%</span>' : '') +
         ' · ' + catBadge(l.categoria || (l.classificacao === 'LEGAL' ? 'LEGAL' : 'ESTIMATIVA')) + ' · redu&ccedil;&atilde;o ' + catBadge('LEGAL');
@@ -330,15 +355,76 @@ function pintaFluxo(){
   var alvo = $('fluxo-out'); if (!alvo) return;
   var raj = rajEscolhido();
   alvo.innerHTML = '<div class="card"><h2>Passo 3 &mdash; O que voc&ecirc; quer calcular com este im&oacute;vel?</h2>' +
-    '<div class="mini">Redutor de ajuste que ser&aacute; usado: <b>' + money(raj.valor) + '</b> (' + esc(raj.rotulo) + '). Os dados do im&oacute;vel j&aacute; v&atilde;o preenchidos; ao calcular, os relat&oacute;rios ficam dispon&iacute;veis.</div>' +
+    '<div class="mini">Redutor de ajuste ' + (raj.sugestao ? 'sugerido' : 'que ser&aacute; usado') + ': <b>' + money(raj.valor) + '</b> (' + esc(raj.rotulo) + '). Ao abrir pelos cart&otilde;es abaixo, este valor &eacute; aplicado ao formul&aacute;rio; navegando pelo menu lateral, confira o campo <b>Saldo do redutor de ajuste</b> &mdash; qualquer diverg&ecirc;ncia &eacute; apontada ao lado do campo.</div>' +
     '<div class="fluxo">' + FLUXO_OPS.filter(function(o){ return o.op !== 'pf' || (PESSOA.tipo === 'PF'); }).map(function(o){ return '<div class="op" onclick="imobEscolherOperacao(\'' + o.op + '\')"><div class="ic">' + o.ic + '</div><b>' + o.t + '</b><div class="d">' + o.d + '</div></div>'; }).join('') + '</div></div>';
 }
 function rajEscolhido(){
   if (!RAJ || !RAJ.opcoes) return { valor: n('v-raj'), rotulo: 'informado' };
   if (RAJ_ESCOLHA !== null && RAJ.opcoes[RAJ_ESCOLHA] && RAJ.opcoes[RAJ_ESCOLHA].valor != null) return RAJ.opcoes[RAJ_ESCOLHA];
+  // v1.6.4 (auditoria F02): sem escolha gravada do art. 375, a maior opção é SUGESTÃO, nunca decisão.
   var disp = RAJ.opcoes.filter(function(o){ return o.valor != null; }).sort(function(a,b){ return b.valor - a.valor; });
-  return disp[0] ? { valor: disp[0].valor, rotulo: disp[0].rotulo + ' (maior opção disponível)' } : { valor: 0, rotulo: 'nenhuma opção disponível' };
+  return disp[0] ? { valor: disp[0].valor, rotulo: disp[0].rotulo + ' (maior opção disponível — sugestão; a escolha do art. 375 é do contribuinte)', sugestao: true } : { valor: 0, rotulo: 'nenhuma opção disponível' };
 }
+/* v1.6.4 (auditoria F02): por QUALQUER caminho de navegação, o redutor anunciado
+   no assistente e o aplicado no formulário têm de coincidir — ou a divergência
+   aparece ao lado do campo, com a origem e um botão para usar o valor do imóvel.
+   Nada é sobrescrito sem confirmação: o valor digitado permanece até o clique.
+   v1.6.5 (reanálise F02-R): manter o valor divergente vira CENÁRIO MANUAL — a
+   ciência e o motivo são registrados ao lado do campo e acompanham o resultado,
+   a memória, as ressalvas dos relatórios e o parecer; parecer com IA e
+   finalização não são emitidos com divergência material pendente. */
+var RAJ_CAMPO = { venda: 'v-raj', permuta: 'x-raj', comparativo: 'c-raj' };
+var RAJ_MANUAL = {};
+function rajDivergencia(op){
+  var id = RAJ_CAMPO[op];
+  if (!id || !$(id) || !RAJ || !RAJ.opcoes) return { divergente: false };
+  var raj = rajEscolhido();
+  if (raj.valor == null || Math.abs(n(id) - raj.valor) <= 0.01) return { divergente: false };
+  var m = RAJ_MANUAL[op], conf = m && m.valor === n(id) ? m : null;
+  return { divergente: true, campo: n(id), imovel: raj.valor, rotulo: raj.rotulo,
+           confirmada: !!conf, justificativa: conf ? conf.justificativa : null, quando: conf ? conf.quando : null };
+}
+function rajRessalvaManual(d){
+  return d.confirmada
+    ? 'Cenário manual do redutor de ajuste: mantido ' + money(d.campo) + ' por decisão do usuário (motivo: ' + d.justificativa + ', registrado em ' + new Date(d.quando).toLocaleString('pt-BR') + '); o imóvel do Passo 2 indicava ' + money(d.imovel) + '.'
+    : 'CENÁRIO MANUAL NÃO CONFIRMADO: o redutor de ajuste usado (' + money(d.campo) + ') diverge do indicado pelo imóvel do Passo 2 (' + money(d.imovel) + ') e o motivo ainda não foi registrado ao lado do campo.';
+}
+function avisarRajDivergente(op){
+  var id = RAJ_CAMPO[op], el = id && $(id); if (!el) return;
+  var alvo = $(id + '-orig');
+  if (!alvo) { alvo = document.createElement('div'); alvo.id = id + '-orig'; alvo.className = 'mini'; el.parentElement.appendChild(alvo); }
+  if (!RAJ || !RAJ.opcoes) { alvo.innerHTML = ''; return; }
+  var raj = rajEscolhido(), d = rajDivergencia(op);
+  if (!d.divergente) { alvo.innerHTML = raj.valor != null && Math.abs(n(id) - raj.valor) <= 0.01 ? 'Origem: ' + esc(raj.rotulo) : ''; return; }
+  if (d.confirmada) {
+    alvo.innerHTML = '<div class="info" style="margin-top:6px"><b>Cen&aacute;rio manual confirmado:</b> mantido ' + money(d.campo) +
+      ' (o im&oacute;vel indica ' + money(d.imovel) + ' &mdash; ' + esc(d.rotulo) + '). Motivo: <i>' + esc(d.justificativa) + '</i>. ' +
+      '<button class="btn" style="padding:3px 8px" onclick="imobUsarRajImovel(\'' + op + '\')">Usar ' + money(d.imovel) + ' do im&oacute;vel</button></div>';
+    return;
+  }
+  var justAtual = $(id + '-just') ? $(id + '-just').value : '';
+  alvo.innerHTML = '<div class="aviso" style="margin-top:6px"><b>Diverge do im&oacute;vel do Passo 2:</b> o campo est&aacute; com ' + money(d.campo) +
+    ', mas o im&oacute;vel indica <b>' + money(d.imovel) + '</b> (' + esc(d.rotulo) + '). ' +
+    '<button class="btn" style="padding:3px 8px" onclick="imobUsarRajImovel(\'' + op + '\')">Usar ' + money(d.imovel) + ' do im&oacute;vel</button>' +
+    '<div style="margin-top:6px"><label for="' + id + '-just">Para manter ' + money(d.campo) + ' como cen&aacute;rio manual, registre o motivo</label> ' +
+    '<input type="text" id="' + id + '-just" value="' + esc(justAtual) + '" placeholder="ex.: saldo parcial j&aacute; utilizado em outra opera&ccedil;&atilde;o" style="max-width:340px"> ' +
+    '<button class="btn" style="padding:3px 8px" onclick="imobConfirmarRajManual(\'' + op + '\')">Manter como cen&aacute;rio manual</button></div></div>';
+}
+function imobUsarRajImovel(op){ acao(function(){
+  var id = RAJ_CAMPO[op], raj = rajEscolhido();
+  if (!id || !$(id) || raj.valor == null) return;
+  $(id).value = raj.valor; fmtMoneyInput($(id));
+  delete RAJ_MANUAL[op];                       // v1.6.5 — sem divergência não há cenário manual
+  avisarRajDivergente(op);
+}); }
+function imobConfirmarRajManual(op){ acao(function(){
+  var id = RAJ_CAMPO[op], d = rajDivergencia(op);
+  if (!d.divergente) return;
+  var elJ = $(id + '-just'), just = elJ ? String(elJ.value || '').trim() : '';
+  if (!just) { if (elJ) { elJ.classList.add('invalido'); elJ.focus(); } return; }
+  RAJ_MANUAL[op] = { valor: d.campo, imovel: d.imovel, rotulo: d.rotulo, justificativa: just, quando: new Date().toISOString() };
+  avisarRajDivergente(op);
+}); }
 function imobEscolherOperacao(op){ acao(function(){
   var raj = rajEscolhido(), tipo = txt('i-tipo');
   if (op === 'venda') { $('v-raj').value = raj.valor; $('v-tipo').value = tipo; if (!(n('v-val') > 0)) $('v-val').value = nOuNulo('i-ref') || nOuNulo('i-aq') || 0; }
@@ -415,12 +501,17 @@ function calcVenda(){ acao(function(){
   if (res.status === 'BLOQUEADO') { $('v-out').innerHTML = imobBloqueio(res); return; }
   var ex = PR.explicar(PREM, 'venda');
   var et = RL.resultadoVenda(res, e, ex);
-  var h = imobGrau(res, 'venda') + imobSequencial('Resultado da aliena&ccedil;&atilde;o', et);
+  // v1.6.5 (F02-R): divergência do redutor identifica o cenário como manual no resultado e na memória
+  var dR = rajDivergencia('venda');
+  if (dR.divergente) et[1].extra = (et[1].extra || '') + ' · CENÁRIO MANUAL: campo ' + money(dR.campo) + ' × imóvel ' + money(dR.imovel) + (dR.confirmada ? ' — motivo: ' + dR.justificativa : ' — divergência ainda não confirmada');
+  var h = imobGrau(res, 'venda') +
+    (dR.divergente ? '<div class="' + (dR.confirmada ? 'info' : 'aviso') + '" style="margin:10px 0"><b>Cen&aacute;rio manual:</b> ' + esc(rajRessalvaManual(dR)) + '</div>' : '') +
+    imobSequencial('Resultado da aliena&ccedil;&atilde;o', et);
   h += imobParcelasHTML(res, 'IBS/CBS devidos em cada pagamento &mdash; art. 380');
   var anos = calcularAnos(e, ctx);
   $('v-out').innerHTML = h + imobAnosHTML(anos, e) + imobMemoria(res, 'venda') + botoesRelatorio('venda');
   ULTIMO.venda = { e: e, res: res, ctx: ctx, etapas: et, anos: anos }; ULTIMA_OP = 'venda';
-  registrarSimulacao(e, res, 'Venda');
+  registrarSimulacao(e, res, 'Venda', dR.divergente ? { redutor_manual: dR } : null);
 }); }
 
 /* ---------- locação ---------- */
@@ -484,7 +575,11 @@ function calcPerm(){ acao(function(){
   if (res.status === 'BLOQUEADO') { $('x-out').innerHTML = imobBloqueio(res); return; }
   var ex = PR.explicar(PREM, 'venda');
   var et = RL.resultadoPermuta(res, e, ex, { valor_recebido: nOuNulo('x-rec'), unidades: txt('x-uni') === '1' ? n('x-nuni') : 0 });
-  var h = imobGrau(res, 'venda') + imobSequencial('Resultado da permuta', et);
+  // v1.6.5 (F02-R): divergência do redutor identifica o cenário como manual também na permuta
+  var dP = rajDivergencia('permuta');
+  var h = imobGrau(res, 'venda') +
+    (dP.divergente ? '<div class="' + (dP.confirmada ? 'info' : 'aviso') + '" style="margin:10px 0"><b>Cen&aacute;rio manual:</b> ' + esc(rajRessalvaManual(dP)) + '</div>' : '') +
+    imobSequencial('Resultado da permuta', et);
   if (txt('x-din') === '1') h += '<div class="card"><div class="aviso">Contrapresta&ccedil;&atilde;o em dinheiro al&eacute;m da torna: trate o valor como torna (art. 360, &sect;3&ordm;, I) &mdash; informe-o nos campos de torna para que seja tributado.</div></div>';
   if (n('x-cre') > 0) h += '<div class="card"><div class="info">Cr&eacute;ditos informados (' + money(n('x-cre')) + ') n&atilde;o foram abatidos: o motor n&atilde;o compensa cr&eacute;ditos na permuta &mdash; o aproveitamento se d&aacute; na apura&ccedil;&atilde;o peri&oacute;dica (arts. 47 a 57).</div></div>';
   if (txt('x-nome')) h += '<div class="card"><div class="mini">Contraparte: <b>' + esc(txt('x-nome')) + '</b> (' + esc(txt('x-parte')) + ')</div></div>';
@@ -492,7 +587,7 @@ function calcPerm(){ acao(function(){
   var anos = calcularAnos(e, ctx);
   $('x-out').innerHTML = h + imobAnosHTML(anos, e) + imobMemoria(res, 'venda') + botoesRelatorio('permuta');
   ULTIMO.permuta = { e: e, res: res, ctx: ctx, etapas: et, anos: anos }; ULTIMA_OP = 'permuta';
-  registrarSimulacao(e, res, 'Permuta');
+  registrarSimulacao(e, res, 'Permuta', dP.divergente ? { redutor_manual: dP } : null);
 }); }
 
 /* ---------- pessoa física ---------- */
@@ -564,7 +659,8 @@ var IMPACTO = {
 };
 function pintaRegras(){
   var R = M.REGRAS, info = (window.ModulosInfo || {}).imobiliario || {};
-  var h = '<div class="mini" style="margin-bottom:10px">Ruleset <b>' + esc(M.RULESET_VERSAO) + '</b> · motor ' + esc(M.MOTOR_IMOB_VERSAO) + ' · &uacute;ltima atualiza&ccedil;&atilde;o do m&oacute;dulo <b>' + esc(info.data || '—') + '</b> · lacre <code>' + esc(M.LACRE_IMOB_HASH) + '</code></div>' +
+  var h = '<div class="mini" style="margin-bottom:10px">Ruleset <b>' + esc(M.RULESET_VERSAO) + '</b> · motor ' + esc(M.MOTOR_IMOB_VERSAO) + ' · &uacute;ltima atualiza&ccedil;&atilde;o do m&oacute;dulo <b>' + esc(info.data || '—') + '</b> · lacre <code>' + esc(M.LACRE_IMOB_HASH) + '</code>' +
+    ' · <a href="politica-metodologica.html" target="_blank" rel="noopener" id="link-pm-imob">Pol&iacute;tica metodol&oacute;gica (PM-IMOB, documento versionado)</a></div>' +   // v1.6.7 — reanálise P2
     '<div class="ajuda">Cat&aacute;logo audit&aacute;vel (v1.6.0): cada regra traz c&oacute;digo, vers&atilde;o, f&oacute;rmula, fundamento com link oficial e data de consulta, vig&ecirc;ncia, status, premissas, depend&ecirc;ncias e impacto. Status poss&iacute;veis: homologada, legal, administrativa, premissa, indicativa, proje&ccedil;&atilde;o, staging, bloqueada &mdash; regra baseada em premissa, estimativa ou proje&ccedil;&atilde;o nunca &eacute; "homologada".</div>' +
     '<table><thead><tr><th>Regra</th><th>Descri&ccedil;&atilde;o e f&oacute;rmula</th><th>Fundamento oficial</th><th>Vig&ecirc;ncia</th><th>Status</th><th>Impacto no c&aacute;lculo</th></tr></thead><tbody>';
   ASSUNTOS.forEach(function(a){
@@ -683,7 +779,7 @@ function calcComp(){ acao(function(){
   var cargaA = receita > 0 ? totA / receita * 100 : 0, cargaR = receita > 0 ? totR / receita * 100 : 0;
   var cmpMotor = opV ? M.comparativoAtualXReforma({ atual: dadosLP, reforma: opV }, c) : null;
   var h = imobGrau(rV || rL || { confianca: { nivel: 'MEDIA' } }, 'venda') +
-    '<div class="card"><h2>Comparativo lado a lado</h2><table><thead><tr><th>Item</th><th class="num">Regime atual (Lucro Presumido)</th><th class="num">Regime espec&iacute;fico (IBS/CBS)</th><th class="num">Diferen&ccedil;a</th></tr></thead><tbody>' +
+    '<div class="card"><h2>Comparativo lado a lado</h2><div class="mini">O lado da Reforma usa o <b>cen&aacute;rio de refer&ecirc;ncia (2033)</b>; o imposto de cada ano da transi&ccedil;&atilde;o est&aacute; na tabela Ano a ano abaixo &mdash; a mesma escada usada no c&aacute;lculo individual por data.</div><table><thead><tr><th>Item</th><th class="num">Regime atual (Lucro Presumido)</th><th class="num">Regime espec&iacute;fico (IBS/CBS) &mdash; refer&ecirc;ncia 2033</th><th class="num">Diferen&ccedil;a</th></tr></thead><tbody>' +
     linhas.map(function(l){ return '<tr' + (l[3] ? ' class="grp"' : '') + '><td>' + l[0] + '</td><td class="num">' + money(l[1]) + '</td><td class="num">' + money(l[2]) + '</td><td class="num"><b>' + money(l[2] - l[1]) + '</b></td></tr>'; }).join('') +
     '<tr><td>Carga efetiva (substitu&iacute;veis ÷ receita)</td><td class="num">' + pct(cargaA,4) + '</td><td class="num">' + pct(cargaR,4) + '</td><td class="num"><b>' + pct(cargaR - cargaA,4) + '</b></td></tr></tbody></table>' +
     '<div class="' + (totR > totA ? 'aviso' : 'aviso ok') + '" style="margin-top:12px">Varia&ccedil;&atilde;o nos tributos substitu&iacute;veis: <b>' + money(Math.abs(totR - totA)) + '</b> (' + pct(totA > 0 ? Math.abs(totR - totA) / totA * 100 : 0, 2) + ') ' + (totR > totA ? 'a MAIS' : 'a MENOS') + ' no regime espec&iacute;fico.</div>' +
@@ -864,6 +960,9 @@ function imobFinalizarDB(alvo){
   var e = entradaVenda(), ctx = ctxPara('venda'), res = M.calcular(e, ctx);
   if (sem) { alvo.insertAdjacentHTML('afterbegin', sem); return; }
   if (res.status === 'BLOQUEADO') { alvo.insertAdjacentHTML('afterbegin', imobAvisoDB('C&aacute;lculo bloqueado n&atilde;o &eacute; finalizado.')); return; }
+  // v1.6.5 (F02-R): finalizar é emissão final — exige ciência registrada quando o redutor diverge
+  var dvFin = rajDivergencia('venda');
+  if (dvFin.divergente && !dvFin.confirmada) { alvo.insertAdjacentHTML('afterbegin', imobAvisoDB('N&atilde;o finalizado: o redutor de ajuste diverge do im&oacute;vel do Passo 2 (' + money(dvFin.campo) + ' &times; ' + money(dvFin.imovel) + ') sem motivo registrado. Confirme o cen&aacute;rio manual ao lado do campo ou use o valor do im&oacute;vel.')); return; }
   var chave = 'imob-' + Date.now() + '-' + Math.random().toString(16).slice(2, 8);
   e.premissas_editadas = PR.alteradas(PREM).map(function(p){ return { chave: p.chave, valor: p.valor_vigente, original: p.valor_automatico, justificativa: p.justificativa, quando: p.quando }; });
   e.cadastro_imovel = IMOVEL.codigo_interno ? IMOVEL : undefined;
@@ -995,15 +1094,24 @@ function imobPremissaRestaurar(chave){
 /* ---------- auditoria, memória navegável, snapshot e relatórios ---------- */
 var SEVCOR = { impeditivo:'b-err', alto:'b-err', medio:'b-warn', baixo:'b-info' };
 function rodarAuditoria(){ acao(function(){
-  var e = entradaVenda(), ctx = ctxPara('venda'), res = M.calcular(e, ctx);
-  if (res.status === 'BLOQUEADO') { $('au-out').innerHTML = imobBloqueio(res); return; }
+  /* v1.6.4 (auditoria F03): o pacote da auditoria e do parecer s&oacute; se monta sobre
+     um c&aacute;lculo REALIZADO nesta sess&atilde;o — nunca sobre os valores de exemplo do
+     formul&aacute;rio, que antes apareciam como resultado auditado. */
+  var u = ULTIMO.venda;
+  if (!u || !u.res || u.res.status !== 'CALCULADO') {
+    $('au-out').innerHTML = '<div class="card"><h2>Resultado da auditoria</h2><div class="info"><b>Ainda n&atilde;o h&aacute; c&aacute;lculo de Venda nesta sess&atilde;o.</b> A auditoria e o pacote do parecer s&atilde;o montados sobre um c&aacute;lculo realizado e identificado, nunca sobre dados de exemplo. Preencha a aba <b>Venda</b>, clique em <b>Calcular</b> e volte aqui.</div>' + imobSelo() + '</div>';
+    return;
+  }
+  var e = u.e, ctx = u.ctx, res = u.res;
   var au = M.auditar(e, res, ctx);
+  var dvAu = rajDivergencia('venda');   // v1.6.5 (F02-R)
   var h = '<div class="card"><h2>Resultado da auditoria</h2><div class="tot" style="font-size:22px">Confian&ccedil;a <span class="n-' + au.nivel_confianca + '">' + au.nivel_confianca + '</span></div>' +
     '<div class="' + (au.permite_conclusao_definitiva ? 'info' : 'aviso') + '" style="margin-top:10px">' + esc(au.mensagem) + '</div>' +
     (au.total ? '<table style="margin-top:8px"><thead><tr><th style="width:64px">C&oacute;digo</th><th style="width:96px">Severidade</th><th>Achado</th><th style="width:30%">Fonte</th></tr></thead><tbody>' +
       au.achados.map(function(x){ return '<tr><td><code>' + esc(x.codigo) + '</code></td><td><span class="badge ' + SEVCOR[x.severidade] + '">' + esc(x.severidade) + '</span></td><td><b>' + esc(x.titulo) + '</b><div class="mini">' + esc(x.detalhe) + '</div></td><td class="fund">' + esc(x.fonte || '—') + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="info">Nenhum achado.</div>') + imobSelo() + '</div>';
   h += '<div class="card"><h2>Por que este valor?</h2><div class="mini">Clique numa linha para abrir a trilha.</div><table style="margin-top:10px"><thead><tr><th>Linha</th><th class="num">Valor</th><th>Regra</th></tr></thead><tbody>' +
     res.linhas.map(function(l,i){ return '<tr style="cursor:pointer" onclick="trilha(' + i + ')"><td>' + esc(l.descricao) + '</td><td class="num">' + (l.ibs_reduzida != null ? 'IBS ' + pct(l.ibs_reduzida,4) + ' · CBS ' + pct(l.cbs_reduzida,4) : money(l.valor)) + '</td><td><code>' + esc(l.regra_id) + '</code></td></tr>'; }).join('') + '</tbody></table><div id="trilha-out"></div></div>';
+  if (dvAu.divergente) h += '<div class="card"><h2>Decis&atilde;o sobre o redutor de ajuste</h2><div class="' + (dvAu.confirmada ? 'info' : 'aviso') + '">' + esc(rajRessalvaManual(dvAu)) + (dvAu.confirmada ? '' : ' O parecer com IA e a finaliza&ccedil;&atilde;o permanecem bloqueados at&eacute; a confirma&ccedil;&atilde;o.') + '</div></div>';
   var extras = {};
   if (ULTIMO.comparativo && ULTIMO.comparativo.cmp && ULTIMO.comparativo.cmp.status === 'CALCULADO') { extras.comparativo = ULTIMO.comparativo.cmp; extras.projecao = ULTIMO.comparativo.projecao; }
   var pac = M.pacoteParecer(e, res, ctx, extras);
@@ -1015,7 +1123,7 @@ function rodarAuditoria(){ acao(function(){
       pac.bloco_06_memoria_de_calculo.map(function(l){ return '<tr><td>' + esc(l.descricao) + '</td><td><span class="badge b-info">' + esc(l.origem) + '</span></td></tr>'; }).join('') + '</tbody></table></div>' +
     (pac.bloco_13_limitacoes_e_premissas.length ? '<div style="margin-top:12px"><label>Limita&ccedil;&otilde;es e premissas</label>' + pac.bloco_13_limitacoes_e_premissas.map(function(x){ return '<div class="aviso">' + esc(x) + '</div>'; }).join('') + '</div>' : '') +
     '<div class="toolbar" style="margin-top:12px"><button class="btn" onclick="verPrompt()">Ver o prompt travado</button><button class="btn" onclick="testarGuarda()">Testar a guarda anti-alucina&ccedil;&atilde;o</button><button class="btn pri" onclick="imobGerarParecer()">Gerar parecer com IA</button></div><div id="prompt-out"></div></div>';
-  var sn = M.montarSnapshot(e, res, ctx, { request_id: 'previa-' + txt('v-data'), empresa_id: 'previa' });
+  var sn = M.montarSnapshot(e, res, ctx, { request_id: 'previa-' + (e.data_fato_gerador || ''), empresa_id: 'previa' });
   var rep = M.reprocessar(sn);
   h += '<div class="card"><h2>Snapshot forense</h2><table><tbody><tr><td>Hash do snapshot</td><td class="num"><code>' + esc(sn.hash_snapshot) + '</code></td></tr>' +
     '<tr><td>Motor / ruleset</td><td class="num">' + esc(sn.corpo.versoes.motor) + ' &middot; ' + esc(sn.corpo.versoes.ruleset) + '</td></tr><tr><td>Lacre do motor</td><td class="num"><code>' + esc(sn.corpo.versoes.lacre_imob) + '</code></td></tr>' +
@@ -1028,20 +1136,32 @@ function pacoteRelatorio(op){
   var u = ULTIMO[op], opCtx = op === 'locacao' ? 'locacao' : 'venda';
   var e, ctx, res, etapas, anos;
   if (u) { e = u.e; ctx = u.ctx; res = u.res; etapas = u.etapas; anos = u.anos; }
-  else { e = entradaVenda(); ctx = ctxPara('venda'); res = M.calcular(e, ctx); }
+  else {
+    // v1.6.4 (auditoria F03): relatório sem cálculo na sessão não usa os dados de exemplo do formulário
+    return { erro: { status: 'BLOQUEADO', mensagem: 'Nenhum cálculo de ' + op + ' nesta sessão — calcule a operação antes de gerar o relatório.',
+                     bloqueios: [{ codigo: 'F03', msg: 'Nenhum cálculo de ' + op + ' nesta sessão — calcule a operação antes de gerar o relatório.' }] } };
+  }
   if (res.status === 'BLOQUEADO') return { erro: res };
   var ex = PR.explicar(PREM, opCtx);
   if (!etapas) etapas = RL.resultadoVenda(res, e, ex);
   if (anos === undefined) anos = calcularAnos(e, ctx);
   var au = M.auditar(e, res, ctx);
   var pessoa = PESSOA.nome ? PESSOA : {};
-  return { titulo_operacao: { venda: 'Alienação de bem imóvel', locacao: 'Locação de bem imóvel', permuta: 'Permuta de bens imóveis' }[op] || op, entrada: e, res: res, etapas: etapas, anos: anos, expl: ex,
+  var p = { titulo_operacao: { venda: 'Alienação de bem imóvel', locacao: 'Locação de bem imóvel', permuta: 'Permuta de bens imóveis' }[op] || op, entrada: e, res: res, etapas: etapas, anos: anos, expl: ex,
     grau: PR.grauCerteza(PREM, res, M.RULESET_VERSAO), premissas: PR.listar(PREM), coerencia: RL.coerencia(res, ex), auditoria: au,
     comparativo: ULTIMO.comparativo && ULTIMO.comparativo.cmp && ULTIMO.comparativo.cmp.status === 'CALCULADO' ? ULTIMO.comparativo.cmp : null,
     regras: M.REGRAS, ruleset: M.RULESET_VERSAO, motor: M.MOTOR_IMOB_VERSAO, lacre: M.LACRE_IMOB_HASH, app_versao: versaoApp(),
     empresa: { nome: pessoa.nome || IMOVEL.empresa || (window.EMP_GLOBAL && EMP_GLOBAL.nome) || '', cnpj: pessoa.documento ? docFormatado(pessoa.documento) : ((window.EMP_GLOBAL && EMP_GLOBAL.cnpj) || ''), tipo: pessoa.tipo || null, regime: pessoa.regime || null },
     imovel: IMOVEL.codigo_interno ? IMOVEL : e.imovel, calculado_em: new Date().toISOString(),
     ressalvas: ['A alíquota de referência de IBS/CBS (Res. CGIBS 14/2026) é estimativa não vinculante.', 'IRPJ e CSLL permanecem devidos nos dois cenários e não integram os valores de IBS/CBS.', 'A opção do art. 375 é definitiva por imóvel e deve ser exercida até 31/12/2026.'] };
+  // v1.6.5 (F02-R): a decisão sobre o redutor divergente acompanha os documentos emitidos
+  if (op === 'venda' || op === 'permuta') {
+    var dv = rajDivergencia(op);
+    if (dv.divergente) { p.ressalvas.push(rajRessalvaManual(dv)); p.redutor_manual = dv; }
+  }
+  // v1.6.6 (reanálise P1): o documento emitido referencia o snapshot do cálculo que o gerou
+  try { p.snapshot_hash = M.montarSnapshot(e, res, ctx, { request_id: 'relatorio-' + (e.data_fato_gerador || ''), empresa_id: 'relatorio' }).hash_snapshot; } catch (errSn) {}
+  return p;
 }
 function imobRelatorio(tipo, op){ acao(function(){
   var p = pacoteRelatorio(op);
@@ -1049,6 +1169,15 @@ function imobRelatorio(tipo, op){ acao(function(){
   if (p.erro) { alvo.innerHTML = imobBloqueio(p.erro); return; }
   if (!p.coerencia.ok) { alvo.insertAdjacentHTML('afterbegin', '<div class="card"><div class="aviso err"><b>Relat&oacute;rio n&atilde;o emitido:</b> a confer&ecirc;ncia matem&aacute;tica apontou diverg&ecirc;ncia entre mem&oacute;ria e resultado.</div></div>'); return; }
   var html = tipo === 'executivo' ? RL.montarExecutivo(p) : tipo === 'tecnico' ? RL.montarTecnico(p) : tipo === 'simplificado' ? RL.montarSimplificado(p) : RL.montarMemoria(p);
+  // v1.6.6 (reanálise P1): o documento só sai depois de conferido contra o cálculo que o gerou
+  var conf = RL.conferirRelatorio(html, p);
+  if (!conf.ok) {
+    alvo.insertAdjacentHTML('afterbegin', '<div class="card"><div class="aviso err"><b>Relat&oacute;rio n&atilde;o emitido:</b> a confer&ecirc;ncia contra o c&aacute;lculo reprovou o documento.' +
+      (conf.nao_autorizados.length ? '<div class="mini">Valor(es) sem origem no c&aacute;lculo: ' + conf.nao_autorizados.map(esc).join(' · ') + '</div>' : '') +
+      (conf.ausentes.length ? '<div class="mini">Ausente(s) no documento: ' + conf.ausentes.map(esc).join(' · ') + '</div>' : '') + '</div></div>');
+    return;
+  }
+  html = html.replace('</body>', conf.carimbo + '</body>');
   var w = window.open('', '_blank');
   if (!w) { alvo.insertAdjacentHTML('afterbegin', '<div class="card"><div class="aviso">O navegador bloqueou a janela do relat&oacute;rio. Permita pop-ups para este site e tente de novo.</div></div>'); return; }
   w.document.open(); w.document.write(html); w.document.close();
@@ -1077,6 +1206,11 @@ function testarGuarda(){
 }
 function imobGerarParecer(){
   var alvo = $('prompt-out');
+  // v1.6.5 (F02-R): parecer é emissão final — divergência material sem ciência registrada bloqueia
+  var dv = rajDivergencia('venda');
+  if (dv.divergente && !dv.confirmada) {
+    alvo.innerHTML = '<div class="card" style="margin-top:14px"><div class="aviso"><b>Parecer n&atilde;o gerado:</b> o redutor de ajuste do formul&aacute;rio (' + money(dv.campo) + ') diverge do indicado pelo im&oacute;vel do Passo 2 (' + money(dv.imovel) + ') e o motivo ainda n&atilde;o foi registrado. Confirme o cen&aacute;rio manual ao lado do campo, ou use o valor do im&oacute;vel, e calcule novamente.</div></div>'; return;
+  }
   if (typeof window.supaFn !== 'function') { alvo.innerHTML = '<div class="card" style="margin-top:14px"><div class="aviso">Sem a sess&atilde;o do aplicativo: o parecer usa a Edge Function <code>gerar-parecer-imobiliario</code>, com renova&ccedil;&atilde;o de token e limite de 150 s.</div></div>'; return; }
   alvo.innerHTML = '<div class="card" style="margin-top:14px"><div class="info">&#8987; Gerando e conferindo…</div></div>';
   ParecerImobIA.gerarParecerImob(window.__PAC, { nome: (window.EMP_GLOBAL && EMP_GLOBAL.nome) || IMOVEL.empresa || '', cnpj: (window.EMP_GLOBAL && EMP_GLOBAL.cnpj) || '' })
@@ -1101,7 +1235,9 @@ function imobGerarParecer(){
   window.imobSalvarCadastro = imobSalvarCadastro; window.imobLimparCadastro = imobLimparCadastro; window.imobCadastroTipo = imobCadastroTipo;
   window.imobEscolherOperacao = imobEscolherOperacao; window.imobMemoriaAba = imobMemoriaAba;
   window.imobPremissaAplicar = imobPremissaAplicar; window.imobPremissaRestaurar = imobPremissaRestaurar;
-  window.__imobUI = { PREM: function(){ return PREM; }, ctxPara: ctxPara, entradaVenda: entradaVenda, entradaLocacao: entradaLocacao, registrarSimulacao: registrarSimulacao, parseNum: parseNum, pessoa: function(){ return PESSOA; }, sims: function(){ carregarSims(); return SIMS; } };
+  window.imobUsarRajImovel = imobUsarRajImovel;   // v1.6.4 — F02
+  window.imobConfirmarRajManual = imobConfirmarRajManual;   // v1.6.5 — F02-R
+  window.__imobUI = { PREM: function(){ return PREM; }, ctxPara: ctxPara, entradaVenda: entradaVenda, entradaLocacao: entradaLocacao, registrarSimulacao: registrarSimulacao, parseNum: parseNum, pessoa: function(){ return PESSOA; }, sims: function(){ carregarSims(); return SIMS; }, rajDivergencia: rajDivergencia, pacoteRelatorio: pacoteRelatorio };
 
   /* v1.4.1 — a casca chama ao (re)carregar o escritório; e ao sair, para nada da sessão anterior sobrar */
   window.imobAtualizarContexto = function(){
@@ -1129,6 +1265,7 @@ function imobGerarParecer(){
       try { pintaOpc(); } catch (e) { console.warn('[imob] opcionais:', e); }
       try { atualizarDatasInventario(); } catch (e) { console.warn('[imob] inventário:', e); }
       try { ligarMoney(); } catch (e) { console.warn('[imob] money:', e); }
+      try { ligarRotulos(); } catch (e) { console.warn('[imob] rótulos:', e); }   // v1.6.4 — F05
       try { calcRaj(); } catch (e) { console.warn('[imob] redutor:', e); }
     }
   };

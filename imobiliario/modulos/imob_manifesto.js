@@ -9,18 +9,47 @@
   raiz.ModulosInfo.imobiliario = {
     chave: 'imobiliario',
     rotulo: 'An\u00e1lise Imobili\u00e1ria Pro',
-    versao: '1.6.3',
-    data: '19/09/2026',
+    versao: '1.6.7',
+    data: '20/10/2026',
     cadastro_ampliado_no_banco: false,   // true só depois de rodar sql/setup_imob_v130.sql
     aba: 'page-imobiliaria',
-    motor: { nome: 'motorImob', versao: '1.3.1', contrato: 'calc-imob-1',
-             ruleset: 'imob-2026.09.18', lacre: '338c914d', lacre_anterior: 'c287341e', regras: 29, homologadas: 27,
+    motor: { nome: 'motorImob', versao: '1.4.1', contrato: 'calc-imob-1',
+             ruleset: 'imob-2026.09.18', lacre: 'cd2c7359', lacre_anterior: '338c914d', regras: 29, homologadas: 27,
              nota: 'IMOB-TRA-001 reclassificada como proje\u00e7\u00e3o e IMOB-LR-001 segue em staging: regra baseada em premissa, estimativa ou proje\u00e7\u00e3o n\u00e3o \u00e9 homologada.' },
     base_legal: { dispositivos: 97, fontes: ['Decreto 12.955/2026', 'Resolu\u00e7\u00e3o CGIBS 6/2026',
                                              'LC 214/2025 at\u00e9 a LC 227/2026'] },
     estado: 'piloto controlado',
     ressalva: 'Al\u00edquota de refer\u00eancia \u00e9 estimativa n\u00e3o vinculante da Resolu\u00e7\u00e3o CGIBS 14/2026.',
     changelog: [
+      { versao: '1.6.7', data: '20/10/2026', texto:
+        'Reanálise P2 — política metodológica publicada e limites documentados (lacre cd2c7359 INALTERADO; motor 1.4.0 → 1.4.1 apenas pelo texto da fonte do A07 — nenhuma fórmula mudou). '
+        + 'Documento PM-IMOB 1.0.0 (politica-metodologica.html) publicado junto ao app: categorias LEGAL/ESTIMATIVA/PROJEÇÃO e a regra de ouro, fontes e datas de consulta, catálogo versionado (ruleset), '
+        + 'escada 2026-2033, guardas de integridade, limites operacionais e processo de revisão. O achado A07, a aba Regras e o rodapé de todos os relatórios passam a apontar o documento. '
+        + 'Limite operacional documentado: R$ 10 trilhões por valor de entrada — acima disso o formulário bloqueia com mensagem própria (imob_validacao 1.3.0); R$ 1 trilhão segue aceito como na reanálise. '
+        + 'Casos extremos da reanálise fixados na suíte do motor: R$ 1 trilhão (V07), R$ 0,03 em 3 parcelas (V08), reconciliação de parcelas 33,33/33,33/33,35 com o débito (A01), créditos maiores que o débito (V03) e o teto de R$ 10 trilhões com precisão de centavo.' },
+      { versao: '1.6.6', data: '20/10/2026', texto:
+        'Reanálise P1 — validação dos relatórios contra o cálculo (motor 1.4.0 e lacre cd2c7359 INALTERADOS). '
+        + 'Todo relatório emitido (resumo para o cliente, executivo, técnico e memória) passa por conferência automática antes de abrir: cada valor monetário ou percentual do texto precisa ter origem no pacote do cálculo '
+        + '(resultado, memória, etapas, anos, premissas, comparativo), e o total, a base, o valor da operação e a data do fato gerador precisam estar presentes — número sem origem REPROVA e o documento não sai, '
+        + 'na mesma linha da guarda anti-alucinação do parecer. O documento aprovado ganha carimbo de conferência com o número de valores verificados, o hash do snapshot do cálculo e os identificadores '
+        + '(motor · ruleset · lacre · app), inclusive no resumo simplificado, que não os exibia. '
+        + 'Regressão por ano ampliada: locação e permuta ganham casos de 2027 e 2029 na suíte do motor, iguais aos cenários X-LOC e X-PERM da reanálise, e a igualdade cálculo individual = projeção é verificada também nessas operações.' },
+      { versao: '1.6.5', data: '20/10/2026', texto:
+        'Fecho das recomendações da REANÁLISE de 20/10/2026 sobre a v1.6.4 (motor 1.4.0 e lacre cd2c7359 INALTERADOS — nenhuma fórmula mudou). '
+        + 'F02-R: manter um redutor de ajuste diferente do indicado pelo imóvel vira CENÁRIO MANUAL — o motivo é registrado ao lado do campo (ciência expressa) e acompanha o resultado, a memória, as ressalvas dos relatórios e a auditoria; '
+        + 'parecer com IA e Finalizar e gravar são bloqueados enquanto a divergência material estiver sem confirmação; usar o valor do imóvel desfaz a divergência e preserva a origem. '
+        + 'Resumo da locação: a faixa da base passou a mostrar a sequência completa e verdadeira (receita − deduções − redutor social), em vez de subtrair o redutor social de uma base que já o descontava. '
+        + 'Resumo da permuta: o redutor de ajuste TRANSFERIDO ao imóvel recebido deixou de aparecer como dedução da base (rotulado "transferido — não é dedução desta base"); a faixa só exibe igualdades que fecham. '
+        + 'Campo monetário com texto (ex.: "abc") recebe mensagem de FORMATO ("não é um número válido"), não mais a de campo vazio. Suítes com os casos novos da reanálise.' },
+      { versao: '1.6.4', data: '20/10/2026', texto:
+        'Correções da auditoria externa de 20/10/2026 (achados F01 a F06). MOTOR 1.4.0, novo lacre cd2c7359 (anterior 338c914d) — fórmulas mudaram de propósito. '
+        + 'F01 (P0): a DATA do fato gerador escolhe a alíquota do cálculo individual de venda, locação e permuta — 2026 segue o ano-teste, 2027-2032 usam a MESMA escada de transição da projeção e 2033 usa a referência; '
+        + 'cálculo individual, projeção e relatórios devolvem o mesmo valor para o mesmo ano; fato gerador anterior a 2026 é BLOQUEADO (E017); o comparativo identifica o lado da Reforma como cenário de referência 2033. '
+        + 'F02: o redutor anunciado no assistente é sugestão rotulada (a escolha do art. 375 é do contribuinte) e qualquer divergência entre o campo e o imóvel do Passo 2 aparece ao lado do campo, com origem e botão de confirmação — nada é sobrescrito em silêncio. '
+        + 'F03: Auditoria e parecer exigem cálculo REALIZADO na sessão; sem cálculo, as telas e os relatórios informam estado vazio em vez de montar pacote com os valores de exemplo do formulário. '
+        + 'F04: a etapa 2 do resultado passa a exibir o redutor UTILIZADO (min) com o disponível e o remanescente ao lado — todas as igualdades exibidas são verdadeiras, inclusive com base zero. '
+        + 'F05: todo campo ganha nome acessível programático (label for + aria-describedby na ajuda). '
+        + 'F06: o achado A07 cita política metodológica versionada (ruleset) e a Res. CGIBS 14/2026, não mais "Seção 6 do prompt". Suítes atualizadas com os casos da auditoria (anos de transição, redutor maior que a venda, estado vazio da auditoria).' },
       { versao: '1.6.3', data: '19/09/2026', texto:
         'Layout igual ao do An\u00e1lise Tribut\u00e1ria Pro: marca da barra lateral no mesmo formato ("An\u00e1lise Imobili\u00e1ria Pro / ARTECON"), telas do m\u00f3dulo como itens de primeiro n\u00edvel com o mesmo desenho dos itens do ATP (sem recuo, 14px), '
         + 'item "Vers\u00f5es" no lugar de "Sobre o m\u00f3dulo", t\u00edtulo da p\u00e1gina com o badge de vers\u00e3o \u00e0 direita como no dashboard do ATP. Motor, c\u00e1lculo, regras e relat\u00f3rios intocados (lacre 338c914d).' },

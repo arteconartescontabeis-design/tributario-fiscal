@@ -18,7 +18,7 @@ w.APP = { escritorioId: null, user: { email: 'tester@artecon' } };
 w.open = function () { var d = new JSDOM('<html><head></head><body></body></html>'); var ww = d.window; ww.print = function () {}; ww.focus = function () {}; w.__ultimaJanela = ww; return ww; };
 w.__ultimaJanela = null;
 ['imob_manifesto.js', 'imob_estilo.js', 'imob_pagina.js', 'motorImob.js', 'persistenciaImob.js', 'parecerImobIA.js', 'nucleoRastreio.js',
- 'imob_premissas.js', 'imob_validacao.js', 'imob_relatorios.js', 'ui_imobiliaria.js'].forEach(function (f) {
+ 'imob_premissas.js', 'imob_validacao.js', 'imob_relatorios.js', 'imob_graficos.js', 'imob_marca.js', 'ui_imobiliaria.js', 'imob_layout.js'].forEach(function (f) {
   w.eval(fs.readFileSync(path.join(MOD, f), 'utf8'));
 });
 var d = w.document, M = w.MotorImob, PR = w.ImobPremissas, VA = w.ImobValidacao, RL = w.ImobRelatorios;
@@ -49,12 +49,22 @@ t('E2', 'todo onclick da marcação aponta para função exportada', 'imob_pagin
   var falt = Object.keys(f).filter(function (k) { return typeof w[k] !== 'function'; });
   return falt.length ? { ok: false, obtido: falt } : true;
 });
-t('E3', 'lacre do motor íntegro e versão do módulo 1.6.3 visível', 'lacreVerificar + ModulosInfo', '338c914d / 1.6.3', function () {
-  var v = M.lacreVerificar(); return v.integro && v.hash_atual === '338c914d' && M.MOTOR_IMOB_VERSAO === '1.3.1' && w.ModulosInfo.imobiliario.versao === '1.6.3' && w.ModulosInfo.imobiliario.changelog[0].versao === '1.6.3' && w.ModulosInfo.imobiliario.motor.lacre === '338c914d' ? true : { ok: false, obtido: v };
+t('E3', 'lacre do motor íntegro e versão do módulo 1.6.7 visível', 'lacreVerificar + ModulosInfo', 'cd2c7359 / 1.6.7', function () {
+  var v = M.lacreVerificar(); return v.integro && v.hash_atual === 'cd2c7359' && M.MOTOR_IMOB_VERSAO === '1.4.1' && w.ModulosInfo.imobiliario.versao === '1.6.7' && w.ModulosInfo.imobiliario.changelog[0].versao === '1.6.7' && w.ModulosInfo.imobiliario.motor.lacre === 'cd2c7359' ? true : { ok: false, obtido: v };
 });
 t('E4', '14 abas e página injetada; nav lateral marca ativo', 'abrirAba', 'aba on = venda', function () {
   w.abrirAba('venda'); var on = d.querySelectorAll('#imob-tabs .tab.on');
   return on.length === 1 && on[0].dataset.t === 'venda' && $('t-venda').style.display === '' && $('t-imovel').style.display === 'none' ? true : { ok: false, obtido: on.length };
+});
+// v1.6.4 — auditoria F03: antes de QUALQUER cálculo, auditoria e memória informam estado vazio coerente
+t('F3', 'Auditoria sem cálculo na sessão mostra estado vazio, nunca pacote com os exemplos do formulário', 'abrirAba(auditoria) antes do 1º Calcular', 'aviso "Ainda não há cálculo de Venda" nas duas telas; sem Pacote do parecer', function () {
+  w.abrirAba('auditoria'); var a = texto('au-out'), aH = html_('au-out');
+  w.abrirAba('memoria'); var m = texto('mem-out');
+  return a.indexOf('Ainda não há cálculo de Venda') >= 0 && aH.indexOf('Pacote do parecer') < 0 && aH.indexOf('Resultado da auditoria') > 0 && m.indexOf('Ainda não há cálculo') >= 0 ? true : { ok: false, obtido: [a.slice(0, 120), m.slice(0, 80)] };
+});
+t('F3b', 'Relatório sem cálculo na sessão não usa os dados de exemplo', 'imobRelatorio antes do 1º Calcular', 'bloqueio com orientação', function () {
+  w.abrirAba('venda'); w.imobRelatorio('executivo', 'venda');
+  return texto('v-out').indexOf('Nenhum cálculo de venda nesta sessão') >= 0 ? true : { ok: false, obtido: texto('v-out').slice(0, 150) };
 });
 
 /* ===== item 17 — 25 testes de aceite ============================================= */
@@ -216,7 +226,7 @@ t(23, 'Validação pré-cálculo na venda (valor zero, data inválida) bloqueia 
 // 24 resultado em 12 etapas com fórmula
 t(24, 'Resultado da alienação em 12 etapas com fórmula, na ordem do Prompt', 'venda padrão', '12 etapas + carga efetiva 6,2022%', function () {
   var et = d.querySelectorAll('#v-out .seq .et'); var rot = Array.prototype.map.call(et, function (e) { return e.querySelector('.r').textContent; });
-  var esperado = ['Valor total da operação', 'Redutor de ajuste disponível', 'Redutor social', 'Base de cálculo (antes dos créditos)', 'IBS calculado', 'CBS calculada', 'Créditos de IBS/CBS informados', 'Créditos efetivamente aproveitados', 'Saldo de créditos não utilizado', 'Total bruto (IBS + CBS)', 'Total líquido a recolher', 'Carga efetiva sobre a operação'];
+  var esperado = ['Valor total da operação', 'Redutor de ajuste utilizado', 'Redutor social', 'Base de cálculo (antes dos créditos)', 'IBS calculado', 'CBS calculada', 'Créditos de IBS/CBS informados', 'Créditos efetivamente aproveitados', 'Saldo de créditos não utilizado', 'Total bruto (IBS + CBS)', 'Total líquido a recolher', 'Carga efetiva sobre a operação'];
   var okOrdem = esperado.every(function (x, i) { return rot[i] === x; });
   var formulas = Array.prototype.every.call(et, function (e) { return e.querySelector('.f').textContent.trim().length > 3; });
   return okOrdem && formulas && texto('v-out').indexOf('6,2022%') > 0 ? true : { ok: false, obtido: rot };
@@ -290,12 +300,13 @@ t('N7', 'Resumo para o cliente e relatórios por operação (locação e permuta
 t('E1', 'toda classe realmente renderizada tem CSS no módulo ou no índice', 'DOM após os testes', 'nenhuma classe órfã', function () {
   var css = w.ImobEstilo.CSS + fs.readFileSync(path.join(RAIZ, 'imobiliario', 'index.html'), 'utf8');
   var usadas = {}; d.querySelectorAll('#page-imobiliaria [class]').forEach(function (el) { String(el.className).split(/\s+/).forEach(function (c) { if (c) usadas[c] = 1; }); });
-  var orf = Object.keys(usadas).filter(function (c) { return css.indexOf('.' + c) < 0; });
+  // v1.6.4: a casca (dashboard do ATP) saiu deste repositório em 16/10/2026 — imobiliaria.html
+  // virou aviso de mudança de endereço e o CSS destas classes vive no host (tributario-fiscal).
+  var CASCA = ['page-title', 'crumb', 'card', 'grid', 'toolbar', 'btn'];
+  var orf = Object.keys(usadas).filter(function (c) { return CASCA.indexOf(c) < 0 && css.indexOf('.' + c) < 0; });
   return orf.length ? { ok: false, obtido: orf } : true;
 });
 
-/* ===== resultado ================================================================= */
-fs.writeFileSync(path.join(__dirname, 'relatorio_imob_v140.json'), JSON.stringify({ versao: w.ModulosInfo.imobiliario.versao, quando: new Date().toISOString(), total: total, falhas: falhas, testes: registro }, null, 1));
 /* ===== v1.6.0 — prompt v1.5 ====================================================== */
 t('V1', 'Tabela 2026-2033: 2027 mostra IBS 0,10% legal e CBS estimada, nunca "fixada em lei" por atacado', 'venda 900.000 → aba Ano a ano', 'IBS 0,10% + badges por tributo', function () {
   w.abrirAba('venda'); set('v-val', 900000); set('v-raj', 400000); set('v-tipo', 'residencial_novo'); set('v-data', '2033-06-15'); w.calcVenda();
@@ -359,5 +370,164 @@ t('V11', 'Regras e fontes: regras de Lucro Presumido marcadas como fonte secund�
   w.abrirAba('regras'); var h = html_('r-out'); return h.indexOf('fonte secund') > 0 && h.indexOf('consulta em 2026-08-22') > 0 && h.indexOf('consulta em 2026-08-20') > 0 ? true : { ok: false, obtido: h.slice(0, 100) };
 });
 
+/* ===== v1.6.4 — auditoria externa de 20/10/2026 (F01, F02, F04, F05) =============== */
+t('F1', 'F01: o ano do fato gerador muda o cálculo individual como muda a projeção', 'venda 900.000; RAJ 400.000; res. novo; 2029', 'total 22.160 no resultado E na linha 2029 da tabela Ano a ano', function () {
+  w.abrirAba('venda'); set('v-val', 900000); set('v-raj', 400000); set('v-cre', 0); set('v-tipo', 'residencial_novo'); set('v-data', '2029-06-15'); set('v-pag', ''); w.calcVenda();
+  var r = M.calcular(w.__imobUI.entradaVenda(), w.__imobUI.ctxPara('venda')), h = html_('v-out');
+  var linha29 = (function () { var i = h.indexOf('<td>2029'); return i < 0 ? '' : h.slice(i, h.indexOf('</tr>', i)); })();
+  return r.total === 22160 && h.indexOf('22.160,00') > 0 && linha29.indexOf('22.160,00') > 0 ? true : { ok: false, obtido: [r.total, linha29.slice(0, 200)] };
+});
+t('F1b', 'F01: data anterior a 2026 é bloqueada pelo motor (E017)', 'venda em 2025-12-31', 'BLOQUEADO, sem resultado numérico', function () {
+  set('v-data', '2025-12-31'); w.calcVenda();
+  var h = html_('v-out'), r = M.calcular(w.__imobUI.entradaVenda(), w.__imobUI.ctxPara('venda'));
+  set('v-data', '2033-06-15'); w.calcVenda();
+  return r.status === 'BLOQUEADO' && r.bloqueios[0].codigo === 'E017' && h.indexOf('E017') > 0 ? true : { ok: false, obtido: [r.status, h.slice(0, 150)] };
+});
+t('F4', 'F04: redutor maior que a venda — resumo mostra o UTILIZADO e a igualdade é verdadeira', 'venda 300.000; RAJ 400.000; 2033', 'etapa 2 = 300.000 utilizado; base 0 = 300.000 − 300.000 − 0', function () {
+  set('v-val', 300000); set('v-raj', 400000); set('v-data', '2033-06-15'); w.calcVenda();
+  var ets = Array.prototype.slice.call(d.querySelectorAll('#v-out .seq .et'));
+  var raj = ets.filter(function (e) { return /Redutor de ajuste utilizado/.test(e.querySelector('.r').textContent); })[0];
+  var base = ets.filter(function (e) { return /Base de cálculo/.test(e.querySelector('.r').textContent); })[0];
+  var vRaj = raj && raj.querySelector('.v').textContent, fBase = base && base.querySelector('.f').textContent;
+  var extra = raj && raj.querySelector('.f').textContent;
+  set('v-val', 900000); w.calcVenda();
+  return vRaj === '300.000,00' && /300\.000,00\s*−\s*300\.000,00\s*−\s*0,00/.test(fBase) && /disponível 400\.000,00/.test(extra) && /remanescente 100\.000,00/.test(extra) ? true : { ok: false, obtido: [vRaj, fBase, extra] };
+});
+t('F5', 'F05: campos financeiros têm nome acessível programático (label for + aria-describedby)', 'v-val / v-raj', 'label[for] presente e ajuda ligada', function () {
+  var l1 = d.querySelector('label[for="v-val"]'), l2 = d.querySelector('label[for="v-raj"]');
+  var d1 = $('v-val').getAttribute('aria-describedby'), ok1 = d1 && $(d1) && /Preço de venda/i.test($(d1).textContent);
+  return !!l1 && !!l2 && /Valor da operação/.test(l1.textContent) && /Saldo do redutor/.test(l2.textContent) && ok1 ? true : { ok: false, obtido: [!!l1, !!l2, d1] };
+});
+t('F2', 'F02: divergência entre o campo e o redutor do imóvel aparece ao lado do campo, com confirmação', 'v-raj 250.000 × imóvel 480.000', 'aviso com origem + botão aplica 480.000; nada sobrescrito em silêncio', function () {
+  set('v-raj', 250000); w.abrirAba('pf'); w.abrirAba('venda');
+  var av = $('v-raj-orig'), antes = w.__imobUI.entradaVenda().redutor_ajuste_saldo;
+  var temAviso = av && av.textContent.indexOf('480.000,00') > 0 && av.textContent.indexOf('Diverge') >= 0 && av.querySelector('button');
+  w.imobUsarRajImovel('venda');
+  var depois = w.__imobUI.entradaVenda().redutor_ajuste_saldo, origem = av.textContent.indexOf('Origem:') >= 0;
+  set('v-raj', 400000); w.calcVenda();
+  return antes === 250000 && temAviso && depois === 480000 && origem ? true : { ok: false, obtido: [antes, av && av.textContent.slice(0, 160), depois] };
+});
+
+/* ===== v1.6.5 — reanálise de 20/10/2026 (F02-R e observações 3, 4 e 5) ============= */
+t('F2r', 'F02-R: divergência sem ciência → cenário manual NÃO confirmado: aviso no resultado, ressalva no pacote, parecer e auditoria avisam', 'v-raj 400.000 × imóvel 480.000, sem motivo', 'aviso; ressalva; imobGerarParecer bloqueia', function () {
+  w.abrirAba('venda'); w.calcVenda();
+  var aviso = texto('v-out').indexOf('CENÁRIO MANUAL NÃO CONFIRMADO') >= 0;
+  var dv = w.__imobUI.rajDivergencia('venda');
+  var p = w.__imobUI.pacoteRelatorio('venda');
+  var ress = !p.erro && (p.ressalvas || []).join(' ').indexOf('CENÁRIO MANUAL NÃO CONFIRMADO') >= 0;
+  w.abrirAba('auditoria');
+  var auAviso = texto('au-out').indexOf('permanecem bloqueados') >= 0;
+  w.imobGerarParecer();
+  var bloq = texto('prompt-out').indexOf('Parecer não gerado') >= 0;
+  return aviso && dv.divergente && !dv.confirmada && ress && auAviso && bloq ? true : { ok: false, obtido: [aviso, dv.divergente, dv.confirmada, ress, auAviso, texto('prompt-out').slice(0, 120)] };
+});
+t('F2r2', 'F02-R: registrar o motivo confirma o cenário manual — presente no resultado, na memória, nas ressalvas e na simulação; parecer liberado', 'motivo + "Manter como cenário manual"', 'confirmação ao lado do campo; etapa 2 com o motivo; ressalva com a decisão', function () {
+  w.abrirAba('venda');
+  var elJ = $('v-raj-just'); if (!elJ) return { ok: false, obtido: 'input v-raj-just ausente' };
+  elJ.value = 'Saldo parcial: 80.000 já utilizados em outra alienação';
+  w.imobConfirmarRajManual('venda');
+  var av = texto('v-raj-orig'), conf = av.indexOf('Cenário manual confirmado') >= 0 && av.indexOf('Saldo parcial') >= 0;
+  w.calcVenda();
+  var noRes = texto('v-out').indexOf('motivo: Saldo parcial') >= 0;
+  var ets = Array.prototype.slice.call(d.querySelectorAll('#v-out .seq .et'));
+  var raj = ets.filter(function (e) { return /Redutor de ajuste utilizado/.test(e.querySelector('.r').textContent); })[0];
+  var naMem = raj && /CENÁRIO MANUAL/.test(raj.querySelector('.f').textContent) && /motivo: Saldo parcial/.test(raj.querySelector('.f').textContent);
+  var p = w.__imobUI.pacoteRelatorio('venda');
+  var ress = !p.erro && (p.ressalvas || []).join(' ').indexOf('mantido 400.000,00 por decisão do usuário') >= 0;
+  var sim = w.__imobUI.sims()[0], simReg = sim && sim.extra && sim.extra.redutor_manual && sim.extra.redutor_manual.confirmada === true;
+  w.abrirAba('auditoria'); w.imobGerarParecer();
+  var liberado = texto('prompt-out').indexOf('Parecer não gerado') < 0;
+  return conf && noRes && naMem && ress && simReg && liberado ? true : { ok: false, obtido: [conf, noRes, naMem, ress, simReg, texto('prompt-out').slice(0, 120)] };
+});
+t('F2r3', 'F02-R: usar o valor do imóvel desfaz a divergência e preserva a origem', 'imobUsarRajImovel(venda)', 'campo 480.000; "Origem:" ao lado; divergente = false', function () {
+  w.abrirAba('venda'); w.imobUsarRajImovel('venda');
+  var dv = w.__imobUI.rajDivergencia('venda');
+  var ok1 = w.__imobUI.entradaVenda().redutor_ajuste_saldo === 480000 && texto('v-raj-orig').indexOf('Origem:') >= 0 && !dv.divergente;
+  set('v-raj', 400000); w.abrirAba('pf'); w.abrirAba('venda');   // devolve o estado padrão dos demais cenários
+  return ok1 ? true : { ok: false, obtido: [dv.divergente, texto('v-raj-orig').slice(0, 100)] };
+});
+
+t('V12', 'Layout 1.6.3: telas do módulo na barra lateral dentro de .nav, brand no formato do ATP, badge de versão no título', 'ImobLayout.aplicar', 'tabs em .sidebar .nav + badge', function () {
+  // v1.6.4: a casca saiu deste repositório (imobiliaria.html virou aviso de endereço);
+  // o teste injeta a sidebar que o host (tributario-fiscal) fornece, igual à de 16/10/2026.
+  if (!d.querySelector('.sidebar')) {
+    var shell = d.createElement('div'); shell.className = 'sidebar';
+    shell.innerHTML = '<div class="brand">Análise Imobiliária Pro<small>Artecon</small><div id="marca-logo" style="display:none"></div><span id="mod-versao-badge" style="display:none">v?</span></div>' +
+      '<div class="nav"><div class="nav-item active" data-p="imob" id="nav-imob-inicio">🏠 <span>Início</span></div>' +
+      '<div class="nav-item" data-p="modulo">🕘 <span>Versões</span></div></div>';
+    d.body.insertBefore(shell, d.body.firstChild);
+  }
+  try { w.ImobLayout.aplicar({ menuLateral: true }); } catch (e) { return { ok: false, obtido: e.message }; }
+  var tabs = d.querySelector('.sidebar .nav #imob-tabs'), brand = d.querySelector('.sidebar .brand'), badge = $('imob-badge-versao');
+  return tabs && tabs.querySelectorAll('.tab').length >= 14 && brand && /Análise Imobiliária Pro/.test(brand.textContent) && brand.querySelector('small') && badge && /v1\.6\.7/.test(badge.textContent) && /Vers/.test(d.querySelector('.nav-item[data-p="modulo"]').textContent) ? true : { ok: false, obtido: [!!tabs, brand && brand.textContent, badge && badge.textContent] };
+});
+
+t('R3', 'Reanálise obs. 3: faixa da base da locação mostra a sequência completa e VERDADEIRA', 'locação 5.000; encargos 1.030 comprovados; residencial', 'Base 3.370,00 = Receita 5.000,00 − Deduções 1.030,00 − Redutor social 600,00', function () {
+  w.abrirAba('locacao'); set('l-val', 5000); set('l-fim', 'residencial'); set('l-mes', 1); set('l-prz', ''); set('l-cls', ''); set('l-just', ''); set('l-trib', 180); set('l-cond', 850); set('l-foro', 0); set('l-prova', '1'); set('l-dias', ''); set('l-area', ''); set('l-cre', 0); set('l-data', '2033-06-15'); set('l-cmp', '0'); w.calcLoc();
+  w.ImobLayout.desfazer(); w.ImobLayout.aplicar({ menuLateral: true });
+  var hb = d.querySelector('#l-out .h-base'), t_ = hb ? hb.textContent : '(sem h-base)';
+  var certo = /Base de cálculo\s*3\.370,00\s*=\s*Receita bruta do período\s*5\.000,00\s*−\s*Deduções\s*1\.030,00\s*−\s*Redutor social da locação residencial\s*600,00/.test(t_);
+  return certo ? true : { ok: false, obtido: t_ };
+});
+t('R4', 'Reanálise obs. 4: faixa da base da permuta distingue o redutor TRANSFERIDO (não aparece como dedução)', 'dado 1.000.000; recebido 800.000; torna recebida 200.000', 'Parcela tributável 200.000,00 · redutor transferido 400.000,00; nenhuma subtração falsa', function () {
+  w.abrirAba('permuta'); set('x-val', 1000000); set('x-rec', 800000); set('x-nome', ''); set('x-parte', 'contribuinte'); set('x-tpaga', 0); set('x-trec', 200000); set('x-raj', 400000); set('x-cre', 0); set('x-uni', '0'); set('x-nuni', ''); set('x-fr', ''); set('x-tparc', ''); set('x-data', '2033-06-15'); set('x-din', '0'); set('x-div', '0'); w.calcPerm();
+  w.ImobLayout.desfazer(); w.ImobLayout.aplicar({ menuLateral: true });
+  var hb = d.querySelector('#x-out .h-base'), t_ = hb ? hb.textContent : '(sem h-base)';
+  var certo = /Parcela tributável\s*200\.000,00/.test(t_) && /Redutor de ajuste do imóvel recebido\s*400\.000,00\s*\(transferido — não é dedução desta base\)/.test(t_) && !/−\s*Redutor de ajuste/.test(t_);
+  return certo ? true : { ok: false, obtido: t_ };
+});
+t('R5', 'Reanálise obs. 5: texto não numérico em campo monetário recebe mensagem de FORMATO, vazio segue obrigatório', 'validarVenda valor "abc" × valor ""', '"não é um número válido" × "é obrigatório"', function () {
+  var va = w.ImobValidacao.validarVenda({ valor: 'abc', redutor: 0, creditos: 0, data: '2033-06-15', tipo: 'residencial_novo', pagamentos: '' });
+  var vz = w.ImobValidacao.validarVenda({ valor: '', redutor: 0, creditos: 0, data: '2033-06-15', tipo: 'residencial_novo', pagamentos: '' });
+  var m1 = (va.erros[0] || {}).msg || '', m2 = (vz.erros[0] || {}).msg || '';
+  return !va.ok && m1.indexOf('não é um número válido') >= 0 && m1.indexOf('"abc"') >= 0 && !vz.ok && m2.indexOf('é obrigatório') >= 0 ? true : { ok: false, obtido: [m1, m2] };
+});
+
+t('P1a', 'Reanálise P1: os 4 relatórios da venda saem conferidos contra o cálculo, com carimbo, snapshot e lacre', 'simplificado · executivo · técnico · memória', 'carimbo "Conferência automática" + snapshot + cd2c7359 + total 55.820,00 em todos', function () {
+  w.abrirAba('venda'); set('v-val', 900000); set('v-raj', 400000); set('v-cre', 0); set('v-tipo', 'residencial_novo'); set('v-data', '2033-06-15'); set('v-pag', ''); w.calcVenda();
+  var falta = [];
+  ['simplificado', 'executivo', 'tecnico', 'memoria'].forEach(function (k) {
+    w.imobRelatorio(k, 'venda');
+    var h = w.__ultimaJanela ? w.__ultimaJanela.document.documentElement.outerHTML : '';
+    if (!(h.indexOf('Conferência automática do documento') > 0 && h.indexOf('snapshot') > 0 && h.indexOf('cd2c7359') > 0 && h.indexOf('55.820,00') > 0)) falta.push(k + ': ' + h.slice(0, 80));
+  });
+  return falta.length ? { ok: false, obtido: falta } : true;
+});
+t('P1b', 'Reanálise P1: conferência também nos relatórios de locação e permuta', 'tecnico(locacao) + simplificado(permuta)', 'carimbo nos dois documentos', function () {
+  w.imobRelatorio('tecnico', 'locacao'); var h1 = w.__ultimaJanela ? w.__ultimaJanela.document.documentElement.outerHTML : '';
+  w.imobRelatorio('simplificado', 'permuta'); var h2 = w.__ultimaJanela ? w.__ultimaJanela.document.documentElement.outerHTML : '';
+  return h1.indexOf('Conferência automática do documento') > 0 && h2.indexOf('Conferência automática do documento') > 0 ? true : { ok: false, obtido: [h1.slice(0, 80), h2.slice(0, 80)] };
+});
+t('P1c', 'Reanálise P1: número sem origem no cálculo REPROVA o documento; falta dos números centrais reprova', 'conferirRelatorio com html adulterado e vazio', 'ok=false listando 99.999,99; ausentes lista total/base/valor/data', function () {
+  var p = w.__imobUI.pacoteRelatorio('venda');
+  var html = w.ImobRelatorios.montarExecutivo(p);
+  var c1 = w.ImobRelatorios.conferirRelatorio(html, p);
+  var c2 = w.ImobRelatorios.conferirRelatorio(html.replace('</body>', '<p>valor estimado de mercado: 99.999,99</p></body>'), p);
+  var c3 = w.ImobRelatorios.conferirRelatorio('<html><body>documento vazio</body></html>', p);
+  return c1.ok && c1.verificados > 20 && !c2.ok && c2.nao_autorizados.indexOf('99.999,99') >= 0 && !c3.ok && c3.ausentes.length >= 4 ? true : { ok: false, obtido: [c1.ok, c1.verificados, c2.nao_autorizados, c3.ausentes] };
+});
+
+t('R6', 'Reanálise P2: limite documentado de R$ 10 trilhões no formulário (1 trilhão segue aceito)', 'validarVenda 1e12 e 1e13 ok × 2e13 bloqueia', 'mensagem cita o limite e a política PM-IMOB', function () {
+  var base = { redutor: 0, creditos: 0, data: '2033-06-15', tipo: 'comercial', pagamentos: '' };
+  var tri1 = w.ImobValidacao.validarVenda(Object.assign({ valor: '1000000000000' }, base));
+  var tri10 = w.ImobValidacao.validarVenda(Object.assign({ valor: '10000000000000' }, base));
+  var tri20 = w.ImobValidacao.validarVenda(Object.assign({ valor: '20000000000000' }, base));
+  var m = ((tri20.erros || [])[0] || {}).msg || '';
+  return tri1.ok && tri10.ok && !tri20.ok && m.indexOf('limite documentado de R$ 10 trilhões') >= 0 && m.indexOf('PM-IMOB') >= 0 ? true : { ok: false, obtido: [tri1.ok, tri10.ok, m] };
+});
+t('R7', 'Reanálise P2: política metodológica localizável — link na aba Regras, fonte do A07 e rodapé dos relatórios', 'politica-metodologica.html referenciada', 'link + A07 + rodapé citam o documento', function () {
+  w.abrirAba('regras');
+  var a = $('link-pm-imob'), temLink = a && /politica-metodologica\.html$/.test(a.getAttribute('href')) && /PM-IMOB/.test(a.textContent);
+  w.abrirAba('auditoria');
+  var a07 = texto('au-out').indexOf('politica-metodologica.html') >= 0;
+  w.abrirAba('venda'); w.imobRelatorio('executivo', 'venda');
+  var h = w.__ultimaJanela ? w.__ultimaJanela.document.documentElement.outerHTML : '';
+  var rodape = h.indexOf('Política Metodológica PM-IMOB') > 0 && h.indexOf('politica-metodologica.html') > 0;
+  return temLink && a07 && rodape ? true : { ok: false, obtido: [!!temLink, a07, rodape] };
+});
+
+/* ===== resultado ================================================================= */
+// v1.6.5: gravado no FIM da suíte — antes ficava no meio e o relatório não contava os testes V1-V12, F e R.
+fs.writeFileSync(path.join(__dirname, 'relatorio_imob_v140.json'), JSON.stringify({ versao: w.ModulosInfo.imobiliario.versao, quando: new Date().toISOString(), total: total, falhas: falhas, testes: registro }, null, 1));
 console.log('\n' + (total - falhas) + '/' + total + ' testes OK — relatório em tests/relatorio_imob_v140.json');
 process.exit(falhas ? 1 : 0);   // o timer diário do inventário manteria o processo vivo
