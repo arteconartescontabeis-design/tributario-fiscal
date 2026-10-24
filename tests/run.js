@@ -5340,6 +5340,29 @@ console.log('\n■ Integridade da interface');
     chk('5av · v7.95.2 · badge, changelog e lacre 8ab9c16a intocado', /APP_VERSAO = '7\.(?:9[5-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.95\.2<\/b><\/td><td>18\/09\/2026/.test(html) && /LACRE_HASH = '0a257d66'/.test(html) && /r\.comp\._projetadoK = k/.test(html));
   }
 
+  // ═══ 5bn · v7.103.0 — B14 tabela de regras do motor com vigência, fonte e registro de aprovação ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const RG = run('typeof REGRAS_VIGENCIA !== "undefined" ? REGRAS_VIGENCIA : null');
+    chk('5bn · REGRAS_VIGENCIA existe com 12+ regras, todas com id, regra, fonte, vigência, versão e registro de aprovação',
+      Array.isArray(RG) && RG.length >= 12 && RG.every(r => r.id && r.regra && r.fonte && r.vigencia && r.versao && r.aprovacao));
+    chk('5bn · a LC 224 está na tabela com vigência 2026 (IRPJ jan, CSLL abr) e o selo da entrega',
+      !!(RG || []).find(r => r.id === 'lc224' && /2026/.test(r.vigencia) && /0a257d66/.test(r.selo || '')));
+    // "cálculo antigo não muda": a regra mais nova (LC 224) NÃO alcança ano-base anterior à vigência
+    { const F12 = v => Array(12).fill(v);
+      const i25 = mk({a1_semst:F12(600000)}, 7200000, { ano:2025, iss:0, icmsV:0, icmsC:0, adicionalIR:'trimestral' });
+      i25.folha = { prolabore:z(), salarios:z(), baseFgts:z(), prov13:z(), provFerias:z() }; i25.cfg.folha12Lanc = z();
+      const r25 = g.calcular(clone(i25), clone(AD), {...FD});
+      const semLc = 7200000*.0065 + 7200000*.03 + .15*(7200000*.08) + 4*((1800000*.08 - 60000)*.10) + .09*(7200000*.12);
+      chk('5bn · vigência respeitada: o mesmo caso da LC 224 em ano-base 2025 sai SEM o acréscimo (lei, ao centavo)',
+        Math.abs(r25.totais.lp - semLc) <= 0.02, 'lei=' + semLc.toFixed(2) + ' · motor=' + r25.totais.lp.toFixed(2)); }
+    chk('5bn · a aba Versões exibe a tabela (regras-box renderizada pelo lacre, com fonte e vigência)',
+      (() => { const h = run('(function(){ document.getElementById("regras-box").innerHTML=""; LACRE_ST = LACRE_ST || { ok:true, resumo:[] }; regrasRender(); return document.getElementById("regras-box").innerHTML; })()');
+        return /Regras do motor — vigência, fonte e aprovação/.test(h) && /LC 224\/2025/.test(h) && /Vigência/.test(h); })());
+    chk('5bn · lacre 0a257d66 intocado (B14 documenta, não calcula)', /LACRE_HASH = '0a257d66'/.test(html));
+    chk('5bn · v7.103.0 · badge e changelog', /APP_VERSAO = '7\.(?:99|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.103\.0<\/b><\/td><td>24\/10\/2026/.test(html));
+  }
+
   // ═══ 5bm · v7.102.0 — B13 suíte independente (gabaritos transcritos da lei, fora do motor) ═══
   {
     chk('5bm · a suíte independente rodou com 16+ casos e divergência máxima dentro de 2 centavos',
