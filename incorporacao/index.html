@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.107.0 (lacre 795f5d26) em 2026-10-24T23:10:08.677Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.108.0 (lacre 795f5d26) em 2026-11-11T20:10:31.092Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2872,19 +2872,28 @@ function compContraCenarios(comp, contraBase){
   return { inf, base, sup };
 }
 // nível de confiabilidade da análise (item 15) — texto + ícone, nunca só cor
-function compConfianca(comp, sens, critico){
+// v7.108.0 · snFora = empresa SEM o Simples nos anos projetados (receita do ano-base acima do
+// teto): o crédito de IBS/CBS entra por IGUAL no Lucro Presumido e no Lucro Real, então a
+// composição dos fornecedores não tem como trocar o regime vencedor. Parcela não identificada
+// (ou composição ausente) deixa de forçar nível BAIXO/"NÃO CONCLUSIVO" e passa a ser registrada
+// como limitação do VALOR estimado do crédito, não da conclusão — o parecer volta a recomendar.
+// Divergência matemática (critico) e inversão de vencedor continuam forçando BAIXO sempre.
+function compConfianca(comp, sens, critico, snFora){
+  const notaFora = ' — afeta o valor estimado do crédito de IBS/CBS, não a escolha entre Lucro Presumido e Lucro Real';
   const c = comp; const pend = [];
   if (critico) pend.push('divergência matemática (' + critico + ')');
-  if (!c) return { nivel:'BAIXO', cor:'#943126', icone:'⛔', motivos:['composição dos fornecedores ausente'].concat(pend), rotulo:'BAIXO', naoConclusivo:true };
+  if (!c){ const nv = (snFora && !critico) ? 'MÉDIO' : 'BAIXO';
+    return { nivel:nv, cor: nv==='MÉDIO'?'#b9770e':'#943126', icone: nv==='MÉDIO'?'⚠️':'⛔',
+             motivos:['composição dos fornecedores ausente' + (snFora ? notaFora : '')].concat(pend), rotulo:nv, naoConclusivo: nv === 'BAIXO' }; }
   const nidPct = c.final ? (c.final.g.nid.pct||0) : 1;
   const confirmada = c.status === 'confirmada';
   const semDados = c.origem === 'sem-dados' && !c.editada && !confirmada;
-  if (nidPct > 0.25 || semDados) pend.push('parcela relevante não identificada (' + (nidPct*100).toFixed(1).replace('.',',') + '% das compras)');
+  if (nidPct > 0.25 || semDados) pend.push('parcela relevante não identificada (' + (nidPct*100).toFixed(1).replace('.',',') + '% das compras)' + (snFora ? notaFora : ''));
   if (sens && sens.inversao) pend.push('a composição pode alterar o regime vencedor');
   if (!confirmada) pend.push('composição não confirmada pelo usuário');
   let nivel;
   if (pend.length === 0) nivel = 'ALTO';
-  else if ((sens && sens.inversao) || nidPct > 0.25 || semDados || critico) nivel = 'BAIXO';
+  else if ((sens && sens.inversao) || critico || (!snFora && (nidPct > 0.25 || semDados))) nivel = 'BAIXO';
   else nivel = 'MÉDIO';
   if (nivel === 'ALTO' && !confirmada) nivel = 'MÉDIO';
   return { nivel, cor: nivel==='ALTO'?'#1e8449':nivel==='MÉDIO'?'#b9770e':'#943126', icone: nivel==='ALTO'?'✅':nivel==='MÉDIO'?'⚠️':'⛔', motivos: pend, rotulo: nivel, naoConclusivo: nivel === 'BAIXO' };
@@ -3356,7 +3365,7 @@ function calcCenariosReforma(res, reforma) {
   // sem compras não há composição a confirmar; compras digitadas na aba valem como informadas pelo usuário
   const _compRef = _comp || (semPerfil ? null : ((T.comprasRevenda||0) > 0.005 || (_ce.contra.compras_lrlp||0) + (_ce.contra.compras_simples||0) > 0.005
     ? { status:'sugerida', origem:'usuario', final: { g: { nid: { pct: 0 } } } } : { status:'confirmada', origem:'nenhuma', final: { g: { nid: { pct: 0 } } } }));
-  const confianca = compConfianca(_compRef, sens, hibNaoFechaArr.length ? 'MEM-01' : null);
+  const confianca = compConfianca(_compRef, sens, hibNaoFechaArr.length ? 'MEM-01' : null, _snIndisponivel);   // v7.108.0 · sem Simples nos anos projetados, a composição não decide o vencedor
   for (const l of REF) l.naoConclusivo = !!confianca.naoConclusivo;
   // v7.105.0 (B17) · quanto a LC 224 pesa num ano cheio projetado — alimenta a nota de sensibilidade
   // das ADIs no parecer. anoCheio = resto do LP com a lei (estado ≥2027) − resto com a lei afastada.
@@ -6339,10 +6348,17 @@ function parecerDados(){
   // isso vira ALERTA (abaixo), não mudança de variante.
   const rbtMax = Math.max(0, ...MmReal.map(x=>+x.rbt12||0));
   const rbtMaxProj = Math.max(0, ...Mm.map(x=>+x.rbt12||0));
-  // v7.93.0 · a variante lê a ELEGIBILIDADE (snElegibilidade), não o rbtMax cru: excesso de até 20% no ano
-  // mantém a empresa no Simples até 31/12 e só impede o exercício seguinte (LC 123, art. 3º, § 9º-A).
+  // v7.93.0 · a variante lê a ELEGIBILIDADE (snElegibilidade), não o rbtMax cru.
+  // v7.108.0 · receita do ano-base ACIMA DO TETO (estado 'transicao' OU 'inelegivel') também vira
+  // variante 'acima': qualquer excesso sobre o teto impede a permanência/opção no exercício
+  // seguinte (LC 123/2006, art. 3º, §§ 9º e 9º-A) — e os anos que o documento compara (2027 em
+  // diante) são exatamente esses. Até a v7.107.0 o estado 'transicao' mantinha a variante de
+  // optante e o parecer oferecia "os três caminhos do Simples" em 2027, gráficos com "por dentro"
+  // e "híbrido" incluídos, a uma empresa que não terá o regime; a comparação passa a ser só
+  // Lucro Presumido × Lucro Real, com a situação do ano-base (permanência até 31/12 ou exclusão
+  // no mês seguinte ao excesso) declarada pelo snTexto no enquadramento e no quadro do Simples.
   let _EL = null; try { _EL = snElegibilidade(_res, RL.dados.cfg); } catch(e){ _EL = null; /* silêncio proposital (A10): sem elegibilidade cai na regra antiga do rbtMax */ }
-  const acima = _EL ? _EL.estado === 'inelegivel' : rbtMax > PARECER_TETO;
+  const acima = _EL ? _EL.estado !== 'elegivel' : rbtMax > PARECER_TETO;
   const snTexto = snSituacaoTexto(_EL, RL.dados.ano), snCurta = snSituacaoCurta(_EL, RL.dados.ano), snEstado = _EL ? _EL.estado : (acima ? 'inelegivel' : 'elegivel');
   const cadSimples = /simples|mei/.test(regime);
   const optante = !acima && (cadSimples || (!regime && !!RL.dados._pgdas));
@@ -6360,7 +6376,9 @@ function parecerDados(){
   const _subMonEf = (PJ.v === projJanelaNorm(_cfgP.projJanela) || !RL.res)
     ? (RL.res && RL.res.subMon) : monitorSublimite(RL.res, Object.assign({}, _cfgP, { projJanela: PJ.v }));
   const alertas = [];
-  if (acima && cadSimples) alertas.push('Cadastro indica Simples Nacional, mas o RBT12 apurado supera o teto de R$ 4,8 mi — a empresa está sujeita à exclusão do regime; o parecer trata o cenário do regime regular.');
+  if (acima && cadSimples) alertas.push('Cadastro indica Simples Nacional, mas a receita apurada supera o teto de R$ 4,8 mi do regime'
+    + (snEstado === 'transicao' ? ' durante o ano-base — o Simples não estará disponível nos exercícios seguintes (LC 123/2006, art. 3º, §§ 9º e 9º-A)' : ' — a empresa está sujeita à exclusão do regime')
+    + '; o parecer compara os regimes aplicáveis (Lucro Presumido × Lucro Real).');   // v7.108.0 · 'transicao' também é variante acima
   if (!acima && rbtMax > 4320000) alertas.push('RBT12 em '+fmtR(rbtMax)+' — acima de 90% do teto do Simples (R$ 4,8 mi): monitorar o risco de exclusão.');
   // v7.41.2 · a trava da 5ª faixa PRESSUPÕE ausência de impedimento (ver "Divergências e decisões
   // declaradas"). Enquanto o monitor apontava impedimento, este alerta afirmava que o ICMS/ISS segue
@@ -7396,7 +7414,7 @@ function apTelas(A, modo){
     ${D.snEstado==='inelegivel'
       ? resumo(`a empresa está acima do teto do Simples; a comparação real é entre Presumido e Real, e a Reforma encarece os dois.`, 'warn')
       : D.snEstado==='transicao'
-      ? resumo(`${D.snTexto||''} A comparação de 2026 mantém o Simples; a partir do ano seguinte a escolha é entre Presumido e Real.`, 'warn')
+      ? resumo(`${D.snTexto||''} A partir do exercício seguinte a escolha é entre Lucro Presumido e Lucro Real — é essa a comparação deste estudo.`, 'warn')
       : resumo(`a empresa paga ${apPct(D.T.receita?D.hojeAnual/D.T.receita*100:0)} da receita em imposto e ${A.folga>=0?'tem folga de '+apMi(A.folga)+' até o teto':'já supera o teto em '+apMi(A.excesso)}. ${A.P.V && A.P.V.pctPJ>50?'A pressão para mudar não vem do tamanho — vem dos clientes.':'Chega à Reforma sem pressão para sair do Simples.'}`, 'ok')}` });
 
   S.caminhosS = () => ({ html:`
@@ -7623,7 +7641,7 @@ function apTelas(A, modo){
     ${cab('Parecer e recomendação',`Esta tela mostra <b>a conclusão do estudo</b> para ${A.razao}, com os números que a sustentam.`)}
     <div class="ap-grade" style="grid-template-columns:1fr 1fr;gap:26px">
       <div style="font-size:14px;line-height:1.5">
-        <p style="margin:0 0 10px"><b>Situação:</b> carga anual de ${fmtR(D.hojeAnual)} no ${D.regimeHojeNome}, receita ${D.proj?'projetada':'apurada'} de ${fmtR(D.T.receita)}${D.variante==='acima'?'':(A.folga>=0?', folga de '+fmtR(A.folga)+' até o teto':', receita interna superior ao teto do Simples em '+fmtR(A.excesso))}.</p>
+        <p style="margin:0 0 10px"><b>Situação:</b> carga anual de ${fmtR(D.hojeAnual)} no ${D.regimeHojeNome}, receita ${D.proj?'projetada':'apurada'} de ${fmtR(D.T.receita)}${A.folga>=0?(D.variante==='acima'?'':', folga de '+fmtR(A.folga)+' até o teto'):', receita interna superior ao teto do Simples em '+fmtR(A.excesso)}.</p>
         <p style="margin:0 0 10px"><b>Simples Nacional:</b> ${snSituacaoQuadro(D).map(x=>esc(x)).join(' ')}</p>
         ${cam.length?`<p style="margin:0 0 10px"><b>Em ${D.anoRef}:</b> ${cam.map((c,k)=>`${c.nome.toLowerCase()} ${fmtR(c.serie[i0])}`).join('; ')}${A.L?` (IBS/CBS líquido de ${fmtR(A.L.liquido)})`:''}.</p>`:''}
         <p style="margin:0"><b>Caixa:</b> ${D.variante==='acima'?'':'fora do DAS, '}retenção de ${fmtR(D.split.fonteMes)} por mês em ${D.split.ano||2032}, custo financeiro de ${fmtR(D.split.custoAno)} ao ano.</p>
