@@ -5173,7 +5173,7 @@ console.log('\n■ Integridade da interface');
       chk('5ai · excesso > 20%: exclusão no mês seguinte ao do excesso (§ 9º)', /mais de 20%/.test(u) && /mês seguinte/.test(u) && /setembro/.test(u));
       const v = run('snSituacaoTexto')({estado:'inelegivel', excesso:0.45, teto:4800000, fonte:'lancamento'}, 2026);
       chk('5ai · inelegível: "não pode optar pelo Simples Nacional em 2026", exercício nomeado', /não é elegível ao Simples Nacional em 2026/.test(v) && /não pode optar pelo Simples Nacional em 2026/.test(v));
-      chk('5ai · parecer e apresentações usam a conclusão única (snSituacaoTexto/snCurta) e a variante lê a elegibilidade', /const acima = _EL \? _EL\.estado === 'inelegivel'/.test(html) && /D\.snEstado==='transicao'/.test(html) && (html.match(/D\.snTexto/g)||[]).length >= 5); }
+      chk('5ai · parecer e apresentações usam a conclusão única (snSituacaoTexto/snCurta) e a variante lê a elegibilidade (v7.108.0: qualquer estado ≠ elegível = acima)', /const acima = _EL \? _EL\.estado !== 'elegivel'/.test(html) && /D\.snEstado==='transicao'/.test(html) && (html.match(/D\.snTexto/g)||[]).length >= 5); }
     { const aliq = run('RF_ALIQ_DEFAULT');
       const C = { comp:null, sens:null, confianca:null, rfx:{ aliq }, semPerfil:false, semCreditos:true };
       const L = { ano:2027, deb:464330.81, cred:0, liquido:464330.81 };
@@ -6466,6 +6466,49 @@ console.log('\n■ Integridade da interface');
     chk('5ak · a tabela mensal da Análise Atual recebe a mesma frase de totais dos relatórios', /\$id\('an-detalhe'\)\.innerHTML = h \+ notaTotais\(\);/.test(html) && (html.match(/notaTotais\(\)/g)||[]).length >= 3);
     chk('5ak · lacre 22197ef1 intocado', /LACRE_HASH = '795f5d26'/.test(html));
     chk('5ak · v7.93.2 · badge e changelog', /APP_VERSAO = '7\.(?:9[3-9]|[1-9]\d\d)\.\d+'/.test(html) && /<b>v7\.93\.2<\/b><\/td><td>13\/09\/2026/.test(html));
+  }
+
+  // ═══ 5bt · v7.108.0 — receita acima do teto: documentos só comparam Presumido × Real ═══
+  // Caso real da auditoria de 11/11: serviços (Anexo III), receita interna de R$ 11,8 mi no 1º
+  // semestre (estado 'transicao', excesso > 20%). O parecer oferecia "os três caminhos do Simples
+  // em 2027" e gráficos com "por dentro"/"híbrido", e o nível de confiabilidade saía "BAIXO —
+  // parcela relevante não identificada (85% das compras)" tornando NÃO CONCLUSIVA uma comparação
+  // (LP × LR) que não depende da composição dos fornecedores.
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const b = run('anNovo')('26262626000126', 2026);
+    for (const k of Object.keys(b.receitas)) b.receitas[k] = z();
+    b.cfg.iss = .02; b.cfg.rbt12Lanc = Array(12).fill(0);
+    b.receitas.a3_semret = [1876117.07,1891658.94,1972262.02,1642716.12,2031869.43,2391619.34,0,0,0,0,0,0];
+    b.folha.salarios = Array(12).fill(30000);
+    const rb = g.calcular(clone(b), clone(AD), {...FD});
+    ctx.__xb = b; ctx.__xrb = rb;
+    run('RL.dados = __xb; RL.res = __xrb; AN = __xb; AN._res = __xrb; RL.empresa = { razao_social:"Acima do Teto Ltda", regime:"Simples Nacional" }; RL.forn = null; RL._ia = null; RL.reforma = null; RL.exec = null; RL.fechada = false;');
+    const EL = run('snElegibilidade')(rb, b.cfg);
+    chk('5bt · massa reproduz o caso: estourou o teto DURANTE o ano (transicao, excesso > 20%)', EL.estado === 'transicao' && EL.excesso > 0.20, EL.estado + ' ' + (EL.excesso*100).toFixed(1) + '%');
+    let D = null, eD = null; try { D = run('parecerDados()'); } catch(e){ eD = e.message; }
+    chk('5bt · variante do documento = acima (o Simples não existirá nos anos comparados, 2027+)', eD === null && D && D.variante === 'acima' && D.snEstado === 'transicao', eD || (D && D.variante));
+    const abrir = tipo => { ctx.document.getElementById('rl-tipo').value = tipo; ctx.document.getElementById('rl-corpo').innerHTML = ''; let erro = null; try { run('rlRender()'); } catch(e){ erro = e.message; } return erro; };
+    const corpo = () => (ctx.document.getElementById('rl-corpo').innerHTML || '');
+    { const e = abrir('parecer'); const t = corpo(); const txt = t.replace(/<[^>]+>/g,' ');
+      chk('5bt · parecer SEM "Os três caminhos do Simples", SEM o quadro "Cenário em 2027" e SEM o gráfico por dentro × híbrido (pc-cen33)', e === null && !/três caminhos do Simples/.test(txt) && !/Cenário em 20\d\d/.test(t) && !/pc-cen33/.test(t), e || '');
+      chk('5bt · parecer compara Lucro Presumido × Lucro Real e declara a exclusão (mês seguinte ao excesso, art. 3º, § 9º)', /Lucro Presumido/.test(txt) && /Lucro Real/.test(txt) && /mês seguinte/.test(txt) && /A análise compara os regimes aplicáveis/.test(txt));
+      chk('5bt · tabela de evolução ano a ano sem as colunas "Por dentro" e "Híbrido"', !/<th class="num">Por dentro<\/th>/.test(t)); }
+    { const e = abrir('apresentacao_c'); const t = corpo().replace(/<[^>]+>/g,' ');
+      chk('5bt · apresentação completa: dois caminhos (Presumido × Real), sem "Por dentro do DAS" e sem "Híbrido"', e === null && !/Por dentro do DAS/.test(t) && !/Híbrido/.test(t) && /Lucro Presumido/.test(t) && /Lucro Real/.test(t), e || ''); }
+    { const e = abrir('apresentacao_s'); const t = corpo().replace(/<[^>]+>/g,' ');
+      chk('5bt · apresentação simplificada: situação do ano-base declarada (exclusão pelo § 9º) e escolha LP × LR anunciada', e === null && /mês seguinte/.test(t) && /a escolha é entre Lucro Presumido e Lucro Real/.test(t), e || ''); }
+    // confiabilidade: NID alto deixa de derrubar o nível quando o Simples está fora dos anos projetados
+    const conf1 = run('compConfianca')({ status:'sugerida', origem:'consultas', final:{ g:{ nid:{ pct:0.85 } } } }, null, null, true);
+    chk('5bt · snFora: 85% não identificado → nível MÉDIO ⚠️ com a nota "não a escolha entre Lucro Presumido e Lucro Real", parecer CONCLUSIVO', conf1.nivel === 'MÉDIO' && conf1.naoConclusivo === false && conf1.motivos.some(m => /não a escolha entre Lucro Presumido e Lucro Real/.test(m)), conf1.nivel + ': ' + conf1.motivos.join('|'));
+    const conf2 = run('compConfianca')({ status:'sugerida', origem:'consultas', final:{ g:{ nid:{ pct:0.85 } } } }, null, null, false);
+    chk('5bt · empresa COM o Simples em jogo: 85% não identificado segue BAIXO/NÃO CONCLUSIVO (nada mudou para optantes)', conf2.nivel === 'BAIXO' && conf2.naoConclusivo === true);
+    const conf3 = run('compConfianca')(null, null, 'MEM-01', true);
+    chk('5bt · divergência matemática continua forçando BAIXO mesmo com snFora', conf3.nivel === 'BAIXO' && conf3.naoConclusivo === true);
+    const cen = run('calcCenariosReforma')(rb, null);
+    chk('5bt · cenários da massa: Simples indisponível nos anos projetados (snBloqueado) e confiabilidade não-BAIXA sem pendência crítica', cen.snIndisponivel === true && cen.REF.filter(l=>l.ano>=2027).every(l=>l.snBloqueado) && cen.confianca.nivel !== 'BAIXO', (cen.confianca && cen.confianca.nivel) + ': ' + (cen.confianca ? cen.confianca.motivos.join('|') : ''));
+    chk('5bt · lacre 795f5d26 intocado (variante e confiabilidade, nunca número)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bt · v7.108.0 · badge e changelog', /APP_VERSAO = '7\.(?:10[8-9]|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.108\.0<\/b><\/td><td>11\/11\/2026/.test(html));
   }
 
   console.log(FALHAS.length ? `✗ ${FALHAS.length} FALHA(S): ${FALHAS.join(' · ')}` : `✓✓ SUÍTE COMPLETA: ${OK} verificações OK`);

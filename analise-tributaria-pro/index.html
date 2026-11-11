@@ -823,6 +823,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.108.0</b></td><td>11/11/2026</td><td><b>⛔ EMPRESA COM RECEITA ACIMA DO TETO DO SIMPLES: análise só entre Lucro Presumido e Lucro Real. Motor e lacre <code>795f5d26</code> INTOCADOS — muda a variante dos documentos e o nível de confiabilidade, nunca número.</b> Correção de auditoria externa (caso real, serviços, receita interna de R$ 11,8 mi no 1º semestre). <b>(1) O defeito:</b> a empresa que ESTOURA o teto durante o ano-base (estado <code>transicao</code> da snElegibilidade) continuava saindo como optante nos documentos: o parecer oferecia <b>"Os três caminhos do Simples em 2027"</b>, o quadro <b>"Cenário em 2027"</b> e os gráficos com <b>"Por dentro"</b> e <b>"Híbrido · % receita"</b> — caminhos que a empresa não terá, porque qualquer excesso sobre o teto impede a permanência/opção no exercício seguinte (LC 123/2006, art. 3º, §§ 9º e 9º-A), e os anos comparados (2027+) são exatamente esses. <b>A variante do parecer e das apresentações passa a ser <code>acima</code> sempre que a receita do ano-base supera o teto</b> (estado ≠ elegível): a comparação fica entre Lucro Presumido e Lucro Real, as seções e gráficos do Simples saem do documento e a situação do ano-base (permanência até 31/12 com excesso ≤ 20%, ou exclusão do mês seguinte ao excesso) segue declarada pelo snTexto no enquadramento, no quadro "Situação no Simples Nacional" e nas telas das apresentações. <b>(2) Confiabilidade:</b> para essa empresa, o crédito de IBS/CBS entra por IGUAL no Presumido e no Real — a composição dos fornecedores <b>não tem como trocar o regime vencedor</b>. O "⛔ NÍVEL DE CONFIABILIDADE: BAIXO — parcela relevante não identificada (X% das compras)" deixava o parecer NÃO CONCLUSIVO por uma pendência que não muda a conclusão; <code>compConfianca</code> ganhou o parâmetro <code>snFora</code> (ligado quando o Simples está indisponível nos anos projetados): parcela não identificada/composição ausente passa a nível MÉDIO ⚠️ com a nota "afeta o valor estimado do crédito de IBS/CBS, não a escolha entre Lucro Presumido e Lucro Real" — divergência matemática e inversão de vencedor continuam forçando BAIXO sempre. <b>(3) Textos:</b> o alerta do cadastro optante cita a exclusão certa e a comparação LP × LR; a apresentação mostra "receita interna superior ao teto em R$ X" também na variante acima (nunca "folga" negativa). Teto legal aplicado: R$ 4,8 mi (LC 123/2006, art. 3º, II), proporcional no ano de início — a regra não usa valor fixo de corte. Suíte: bloco 5bt.</td></tr>
                     <tr><td><b>v7.107.0</b></td><td>24/10/2026</td><td><b>🔒 TRAVA DOS MESES ENTREGUES — "fechamento por período" do jeito que o app trabalha. Motor e lacre <code>795f5d26</code> INTOCADOS: é trava de tela e trilha, nunca cálculo.</b> <b>(1) A lacuna:</b> durante o ano a análise fica aberta (o 2º semestre ainda vai ser digitado), e nada impedia uma edição retroativa de janeiro–junho DEPOIS da entrega do 1º semestre ao cliente. <b>(2) A trava:</b> o 📬 Registrar entrega do período (v7.106.0) agora também TRAVA os meses do corte — grava em <code>dados._entregas</code> (no banco e na análise aberta) o período, os meses e o <b>retrato dos valores entregues</b>. A grade recusa a edição de mês travado (aviso com o período da entrega); a <b>importação</b> (PGDAS, planilha, XML, balancete, Demonstrativo, Faturamento) que invadir o corte tem as células repostas pelo retrato, com alerta listando o que foi preservado — os demais meses entram normalmente, então o fluxo "entrega S1 → importa jul–dez" segue livre. <b>(3) 🔓 Destravar existe</b> — por entrega, com <b>motivo obrigatório (≥5 caracteres) assinado na trilha de auditoria</b> (padrão do motivo da v7.98): nada é proibido, tudo fica registrado (quem, quando, por quê). O aviso dos meses travados aparece na Análise Atual, ao lado do fechamento. <b>(4) Fecho do ciclo:</b> no fim do exercício, o 🔒 Fechar análise congela tudo como sempre; a trava protege o meio do caminho. Fora do <code>anCanon</code> de propósito: travar/destravar não é "edição" da análise. Suíte: bloco 5bs (entrega trava e grava o retrato; grade recusa; importação reposta; destravar com motivo assina a trilha e libera).</td></tr>
                     <tr><td><b>v7.106.0</b></td><td>24/10/2026</td><td><b>📅 APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral · semestral · anual) passa a orientar os documentos. Motor e lacre <code>795f5d26</code> INTOCADOS: o período é a SOMA dos meses do corte, nunca um segundo cálculo.</b> <b>(1) Por quê:</b> clientes com plano trimestral/semestral recebiam documentos sempre anuais — e 71 das 72 análises fechadas de 2026 têm exatamente jan–jun lançado, prontas para uma entrega de 1º semestre. <b>(2) Plano na ficha:</b> a empresa ganha o campo "Plano de apuração — Artecon" (coluna <code>plano_apuracao</code>, <code>banco/atp/setup_v7106.sql</code>). <b>(3) Período do documento:</b> Comparativo de regimes, Conferência e Parecer ganham o seletor (Ano · 1º/2º semestre · T1–T4), que abre no último período do plano com receita lançada. Só cortes alinhados a trimestre: IRPJ/CSLL do Presumido, o adicional e a LC 224 são trimestrais, então a soma dos meses do corte é EXATA — a suíte crava a partição t1+t2+t3+t4 = ano ao centavo. <b>(4) O que cada documento mostra no corte:</b> o Comparativo elege o vencedor DO PERÍODO e recalcula todas as tabelas sobre os meses do corte; a Conferência ganha o cartão "Apuração do período"; o Parecer declara o corte na capa e ganha a página "Apuração do período". Honestidades declaradas: Lucro Real em apuração ANUAL aparece como estimativa no corte (o ajuste é anual); 13º e provisões ficam nos meses deles; os cenários da Reforma são do EXERCÍCIO e permanecem no documento anual — comparar trimestre com ano pleno seria desonesto. <b>(5) 📬 Registrar entrega do período:</b> cada emissão do ciclo pode ser registrada no Histórico (evento <code>entrega-periodo</code>, com corte, totais, vencedor, autor, app e lacre) — a prova, meses depois, do que foi entregue em cada ciclo do plano. Suíte: bloco 5br (partição ao centavo, eleição do corte, padrão pelo plano, comparativo funcional com e sem corte, entrega no Histórico).</td></tr>
                     <tr><td><b>v7.105.1</b></td><td>24/10/2026</td><td><b>🔁 REFECHAMENTO EM LOTE DAS DIVERGENTES — decisão tomada caso a caso, execução em um clique. Motor e lacre <code>795f5d26</code> INTOCADOS.</b> O 🧊 (v7.101.5) congela as fechadas que batem ao centavo e LISTA as divergentes para decisão profissional; faltava o passo seguinte: decidida a adoção dos números novos (como em 24/10/2026, com o quadro das 11 divergentes analisado caso a caso), cada análise ainda precisava ser aberta e refechada uma a uma. O botão <b>"🔁 Refechar divergentes em lote"</b> (Dashboard, ao lado do 🧊) executa a decisão: varre as fechadas sem execução congelada, recalcula com o motor atual e refecha SÓ as divergentes, pelo MESMO caminho do 🔁 individual — <b>quem executa o lote assume o fechamento</b> (fechado_por), o Histórico ganha o evento <code>refechada</code> com <code>de/para</code> das versões e o <b>snapshot anterior preservado</b> (os números antigos ficam guardados), e cada refechamento entra no registro imutável de execuções (B09). A idêntica ao centavo NÃO é tocada (congelar é com o 🧊) e a já congelada é pulada. O relatório na tela lista cada refechada com os valores antigo → novo e lembra: <b>parecer entregue com números antigos deve ser reimpresso</b>. Suíte: bloco 5bq (refecha só a divergente; histórico com snapshot anterior; execução registrada; idêntica intocada).</td></tr>
@@ -6669,7 +6670,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.107.0';
+const APP_VERSAO = '7.108.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 // ═══ v7.107.0 · TRAVA DOS MESES ENTREGUES ════════════════════════════════════════════════════
 // Registrar a entrega de um período (📬, Relatórios) TRAVA os meses do corte: a grade recusa a
@@ -7620,19 +7621,28 @@ function compContraCenarios(comp, contraBase){
   return { inf, base, sup };
 }
 // nível de confiabilidade da análise (item 15) — texto + ícone, nunca só cor
-function compConfianca(comp, sens, critico){
+// v7.108.0 · snFora = empresa SEM o Simples nos anos projetados (receita do ano-base acima do
+// teto): o crédito de IBS/CBS entra por IGUAL no Lucro Presumido e no Lucro Real, então a
+// composição dos fornecedores não tem como trocar o regime vencedor. Parcela não identificada
+// (ou composição ausente) deixa de forçar nível BAIXO/"NÃO CONCLUSIVO" e passa a ser registrada
+// como limitação do VALOR estimado do crédito, não da conclusão — o parecer volta a recomendar.
+// Divergência matemática (critico) e inversão de vencedor continuam forçando BAIXO sempre.
+function compConfianca(comp, sens, critico, snFora){
+  const notaFora = ' — afeta o valor estimado do crédito de IBS/CBS, não a escolha entre Lucro Presumido e Lucro Real';
   const c = comp; const pend = [];
   if (critico) pend.push('divergência matemática (' + critico + ')');
-  if (!c) return { nivel:'BAIXO', cor:'#943126', icone:'⛔', motivos:['composição dos fornecedores ausente'].concat(pend), rotulo:'BAIXO', naoConclusivo:true };
+  if (!c){ const nv = (snFora && !critico) ? 'MÉDIO' : 'BAIXO';
+    return { nivel:nv, cor: nv==='MÉDIO'?'#b9770e':'#943126', icone: nv==='MÉDIO'?'⚠️':'⛔',
+             motivos:['composição dos fornecedores ausente' + (snFora ? notaFora : '')].concat(pend), rotulo:nv, naoConclusivo: nv === 'BAIXO' }; }
   const nidPct = c.final ? (c.final.g.nid.pct||0) : 1;
   const confirmada = c.status === 'confirmada';
   const semDados = c.origem === 'sem-dados' && !c.editada && !confirmada;
-  if (nidPct > 0.25 || semDados) pend.push('parcela relevante não identificada (' + (nidPct*100).toFixed(1).replace('.',',') + '% das compras)');
+  if (nidPct > 0.25 || semDados) pend.push('parcela relevante não identificada (' + (nidPct*100).toFixed(1).replace('.',',') + '% das compras)' + (snFora ? notaFora : ''));
   if (sens && sens.inversao) pend.push('a composição pode alterar o regime vencedor');
   if (!confirmada) pend.push('composição não confirmada pelo usuário');
   let nivel;
   if (pend.length === 0) nivel = 'ALTO';
-  else if ((sens && sens.inversao) || nidPct > 0.25 || semDados || critico) nivel = 'BAIXO';
+  else if ((sens && sens.inversao) || critico || (!snFora && (nidPct > 0.25 || semDados))) nivel = 'BAIXO';
   else nivel = 'MÉDIO';
   if (nivel === 'ALTO' && !confirmada) nivel = 'MÉDIO';
   return { nivel, cor: nivel==='ALTO'?'#1e8449':nivel==='MÉDIO'?'#b9770e':'#943126', icone: nivel==='ALTO'?'✅':nivel==='MÉDIO'?'⚠️':'⛔', motivos: pend, rotulo: nivel, naoConclusivo: nivel === 'BAIXO' };
@@ -8245,7 +8255,7 @@ function calcCenariosReforma(res, reforma) {
   // sem compras não há composição a confirmar; compras digitadas na aba valem como informadas pelo usuário
   const _compRef = _comp || (semPerfil ? null : ((T.comprasRevenda||0) > 0.005 || (_ce.contra.compras_lrlp||0) + (_ce.contra.compras_simples||0) > 0.005
     ? { status:'sugerida', origem:'usuario', final: { g: { nid: { pct: 0 } } } } : { status:'confirmada', origem:'nenhuma', final: { g: { nid: { pct: 0 } } } }));
-  const confianca = compConfianca(_compRef, sens, hibNaoFechaArr.length ? 'MEM-01' : null);
+  const confianca = compConfianca(_compRef, sens, hibNaoFechaArr.length ? 'MEM-01' : null, _snIndisponivel);   // v7.108.0 · sem Simples nos anos projetados, a composição não decide o vencedor
   for (const l of REF) l.naoConclusivo = !!confianca.naoConclusivo;
   // v7.105.0 (B17) · quanto a LC 224 pesa num ano cheio projetado — alimenta a nota de sensibilidade
   // das ADIs no parecer. anoCheio = resto do LP com a lei (estado ≥2027) − resto com a lei afastada.
@@ -10974,10 +10984,17 @@ function parecerDados(){
   // isso vira ALERTA (abaixo), não mudança de variante.
   const rbtMax = Math.max(0, ...MmReal.map(x=>+x.rbt12||0));
   const rbtMaxProj = Math.max(0, ...Mm.map(x=>+x.rbt12||0));
-  // v7.93.0 · a variante lê a ELEGIBILIDADE (snElegibilidade), não o rbtMax cru: excesso de até 20% no ano
-  // mantém a empresa no Simples até 31/12 e só impede o exercício seguinte (LC 123, art. 3º, § 9º-A).
+  // v7.93.0 · a variante lê a ELEGIBILIDADE (snElegibilidade), não o rbtMax cru.
+  // v7.108.0 · receita do ano-base ACIMA DO TETO (estado 'transicao' OU 'inelegivel') também vira
+  // variante 'acima': qualquer excesso sobre o teto impede a permanência/opção no exercício
+  // seguinte (LC 123/2006, art. 3º, §§ 9º e 9º-A) — e os anos que o documento compara (2027 em
+  // diante) são exatamente esses. Até a v7.107.0 o estado 'transicao' mantinha a variante de
+  // optante e o parecer oferecia "os três caminhos do Simples" em 2027, gráficos com "por dentro"
+  // e "híbrido" incluídos, a uma empresa que não terá o regime; a comparação passa a ser só
+  // Lucro Presumido × Lucro Real, com a situação do ano-base (permanência até 31/12 ou exclusão
+  // no mês seguinte ao excesso) declarada pelo snTexto no enquadramento e no quadro do Simples.
   let _EL = null; try { _EL = snElegibilidade(_res, RL.dados.cfg); } catch(e){ _EL = null; /* silêncio proposital (A10): sem elegibilidade cai na regra antiga do rbtMax */ }
-  const acima = _EL ? _EL.estado === 'inelegivel' : rbtMax > PARECER_TETO;
+  const acima = _EL ? _EL.estado !== 'elegivel' : rbtMax > PARECER_TETO;
   const snTexto = snSituacaoTexto(_EL, RL.dados.ano), snCurta = snSituacaoCurta(_EL, RL.dados.ano), snEstado = _EL ? _EL.estado : (acima ? 'inelegivel' : 'elegivel');
   const cadSimples = /simples|mei/.test(regime);
   const optante = !acima && (cadSimples || (!regime && !!RL.dados._pgdas));
@@ -10995,7 +11012,9 @@ function parecerDados(){
   const _subMonEf = (PJ.v === projJanelaNorm(_cfgP.projJanela) || !RL.res)
     ? (RL.res && RL.res.subMon) : monitorSublimite(RL.res, Object.assign({}, _cfgP, { projJanela: PJ.v }));
   const alertas = [];
-  if (acima && cadSimples) alertas.push('Cadastro indica Simples Nacional, mas o RBT12 apurado supera o teto de R$ 4,8 mi — a empresa está sujeita à exclusão do regime; o parecer trata o cenário do regime regular.');
+  if (acima && cadSimples) alertas.push('Cadastro indica Simples Nacional, mas a receita apurada supera o teto de R$ 4,8 mi do regime'
+    + (snEstado === 'transicao' ? ' durante o ano-base — o Simples não estará disponível nos exercícios seguintes (LC 123/2006, art. 3º, §§ 9º e 9º-A)' : ' — a empresa está sujeita à exclusão do regime')
+    + '; o parecer compara os regimes aplicáveis (Lucro Presumido × Lucro Real).');   // v7.108.0 · 'transicao' também é variante acima
   if (!acima && rbtMax > 4320000) alertas.push('RBT12 em '+fmtR(rbtMax)+' — acima de 90% do teto do Simples (R$ 4,8 mi): monitorar o risco de exclusão.');
   // v7.41.2 · a trava da 5ª faixa PRESSUPÕE ausência de impedimento (ver "Divergências e decisões
   // declaradas"). Enquanto o monitor apontava impedimento, este alerta afirmava que o ICMS/ISS segue
@@ -13719,7 +13738,7 @@ function apTelas(A, modo){
     ${D.snEstado==='inelegivel'
       ? resumo(`a empresa está acima do teto do Simples; a comparação real é entre Presumido e Real, e a Reforma encarece os dois.`, 'warn')
       : D.snEstado==='transicao'
-      ? resumo(`${D.snTexto||''} A comparação de 2026 mantém o Simples; a partir do ano seguinte a escolha é entre Presumido e Real.`, 'warn')
+      ? resumo(`${D.snTexto||''} A partir do exercício seguinte a escolha é entre Lucro Presumido e Lucro Real — é essa a comparação deste estudo.`, 'warn')
       : resumo(`a empresa paga ${apPct(D.T.receita?D.hojeAnual/D.T.receita*100:0)} da receita em imposto e ${A.folga>=0?'tem folga de '+apMi(A.folga)+' até o teto':'já supera o teto em '+apMi(A.excesso)}. ${A.P.V && A.P.V.pctPJ>50?'A pressão para mudar não vem do tamanho — vem dos clientes.':'Chega à Reforma sem pressão para sair do Simples.'}`, 'ok')}` });
 
   S.caminhosS = () => ({ html:`
@@ -13946,7 +13965,7 @@ function apTelas(A, modo){
     ${cab('Parecer e recomendação',`Esta tela mostra <b>a conclusão do estudo</b> para ${A.razao}, com os números que a sustentam.`)}
     <div class="ap-grade" style="grid-template-columns:1fr 1fr;gap:26px">
       <div style="font-size:14px;line-height:1.5">
-        <p style="margin:0 0 10px"><b>Situação:</b> carga anual de ${fmtR(D.hojeAnual)} no ${D.regimeHojeNome}, receita ${D.proj?'projetada':'apurada'} de ${fmtR(D.T.receita)}${D.variante==='acima'?'':(A.folga>=0?', folga de '+fmtR(A.folga)+' até o teto':', receita interna superior ao teto do Simples em '+fmtR(A.excesso))}.</p>
+        <p style="margin:0 0 10px"><b>Situação:</b> carga anual de ${fmtR(D.hojeAnual)} no ${D.regimeHojeNome}, receita ${D.proj?'projetada':'apurada'} de ${fmtR(D.T.receita)}${A.folga>=0?(D.variante==='acima'?'':', folga de '+fmtR(A.folga)+' até o teto'):', receita interna superior ao teto do Simples em '+fmtR(A.excesso)}.</p>
         <p style="margin:0 0 10px"><b>Simples Nacional:</b> ${snSituacaoQuadro(D).map(x=>esc(x)).join(' ')}</p>
         ${cam.length?`<p style="margin:0 0 10px"><b>Em ${D.anoRef}:</b> ${cam.map((c,k)=>`${c.nome.toLowerCase()} ${fmtR(c.serie[i0])}`).join('; ')}${A.L?` (IBS/CBS líquido de ${fmtR(A.L.liquido)})`:''}.</p>`:''}
         <p style="margin:0"><b>Caixa:</b> ${D.variante==='acima'?'':'fora do DAS, '}retenção de ${fmtR(D.split.fonteMes)} por mês em ${D.split.ano||2032}, custo financeiro de ${fmtR(D.split.custoAno)} ao ano.</p>
