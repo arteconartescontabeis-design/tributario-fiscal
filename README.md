@@ -33,3 +33,4 @@ Rodam também no GitHub Actions a cada envio.
 ## Origem
 Migrado em 10/2026 a partir dos repositórios `analise-tributaria-pro` (commit `e41acb2`) e `ncm-pro` (commit `754621b`),
 que ficam arquivados com todo o histórico anterior. Plano e decisões: `artecon-supabase/docs/`.
+- **Site fora do ar após pane do GitHub Pages**: dispare um build novo em *Settings → Pages → Save* (reexecutar um build que falhou com `startup_failure` não adianta) — qualquer commit neste `main` também republica o site inteiro.
