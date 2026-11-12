@@ -6551,6 +6551,32 @@ console.log('\n■ Integridade da interface');
     chk('5bv · v7.109.1 · badge e changelog', /APP_VERSAO = '7\.(?:109|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.109\.1<\/b><\/td><td>12\/11\/2026/.test(html));
   }
 
+  // ═══ 5bw · v7.110.0 — parecer com folhas numeradas ("Folha X de N", capa conta mas não carimba) ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const mkPg = capa => { const kids = []; return {
+      _kids: kids, _capa: capa,
+      classList: { contains: c => capa && c === 'pp-capa' },
+      querySelector: sel => { if (/pp-capa/.test(sel)) return capa ? {} : null;
+        if (sel === '.pp-folha') { const el = kids.find(k => k.className === 'pp-folha'); if (!el) return null;
+          return { remove: () => { const i = kids.indexOf(el); if (i >= 0) kids.splice(i, 1); } }; }
+        return null; },
+      appendChild: el => kids.push(el) }; };
+    const capa = mkPg(true), p2 = mkPg(false), p3 = mkPg(false);
+    const raiz = { querySelectorAll: () => [capa, p2, p3] };
+    ctx.__fls = raiz; run('ppNumerarFolhas(__fls)');
+    chk('5bw · cada folha recebe "Folha X de N" no rodapé; a capa conta como folha 1 mas fica sem carimbo',
+      capa._kids.length === 0 && p2._kids.length === 1 && p2._kids[0].textContent === 'Folha 2 de 3' && p3._kids[0].textContent === 'Folha 3 de 3');
+    const p4 = mkPg(false); raiz.querySelectorAll = () => [capa, p2, p3, p4];
+    run('ppNumerarFolhas(__fls)');
+    chk('5bw · reexecutar (reempacotamento) substitui a numeração — um carimbo por folha, contagem atualizada',
+      p2._kids.length === 1 && p2._kids[0].textContent === 'Folha 2 de 4' && p4._kids[0].textContent === 'Folha 4 de 4');
+    chk('5bw · a numeração roda DEPOIS do empacotador e antes da régua, e o estilo .pp-folha existe',
+      /ppEmpacotarDOM\(\$id\('rl-corpo'\)\); ppNumerarFolhas\(\$id\('rl-corpo'\)\); ppReguaRender\(\);/.test(html) && /\.pp-folha\{position:absolute/.test(html));
+    chk('5bw · lacre 795f5d26 intocado (numeração visual, nunca cálculo)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bw · v7.110.0 · badge e changelog', /APP_VERSAO = '7\.(?:11\d|1[2-9]\d)\.\d+'/.test(html) && /<b>v7\.110\.0<\/b><\/td><td>12\/11\/2026/.test(html));
+  }
+
   console.log(FALHAS.length ? `✗ ${FALHAS.length} FALHA(S): ${FALHAS.join(' · ')}` : `✓✓ SUÍTE COMPLETA: ${OK} verificações OK`);
   process.exit(FALHAS.length ? 1 : 0);
 })();

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.109.1 (lacre 795f5d26) em 2026-11-12T13:29:05.900Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.110.0 (lacre 795f5d26) em 2026-11-12T13:50:34.246Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -126,6 +126,7 @@ canvas{max-height:340px}
      pré-visualização tem a largura do papel: o que se mede é o que se imprime. */
   width:210mm;max-width:100%;box-sizing:border-box}
 .pp-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0}
+.pp-folha{position:absolute;right:11mm;bottom:5mm;font-size:8pt;color:#6b7a8d;z-index:3;letter-spacing:.02em}   /* v7.110.0 · numeração das folhas do parecer */
 .pp-capa{min-height:280mm}
 .pp-capa.pp-semarte{background:#0e2a4d}
 .pp-capa-cliente{position:absolute;left:0;top:57%;max-width:46%;padding:7mm 9mm 7mm 12mm;color:#fff;z-index:2;background:rgba(11,31,58,.88);border-radius:0 10px 10px 0;box-shadow:0 2px 10px rgba(0,0,0,.25)}
@@ -3450,6 +3451,24 @@ function ppEhEncabecamento(el, mi){
   if (soNegrito) return true;
   const ant = el.previousElementSibling;
   return txt.length <= 220 && !!ant && ant.classList && (ant.classList.contains('pp-sec') || ppEhEncabecamento(ant, mi) && ant !== mi.firstElementChild);
+}
+// ═══ v7.110.0 · NUMERAÇÃO DAS FOLHAS DO PARECER ═══════════════════════════════════════════
+// Roda DEPOIS do empacotamento (que pode criar folhas novas) e numera cada .pp-page com
+// "Folha X de N" no canto inferior direito. A capa conta como folha 1 na sequência, mas não
+// recebe o carimbo (a arte fica limpa). Rodar de novo substitui a numeração anterior — o
+// empacotador pode ser reexecutado após os gráficos e a contagem precisa acompanhar.
+function ppNumerarFolhas(raiz){
+  if (!raiz || !raiz.querySelectorAll) return;
+  const pgs = Array.prototype.slice.call(raiz.querySelectorAll('.pp-page'));
+  const n = pgs.length; if (!n) return;
+  pgs.forEach((p, i) => {
+    const velho = p.querySelector && p.querySelector('.pp-folha'); if (velho && velho.remove) velho.remove();
+    if (p.querySelector && p.querySelector('.pp-capa, .pp-bg[src="capa.jpg"]')) return;
+    if (p.classList && p.classList.contains && p.classList.contains('pp-capa')) return;
+    const d = document.createElement('div'); d.className = 'pp-folha';
+    d.textContent = 'Folha ' + (i + 1) + ' de ' + n;
+    p.appendChild(d);
+  });
 }
 function ppEmpacotarDOM(corpo){
   try {
@@ -6909,7 +6928,7 @@ function rlParecer(){
   // o excedente estourava na impressão. Agora ele roda depois que o Chart.js desenha, e a régua
   // confere o resultado na sequência.
   setTimeout(() => {
-    try { ppEmpacotarDOM($id('rl-corpo')); ppReguaRender(); }
+    try { ppEmpacotarDOM($id('rl-corpo')); ppNumerarFolhas($id('rl-corpo')); ppReguaRender(); }
     catch(e){ console.error('empacotar', e); }
   }, 350);
 }
