@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulação de Incorporação — Artecon</title>
-<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.109.0 (lacre 795f5d26) em 2026-11-12T12:48:00.740Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
+<!-- GERADO por tools/build_incorporacao.js a partir do index.html v7.109.1 (lacre 795f5d26) em 2026-11-12T13:29:05.900Z. NÃO EDITE À MÃO: edite src/ e rode o build. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7704,6 +7704,7 @@ function apPrintCss(ligar){
   st = document.createElement('style'); st.id = 'ap-print-css';
   st.textContent = `@media print{ @page{size:A4 landscape;margin:0}
     #rl-corpo{width:297mm!important}
+    .ap-doc, .ap-doc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
     .ap-doc .ap-tools, .ap-doc .rl-status, .ap-doc .card.pp-tools{display:none!important}
     .ap-slide{display:block!important;width:297mm;height:210mm;margin:0;padding:21mm 0 0;page-break-after:always;break-after:page;overflow:hidden;background:#fff}
     .ap-slide:last-child{page-break-after:auto}
@@ -7722,7 +7723,7 @@ function rlApresentacao(modo){
     <div class="card pp-tools ap-tools"><div class="toolbar" style="align-items:center">
       <span class="hint">${statusIA} · ${telas.length} telas · em tela cheia: Enter, espaço, setas ou clique avançam; Esc sai</span><span style="flex:1"></span>
       <button class="btn solid" onclick="apApresentar()">▶ Apresentar (tela cheia)</button>
-      <button class="btn" onclick="window.print()" title="Na janela de impressão: Destino = Salvar como PDF · Layout = Paisagem · Margens = Nenhuma · Cabeçalhos e rodapés DESLIGADOS · ativar Gráficos de segundo plano">🖨️ Imprimir / PDF</button>
+      <button class="btn" onclick="window.print()" title="Na janela de impressão: Destino = Salvar como PDF · Layout = Paisagem · Margens = Nenhuma · Cabeçalhos e rodapés DESLIGADOS. As cores já saem sozinhas (v7.109.1); se o seu navegador ainda as remover, ative Gráficos de segundo plano.">🖨️ Imprimir / PDF</button>
     </div></div>`;
   telas.forEach((t,i)=>{
     const inner = t.capa ? t.html

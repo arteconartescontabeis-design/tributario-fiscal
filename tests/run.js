@@ -6540,6 +6540,17 @@ console.log('\n■ Integridade da interface');
     chk('5bu · v7.109.0 · badge e changelog', /APP_VERSAO = '7\.(?:109|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.109\.0<\/b><\/td><td>12\/11\/2026/.test(html));
   }
 
+  // ═══ 5bv · v7.109.1 — apresentação: cores forçadas na impressão (print-color-adjust) ═══
+  {
+    chk('5bv · o CSS de impressão da apresentação força as cores em todos os elementos (.ap-doc e descendentes)',
+      /\.ap-doc, \.ap-doc \*\{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important\}/.test(html));
+    chk('5bv · o parecer continua com a regra própria no .pp-page', /\.pp-page\{[^}]*print-color-adjust:exact/.test(html));
+    chk('5bv · a dica do botão Imprimir diz que as cores saem sozinhas (plano B: Gráficos de segundo plano)',
+      /As cores já saem sozinhas \(v7\.109\.1\)/.test(html) && /se o seu navegador ainda as remover, ative Gráficos de segundo plano/.test(html));
+    chk('5bv · lacre 795f5d26 intocado (uma linha de CSS de impressão)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bv · v7.109.1 · badge e changelog', /APP_VERSAO = '7\.(?:109|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.109\.1<\/b><\/td><td>12\/11\/2026/.test(html));
+  }
+
   console.log(FALHAS.length ? `✗ ${FALHAS.length} FALHA(S): ${FALHAS.join(' · ')}` : `✓✓ SUÍTE COMPLETA: ${OK} verificações OK`);
   process.exit(FALHAS.length ? 1 : 0);
 })();
