@@ -6511,6 +6511,35 @@ console.log('\n■ Integridade da interface');
     chk('5bt · v7.108.0 · badge e changelog', /APP_VERSAO = '7\.(?:10[8-9]|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.108\.0<\/b><\/td><td>11\/11\/2026/.test(html));
   }
 
+  // ═══ 5bu · v7.109.0 — importação de balancete: destino escolhido uma vez vale para todos os lotes ═══
+  {
+    const run = c => vm.runInContext(c, ctx);
+    const conta = (cls, desc, valor, destino) => ({ cls, desc, valor, destino });
+    ctx.__bal = { cnpj:'13131313000113', lotes: [
+      { arquivo:'jan.xlsx', mesIni:0, mesFim:0, ano:2026, contas:[conta('5.7.02.001','ENERGIA ELETRICA',100,'despesas.adm'), conta('5.7.02.002','ALUGUEL',200,'despesas.adm')] },
+      { arquivo:'fev.xlsx', mesIni:1, mesFim:1, ano:2026, contas:[conta('5.7.02.001','ENERGIA ELETRICA',110,'despesas.adm'), conta('5.7.02.002','ALUGUEL',200,'despesas.adm')] },
+      { arquivo:'mar.xlsx', mesIni:2, mesFim:2, ano:2026, contas:[conta('5.7.02.001','ENERGIA ELETRICA',120,'despesas.adm'), conta('','SEM CLASSIFICACAO',50,'ignorar')] } ] };
+    run('BAL = __bal');
+    // caixa ligada (mkEl nasce com checked:true): mudar jan replica para fev e mar
+    run("balSetDestino(0, 0, 'despesas.credEnergia')");
+    chk('5bu · com a caixa ligada, o destino escolhido numa linha replica para a MESMA conta nos demais balancetes',
+      run('BAL.lotes[0].contas[0].destino') === 'despesas.credEnergia' && run('BAL.lotes[1].contas[0].destino') === 'despesas.credEnergia' && run('BAL.lotes[2].contas[0].destino') === 'despesas.credEnergia');
+    chk('5bu · contas diferentes não são tocadas pela réplica', run('BAL.lotes[1].contas[1].destino') === 'despesas.adm' && run('BAL.lotes[2].contas[1].destino') === 'ignorar');
+    // conta sem classificação casa pela descrição
+    run("BAL.lotes[2].contas[1].cls=''; BAL.lotes[0].contas.push({cls:'',desc:'SEM CLASSIFICACAO',valor:60,destino:'ignorar'});");
+    run("balSetDestino(2, 1, 'despesas.outras')");
+    chk('5bu · conta sem classificação replica pela descrição', run('BAL.lotes[0].contas[2].destino') === 'despesas.outras');
+    // caixa desmarcada: mudança fica só na linha
+    run("document.getElementById('bal-rep').checked = false; balSetDestino(0, 1, 'despesas.credAlugueisPJ')");
+    chk('5bu · com a caixa desmarcada, a mudança vale só para a linha editada (ajuste de mês isolado)',
+      run('BAL.lotes[0].contas[1].destino') === 'despesas.credAlugueisPJ' && run('BAL.lotes[1].contas[1].destino') === 'despesas.adm');
+    run("document.getElementById('bal-rep').checked = true");
+    chk('5bu · a revisão desenha a caixa com mais de um balancete e os selects chamam balSetDestino',
+      /Aplicar o destino escolhido à mesma conta em TODOS os balancetes/.test(html) && /id="bal-sel-\$\{li\}-\$\{i\}" onchange="balSetDestino\(/.test(html) && /BAL\.lotes\.length > 1/.test(html));
+    chk('5bu · lacre 795f5d26 intocado (mudança só na tela de revisão da importação)', /LACRE_HASH = '795f5d26'/.test(html));
+    chk('5bu · v7.109.0 · badge e changelog', /APP_VERSAO = '7\.(?:109|1[1-9]\d)\.\d+'/.test(html) && /<b>v7\.109\.0<\/b><\/td><td>12\/11\/2026/.test(html));
+  }
+
   console.log(FALHAS.length ? `✗ ${FALHAS.length} FALHA(S): ${FALHAS.join(' · ')}` : `✓✓ SUÍTE COMPLETA: ${OK} verificações OK`);
   process.exit(FALHAS.length ? 1 : 0);
 })();

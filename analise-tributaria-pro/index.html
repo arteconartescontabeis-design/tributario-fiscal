@@ -823,6 +823,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.109.0</b></td><td>12/11/2026</td><td><b>📊 IMPORTAÇÃO DE BALANCETE — o destino da conta (com ou sem crédito) escolhido UMA vez vale para TODOS os balancetes do lote. Motor e lacre <code>795f5d26</code> INTOCADOS — mudança só na tela de revisão da importação.</b> <b>O retrabalho:</b> na prévia da importação, cada conta de cada balancete tinha o seu próprio seletor de destino — com 12 balancetes mensais, a mesma conta ("Energia Elétrica", "Aluguel"…) precisava ser reclassificada 12 vezes para mudar entre "✓ CRÉDITO LR" e "SEM crédito". <b>Agora:</b> com mais de um balancete no lote, a revisão ganha a caixa <b>"Aplicar o destino escolhido à mesma conta em TODOS os balancetes"</b> (ligada por padrão): mudar o destino numa linha replica para a mesma conta (mesma classificação; sem classificação, mesma descrição) nos demais balancetes, atualizando os seletores na tela sem redesenhar a prévia (a rolagem não se perde) e avisando quantas ocorrências acompanharam. Desmarcada, volta ao ajuste mês a mês para exceções. A sugestão automática por conta (<code>balDestino</code>), a prévia, a matriz de aplicação e a trilha de origem <code>B</code> não mudam. Suíte: bloco 5bu.</td></tr>
                     <tr><td><b>v7.108.0</b></td><td>11/11/2026</td><td><b>⛔ EMPRESA COM RECEITA ACIMA DO TETO DO SIMPLES: análise só entre Lucro Presumido e Lucro Real. Motor e lacre <code>795f5d26</code> INTOCADOS — muda a variante dos documentos e o nível de confiabilidade, nunca número.</b> Correção de auditoria externa (caso real, serviços, receita interna de R$ 11,8 mi no 1º semestre). <b>(1) O defeito:</b> a empresa que ESTOURA o teto durante o ano-base (estado <code>transicao</code> da snElegibilidade) continuava saindo como optante nos documentos: o parecer oferecia <b>"Os três caminhos do Simples em 2027"</b>, o quadro <b>"Cenário em 2027"</b> e os gráficos com <b>"Por dentro"</b> e <b>"Híbrido · % receita"</b> — caminhos que a empresa não terá, porque qualquer excesso sobre o teto impede a permanência/opção no exercício seguinte (LC 123/2006, art. 3º, §§ 9º e 9º-A), e os anos comparados (2027+) são exatamente esses. <b>A variante do parecer e das apresentações passa a ser <code>acima</code> sempre que a receita do ano-base supera o teto</b> (estado ≠ elegível): a comparação fica entre Lucro Presumido e Lucro Real, as seções e gráficos do Simples saem do documento e a situação do ano-base (permanência até 31/12 com excesso ≤ 20%, ou exclusão do mês seguinte ao excesso) segue declarada pelo snTexto no enquadramento, no quadro "Situação no Simples Nacional" e nas telas das apresentações. <b>(2) Confiabilidade:</b> para essa empresa, o crédito de IBS/CBS entra por IGUAL no Presumido e no Real — a composição dos fornecedores <b>não tem como trocar o regime vencedor</b>. O "⛔ NÍVEL DE CONFIABILIDADE: BAIXO — parcela relevante não identificada (X% das compras)" deixava o parecer NÃO CONCLUSIVO por uma pendência que não muda a conclusão; <code>compConfianca</code> ganhou o parâmetro <code>snFora</code> (ligado quando o Simples está indisponível nos anos projetados): parcela não identificada/composição ausente passa a nível MÉDIO ⚠️ com a nota "afeta o valor estimado do crédito de IBS/CBS, não a escolha entre Lucro Presumido e Lucro Real" — divergência matemática e inversão de vencedor continuam forçando BAIXO sempre. <b>(3) Textos:</b> o alerta do cadastro optante cita a exclusão certa e a comparação LP × LR; a apresentação mostra "receita interna superior ao teto em R$ X" também na variante acima (nunca "folga" negativa). Teto legal aplicado: R$ 4,8 mi (LC 123/2006, art. 3º, II), proporcional no ano de início — a regra não usa valor fixo de corte. Suíte: bloco 5bt.</td></tr>
                     <tr><td><b>v7.107.0</b></td><td>24/10/2026</td><td><b>🔒 TRAVA DOS MESES ENTREGUES — "fechamento por período" do jeito que o app trabalha. Motor e lacre <code>795f5d26</code> INTOCADOS: é trava de tela e trilha, nunca cálculo.</b> <b>(1) A lacuna:</b> durante o ano a análise fica aberta (o 2º semestre ainda vai ser digitado), e nada impedia uma edição retroativa de janeiro–junho DEPOIS da entrega do 1º semestre ao cliente. <b>(2) A trava:</b> o 📬 Registrar entrega do período (v7.106.0) agora também TRAVA os meses do corte — grava em <code>dados._entregas</code> (no banco e na análise aberta) o período, os meses e o <b>retrato dos valores entregues</b>. A grade recusa a edição de mês travado (aviso com o período da entrega); a <b>importação</b> (PGDAS, planilha, XML, balancete, Demonstrativo, Faturamento) que invadir o corte tem as células repostas pelo retrato, com alerta listando o que foi preservado — os demais meses entram normalmente, então o fluxo "entrega S1 → importa jul–dez" segue livre. <b>(3) 🔓 Destravar existe</b> — por entrega, com <b>motivo obrigatório (≥5 caracteres) assinado na trilha de auditoria</b> (padrão do motivo da v7.98): nada é proibido, tudo fica registrado (quem, quando, por quê). O aviso dos meses travados aparece na Análise Atual, ao lado do fechamento. <b>(4) Fecho do ciclo:</b> no fim do exercício, o 🔒 Fechar análise congela tudo como sempre; a trava protege o meio do caminho. Fora do <code>anCanon</code> de propósito: travar/destravar não é "edição" da análise. Suíte: bloco 5bs (entrega trava e grava o retrato; grade recusa; importação reposta; destravar com motivo assina a trilha e libera).</td></tr>
                     <tr><td><b>v7.106.0</b></td><td>24/10/2026</td><td><b>📅 APURAÇÃO POR PERÍODO — o plano do cliente com a Artecon (trimestral · semestral · anual) passa a orientar os documentos. Motor e lacre <code>795f5d26</code> INTOCADOS: o período é a SOMA dos meses do corte, nunca um segundo cálculo.</b> <b>(1) Por quê:</b> clientes com plano trimestral/semestral recebiam documentos sempre anuais — e 71 das 72 análises fechadas de 2026 têm exatamente jan–jun lançado, prontas para uma entrega de 1º semestre. <b>(2) Plano na ficha:</b> a empresa ganha o campo "Plano de apuração — Artecon" (coluna <code>plano_apuracao</code>, <code>banco/atp/setup_v7106.sql</code>). <b>(3) Período do documento:</b> Comparativo de regimes, Conferência e Parecer ganham o seletor (Ano · 1º/2º semestre · T1–T4), que abre no último período do plano com receita lançada. Só cortes alinhados a trimestre: IRPJ/CSLL do Presumido, o adicional e a LC 224 são trimestrais, então a soma dos meses do corte é EXATA — a suíte crava a partição t1+t2+t3+t4 = ano ao centavo. <b>(4) O que cada documento mostra no corte:</b> o Comparativo elege o vencedor DO PERÍODO e recalcula todas as tabelas sobre os meses do corte; a Conferência ganha o cartão "Apuração do período"; o Parecer declara o corte na capa e ganha a página "Apuração do período". Honestidades declaradas: Lucro Real em apuração ANUAL aparece como estimativa no corte (o ajuste é anual); 13º e provisões ficam nos meses deles; os cenários da Reforma são do EXERCÍCIO e permanecem no documento anual — comparar trimestre com ano pleno seria desonesto. <b>(5) 📬 Registrar entrega do período:</b> cada emissão do ciclo pode ser registrada no Histórico (evento <code>entrega-periodo</code>, com corte, totais, vencedor, autor, app e lacre) — a prova, meses depois, do que foi entregue em cada ciclo do plano. Suíte: bloco 5br (partição ao centavo, eleição do corte, padrão pelo plano, comparativo funcional com e sem corte, entrega no Histórico).</td></tr>
@@ -6670,7 +6671,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.108.0';
+const APP_VERSAO = '7.109.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 // ═══ v7.107.0 · TRAVA DOS MESES ENTREGUES ════════════════════════════════════════════════════
 // Registrar a entrega de um período (📬, Relatórios) TRAVA os meses do corte: a grade recusa a
@@ -9295,9 +9296,15 @@ async function balLer(input) {
 const balPeriodoTxt = l => l.mesIni===l.mesFim ? MESES[l.mesIni] : MESES[l.mesIni]+'–'+MESES[l.mesFim];
 function balReview() {
   const todosMensais = BAL.lotes.every(l=>l.mesIni===l.mesFim);
-  const selD = (li,i,atual) => `<select onchange="BAL.lotes[${li}].contas[${i}].destino=this.value" style="min-width:230px">` +
+  const selD = (li,i,atual) => `<select id="bal-sel-${li}-${i}" onchange="balSetDestino(${li},${i},this.value)" style="min-width:230px">` +
     BAL_DESTINOS.map(([k,r])=>`<option value="${k}" ${k===atual?'selected':''}>${r}</option>`).join('') + '</select>';
   let h = `<div class="hint" style="margin-bottom:8px">CNPJ ${BAL.cnpj||'?'} · ${BAL.lotes.length} balancete(s) · período ${MESES[BAL.mesIni]}–${MESES[BAL.mesFim]}${BAL.ano?'/'+BAL.ano:''}. Ajuste os destinos, gere a prévia e confirme.</div>`;
+  // v7.109.0 · a MESMA conta aparece em cada balancete mensal: escolher o destino (com ou sem
+  // crédito) 12 vezes era retrabalho. Com a caixa ligada (padrão), mudar o destino numa linha
+  // replica para a mesma conta (classificação) em TODOS os balancetes do lote importado.
+  if (BAL.lotes.length > 1) h += `<div style="margin:0 0 8px;padding:6px 10px;background:#eaf2f8;border-radius:6px;font-size:12.5px">
+    <label style="cursor:pointer"><input type="checkbox" id="bal-rep" checked> <b>Aplicar o destino escolhido à mesma conta em TODOS os balancetes</b>
+    <span class="hint">— mude uma vez (ex.: "✓ CRÉDITO LR — Energia" ou "Despesa administrativa — SEM crédito") e a conta inteira acompanha nos ${BAL.lotes.length} balancetes; desmarque para ajustar um mês isolado.</span></label></div>`;
   BAL.lotes.forEach((l,li)=>{
     h += `<div style="margin:10px 0 4px;font-weight:600">📄 ${esc(l.arquivo||'balancete')} — ${balPeriodoTxt(l)}${l.ano?'/'+l.ano:''} · ${l.contas.length} contas</div>
     <table class="gtable"><thead><tr><th>Conta</th><th>Descrição</th><th class="num">Valor no período</th><th>Destino na análise</th></tr></thead><tbody>`;
@@ -9315,6 +9322,25 @@ function balReview() {
   </div>
   <div id="bal-previa" style="margin-top:12px"></div>`;
   $id('imp-bal-review').innerHTML = h;
+}
+// v7.109.0 · destino escolhido numa linha replica para a MESMA conta nos demais balancetes do
+// lote (caixa "bal-rep", ligada por padrão). A réplica casa pela classificação da conta (cls) e,
+// quando a classificação vem vazia, pela descrição — e atualiza os selects na tela sem redesenhar
+// a prévia (redesenhar perderia a posição de rolagem no meio da revisão).
+function balSetDestino(li, i, v){
+  const c = BAL && BAL.lotes && BAL.lotes[li] && BAL.lotes[li].contas[i]; if (!c) return;
+  c.destino = v;
+  const rep = $id('bal-rep');
+  if (!rep || !rep.checked || BAL.lotes.length < 2) return;
+  let n = 0;
+  BAL.lotes.forEach((l, lj) => l.contas.forEach((x, xi) => {
+    if (lj === li && xi === i) return;
+    const mesma = c.cls ? x.cls === c.cls : x.desc === c.desc;
+    if (!mesma || x.destino === v) return;
+    x.destino = v; n++;
+    const s = $id('bal-sel-' + lj + '-' + xi); if (s) s.value = v;
+  }));
+  if (n) toast('Destino aplicado também à conta ' + (c.cls || c.desc) + ' em ' + n + ' outro(s) balancete(s).');
 }
 // Matriz ÚNICA usada pela prévia e pela aplicação: {destino: {mes: valorFinal}} — o que a prévia
 // mostra é exatamente o que será gravado. FGTS em valor já convertido para folha.baseFgts.
