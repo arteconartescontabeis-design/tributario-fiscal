@@ -126,6 +126,7 @@ canvas{max-height:340px}
      pré-visualização tem a largura do papel: o que se mede é o que se imprime. */
   width:210mm;max-width:100%;box-sizing:border-box}
 .pp-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0}
+.pp-folha{position:absolute;right:11mm;bottom:5mm;font-size:8pt;color:#6b7a8d;z-index:3;letter-spacing:.02em}   /* v7.110.0 · numeração das folhas do parecer */
 .pp-capa{min-height:280mm}
 .pp-capa.pp-semarte{background:#0e2a4d}
 .pp-capa-cliente{position:absolute;left:0;top:57%;max-width:46%;padding:7mm 9mm 7mm 12mm;color:#fff;z-index:2;background:rgba(11,31,58,.88);border-radius:0 10px 10px 0;box-shadow:0 2px 10px rgba(0,0,0,.25)}
@@ -823,6 +824,7 @@ ul.ap-lista li{margin-bottom:7px}
       <div class="card" >
         <h3>Versões do sistema</h3>
         <table id="tbl-versoes" style="margin-top:8px"><thead><tr><th style="width:90px">Versão</th><th style="width:120px">Data</th><th>Novidades</th></tr></thead><tbody>
+                    <tr><td><b>v7.110.0</b></td><td>12/11/2026</td><td><b>🔢 PARECER — folhas numeradas ("Folha X de N"). Motor e lacre <code>795f5d26</code> INTOCADOS — numeração visual, depois do empacotamento.</b> As folhas do parecer saíam sem número, e um documento de 12+ folhas entregue ao cliente precisa de paginação. A função <code>ppNumerarFolhas</code> roda <b>depois</b> do <code>ppEmpacotarDOM</code> (que pode criar folhas novas na distribuição compacta) e carimba cada <code>.pp-page</code> com <b>"Folha X de N"</b> no canto inferior direito (8pt, cinza discreto, fora do miolo medido pela régua). A <b>capa conta como folha 1</b> na sequência, mas não recebe o carimbo — a arte fica limpa; a numeração reexecutada substitui a anterior, acompanhando qualquer reempacotamento. Apresentação já numerava as telas (X / N no rodapé) e não muda. Suíte: bloco 5bw.</td></tr>
                     <tr><td><b>v7.109.1</b></td><td>12/11/2026</td><td><b>🖨️ APRESENTAÇÃO — as cores deixavam de sair na impressão/PDF. Motor e lacre <code>795f5d26</code> INTOCADOS — uma linha de CSS de impressão.</b> Na tela a apresentação sai colorida, mas ao imprimir o navegador removia os fundos (comportamento-padrão de impressão): cartões e gráficos saíam lavados e as <b>telas escuras viravam texto branco em fundo branco</b> — a menos que o usuário lembrasse de ligar "Gráficos de segundo plano". O parecer nunca sofreu disso porque o <code>.pp-page</code> traz <code>print-color-adjust:exact</code> desde sempre; a apresentação não trazia. O CSS de impressão da apresentação (<code>apPrintCss</code>) ganha <code>.ap-doc, .ap-doc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}</code> — as cores passam a sair sozinhas, com qualquer configuração da janela de impressão; a dica do botão 🖨️ foi atualizada (a recomendação de ligar "Gráficos de segundo plano" vira plano B para navegadores antigos). Suíte: bloco 5bv.</td></tr>
                     <tr><td><b>v7.109.0</b></td><td>12/11/2026</td><td><b>📊 IMPORTAÇÃO DE BALANCETE — o destino da conta (com ou sem crédito) escolhido UMA vez vale para TODOS os balancetes do lote. Motor e lacre <code>795f5d26</code> INTOCADOS — mudança só na tela de revisão da importação.</b> <b>O retrabalho:</b> na prévia da importação, cada conta de cada balancete tinha o seu próprio seletor de destino — com 12 balancetes mensais, a mesma conta ("Energia Elétrica", "Aluguel"…) precisava ser reclassificada 12 vezes para mudar entre "✓ CRÉDITO LR" e "SEM crédito". <b>Agora:</b> com mais de um balancete no lote, a revisão ganha a caixa <b>"Aplicar o destino escolhido à mesma conta em TODOS os balancetes"</b> (ligada por padrão): mudar o destino numa linha replica para a mesma conta (mesma classificação; sem classificação, mesma descrição) nos demais balancetes, atualizando os seletores na tela sem redesenhar a prévia (a rolagem não se perde) e avisando quantas ocorrências acompanharam. Desmarcada, volta ao ajuste mês a mês para exceções. A sugestão automática por conta (<code>balDestino</code>), a prévia, a matriz de aplicação e a trilha de origem <code>B</code> não mudam. Suíte: bloco 5bu.</td></tr>
                     <tr><td><b>v7.108.0</b></td><td>11/11/2026</td><td><b>⛔ EMPRESA COM RECEITA ACIMA DO TETO DO SIMPLES: análise só entre Lucro Presumido e Lucro Real. Motor e lacre <code>795f5d26</code> INTOCADOS — muda a variante dos documentos e o nível de confiabilidade, nunca número.</b> Correção de auditoria externa (caso real, serviços, receita interna de R$ 11,8 mi no 1º semestre). <b>(1) O defeito:</b> a empresa que ESTOURA o teto durante o ano-base (estado <code>transicao</code> da snElegibilidade) continuava saindo como optante nos documentos: o parecer oferecia <b>"Os três caminhos do Simples em 2027"</b>, o quadro <b>"Cenário em 2027"</b> e os gráficos com <b>"Por dentro"</b> e <b>"Híbrido · % receita"</b> — caminhos que a empresa não terá, porque qualquer excesso sobre o teto impede a permanência/opção no exercício seguinte (LC 123/2006, art. 3º, §§ 9º e 9º-A), e os anos comparados (2027+) são exatamente esses. <b>A variante do parecer e das apresentações passa a ser <code>acima</code> sempre que a receita do ano-base supera o teto</b> (estado ≠ elegível): a comparação fica entre Lucro Presumido e Lucro Real, as seções e gráficos do Simples saem do documento e a situação do ano-base (permanência até 31/12 com excesso ≤ 20%, ou exclusão do mês seguinte ao excesso) segue declarada pelo snTexto no enquadramento, no quadro "Situação no Simples Nacional" e nas telas das apresentações. <b>(2) Confiabilidade:</b> para essa empresa, o crédito de IBS/CBS entra por IGUAL no Presumido e no Real — a composição dos fornecedores <b>não tem como trocar o regime vencedor</b>. O "⛔ NÍVEL DE CONFIABILIDADE: BAIXO — parcela relevante não identificada (X% das compras)" deixava o parecer NÃO CONCLUSIVO por uma pendência que não muda a conclusão; <code>compConfianca</code> ganhou o parâmetro <code>snFora</code> (ligado quando o Simples está indisponível nos anos projetados): parcela não identificada/composição ausente passa a nível MÉDIO ⚠️ com a nota "afeta o valor estimado do crédito de IBS/CBS, não a escolha entre Lucro Presumido e Lucro Real" — divergência matemática e inversão de vencedor continuam forçando BAIXO sempre. <b>(3) Textos:</b> o alerta do cadastro optante cita a exclusão certa e a comparação LP × LR; a apresentação mostra "receita interna superior ao teto em R$ X" também na variante acima (nunca "folga" negativa). Teto legal aplicado: R$ 4,8 mi (LC 123/2006, art. 3º, II), proporcional no ano de início — a regra não usa valor fixo de corte. Suíte: bloco 5bt.</td></tr>
@@ -6672,7 +6674,7 @@ async function anHistRestaurar(id){
   toast(ok === false ? 'Restaurada na tela, mas a gravação falhou.' : 'Versão restaurada e gravada ✓');
 }
 // ═══ v7.26.0: TRAVA DE ANÁLISES FECHADAS — snapshot congelado + comparação pós-atualização ═══
-const APP_VERSAO = '7.109.1';
+const APP_VERSAO = '7.110.0';
 function anTravada(){ return !!(AN && AN._status==='fechada'); }
 // ═══ v7.107.0 · TRAVA DOS MESES ENTREGUES ════════════════════════════════════════════════════
 // Registrar a entrega de um período (📬, Relatórios) TRAVA os meses do corte: a grade recusa a
@@ -11572,7 +11574,7 @@ function rlParecer(){
   // o excedente estourava na impressão. Agora ele roda depois que o Chart.js desenha, e a régua
   // confere o resultado na sequência.
   setTimeout(() => {
-    try { ppEmpacotarDOM($id('rl-corpo')); ppReguaRender(); }
+    try { ppEmpacotarDOM($id('rl-corpo')); ppNumerarFolhas($id('rl-corpo')); ppReguaRender(); }
     catch(e){ console.error('empacotar', e); }
   }, 350);
 }
@@ -11785,6 +11787,24 @@ function ppEhEncabecamento(el, mi){
   if (soNegrito) return true;
   const ant = el.previousElementSibling;
   return txt.length <= 220 && !!ant && ant.classList && (ant.classList.contains('pp-sec') || ppEhEncabecamento(ant, mi) && ant !== mi.firstElementChild);
+}
+// ═══ v7.110.0 · NUMERAÇÃO DAS FOLHAS DO PARECER ═══════════════════════════════════════════
+// Roda DEPOIS do empacotamento (que pode criar folhas novas) e numera cada .pp-page com
+// "Folha X de N" no canto inferior direito. A capa conta como folha 1 na sequência, mas não
+// recebe o carimbo (a arte fica limpa). Rodar de novo substitui a numeração anterior — o
+// empacotador pode ser reexecutado após os gráficos e a contagem precisa acompanhar.
+function ppNumerarFolhas(raiz){
+  if (!raiz || !raiz.querySelectorAll) return;
+  const pgs = Array.prototype.slice.call(raiz.querySelectorAll('.pp-page'));
+  const n = pgs.length; if (!n) return;
+  pgs.forEach((p, i) => {
+    const velho = p.querySelector && p.querySelector('.pp-folha'); if (velho && velho.remove) velho.remove();
+    if (p.querySelector && p.querySelector('.pp-capa, .pp-bg[src="capa.jpg"]')) return;
+    if (p.classList && p.classList.contains && p.classList.contains('pp-capa')) return;
+    const d = document.createElement('div'); d.className = 'pp-folha';
+    d.textContent = 'Folha ' + (i + 1) + ' de ' + n;
+    p.appendChild(d);
+  });
 }
 function ppEmpacotarDOM(corpo){
   try {
